@@ -1,0 +1,33 @@
+﻿### === SYSTEM FILES === ###
+.DS_Store
+Thumbs.db
+*.swp
+
+### === IDE/SETTINGS === ###
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+.idea/
+.history/
+
+### === DJANGO/PYTHON === ###
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+*.sqlite3
+.env
+.secrets
+staticfiles/
+media/
+
+### === NODE/FRONTEND === ###
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/cache
+frontend/coverage/
+
+### === LOGS === ###
+*.log
+logs/
