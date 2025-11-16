@@ -59,3 +59,70 @@ def registro():
 @main.route('/health')
 def health():
     return "OK", 200
+
+# Agregar a routes.py
+@main.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+        pwd_hash = hashlib.sha256(password.encode()).hexdigest()
+        
+        user = User.query.filter_by(email=email, password_hash=pwd_hash).first()
+        
+        if user:
+            return f"Bienvenido {user.name}!"
+        else:
+            return "Credenciales incorrectas"
+    
+    return """
+    <form method="post">
+        <h2>Login</h2>
+        Email: <input type="email" name="email" required><br>
+        Contraseña: <input type="password" name="password" required><br>
+        <button>Ingresar</button>
+    </form>
+    <p><a href='/registro'>¿No tienes cuenta? Regístrate</a></p>
+    """
+    
+    # Agregar a routes.py
+@main.route('/admin')
+def admin_panel():
+    # Listar usuarios pendientes de aprobación
+    pending_users = User.query.filter_by(status='pending').all()
+    
+    users_html = ""
+    for user in pending_users:
+        users_html += f"""
+        <div>
+            <strong>{user.name}</strong> ({user.email})
+            <a href='/aprobar/{user.id}'>Aprobar</a>
+            <a href='/rechazar/{user.id}'>Rechazar</a>
+        </div>
+        """
+    
+    return f"""
+    <h1>Panel de Administración - Punta Blanca</h1>
+    <h2>Usuarios Pendientes:</h2>
+    {users_html if users_html else "<p>No hay usuarios pendientes</p>"}
+    """
+    
+    
+    # Agregar a routes.py
+@main.route('/aprobar/<int:user_id>')
+def aprobar_usuario(user_id):
+    user = User.query.get(user_id)
+    if user:
+        user.status = 'active'
+        db.session.commit()
+        return f"Usuario {user.email} APROBADO"
+    return "Usuario no encontrado"
+
+@main.route('/rechazar/<int:user_id>')
+def rechazar_usuario(user_id):
+    user = User.query.get(user_id)
+    if user:
+        user.status = 'rejected' 
+        db.session.commit()
+        return f"Usuario {user.email} RECHAZADO"
+    return "Usuario no encontrado"
