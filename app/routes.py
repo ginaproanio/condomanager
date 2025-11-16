@@ -1,18 +1,30 @@
-from flask import Blueprint, request, render_template_string
+from flask import Blueprint, request, render_template
 from app.models import User, db
-from app.tenant import get_tenant
 import hashlib
 
 main = Blueprint('main', __name__)
 
+def get_tenant_safe():
+    """Versión segura que no depende del contexto de request"""
+    try:
+        host = request.host
+        if 'localhost' in host or 'railway' in host:
+            return 'puntablanca'
+        parts = host.split('.')
+        if len(parts) > 2:
+            return parts[0]
+    except RuntimeError:
+        pass
+    return 'puntablanca'
+
 @main.route('/')
 def index():
-    tenant = get_tenant()
-    return render_template_string(f"""
+    tenant = get_tenant_safe()
+    return f"""
     <h1>CondoManager - {tenant.upper()}</h1>
     <p>Subdominio: <strong>{request.host}</strong></p>
     <a href="/registro">Registrarse</a>
-    """)
+    """
 
 @main.route('/registro', methods=['GET', 'POST'])
 def registro():
@@ -20,8 +32,8 @@ def registro():
         email = request.form['email']
         name = request.form['name']
         pwd = hashlib.sha256(request.form['password'].encode()).hexdigest()
-        tenant = get_tenant()  # ✅ Aquí SÍ hay contexto de request
-        user = User(email=email, name=name, password_hash=pwd, tenant=tenant)  # ✅ Asignar manualmente
+        tenant = get_tenant_safe()
+        user = User(email=email, name=name, password_hash=pwd, tenant=tenant)
         db.session.add(user)
         db.session.commit()
         return f"Registrado: {email} en {tenant}"
@@ -35,12 +47,6 @@ def registro():
     </form>
     """
 
-@main.route('/aprobar/<int:user_id>')
-def aprobar(user_id):
-    user = User.query.get(user_id)
-    if user and user.tenant == get_tenant():
-        user.status = 'active'
-        user.role = 'admin'
-        db.session.commit()
-        return f"{user.email} es ADMIN"
-    return "No autorizado"
+@main.route('/health')
+def health():
+    return "OK", 200
