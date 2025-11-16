@@ -20,8 +20,8 @@ def registro():
         email = request.form['email']
         name = request.form['name']
         pwd = hashlib.sha256(request.form['password'].encode()).hexdigest()
-        tenant = get_tenant()
-        user = User(email=email, name=name, password_hash=pwd, tenant=tenant)
+        tenant = get_tenant()  # ✅ Aquí SÍ hay contexto de request
+        user = User(email=email, name=name, password_hash=pwd, tenant=tenant)  # ✅ Asignar manualmente
         db.session.add(user)
         db.session.commit()
         return f"Registrado: {email} en {tenant}"
