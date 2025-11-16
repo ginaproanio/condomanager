@@ -1,12 +1,11 @@
 from flask import Blueprint, request, render_template
-from app import db  # ✅ Importar desde app
-from app.models import User  # ✅ Importar modelos
+from app import db
+from app.models import User
 import hashlib
+import traceback
 
 main = Blueprint('main', __name__)
 
-
-# ✅ AGREGA ESTA RUTA RAÍZ
 @main.route('/')
 def home():
     return """
@@ -17,24 +16,45 @@ def home():
 
 @main.route('/registro', methods=['GET', 'POST'])
 def registro():
-    if request.method == 'POST':
-        email = request.form['email']
-        name = request.form['name']
-        pwd = hashlib.sha256(request.form['password'].encode()).hexdigest()
-        tenant = 'puntablanca'  # Temporalmente fijo
-        user = User(email=email, name=name, password_hash=pwd, tenant=tenant)
-        db.session.add(user)
-        db.session.commit()
-        return f"Registrado: {email} en {tenant}"
+    try:
+        if request.method == 'POST':
+            email = request.form['email']
+            name = request.form['name']
+            password = request.form['password']
+            pwd_hash = hashlib.sha256(password.encode()).hexdigest()
+            tenant = 'puntablanca'
+            
+            # ✅ VERIFICAR SI LA TABLA EXISTE
+            print(f"🔧 Intentando crear usuario: {email}")
+            
+            user = User(
+                email=email, 
+                name=name, 
+                password_hash=pwd_hash, 
+                tenant=tenant,
+                status='pending'  # ✅ AGREGAR ESTE CAMPO
+            )
+            
+            db.session.add(user)
+            db.session.commit()
+            
+            return f"✅ Registrado: {email} en {tenant}. Espera aprobación."
+        
+        return """
+        <form method="post">
+            <h2>Registro - CondoManager</h2>
+            Email: <input type="email" name="email" required><br><br>
+            Nombre: <input type="text" name="name" required><br><br>
+            Contraseña: <input type="password" name="password" required><br><br>
+            <button>Registrarse</button>
+        </form>
+        """
     
-    return """
-    <form method="post">
-        Email: <input type="email" name="email" required><br>
-        Nombre: <input type="text" name="name" required><br>
-        Contraseña: <input type="password" name="password" required><br>
-        <button>Registrarse</button>
-    </form>
-    """
+    except Exception as e:
+        error_msg = f"❌ Error en registro: {str(e)}"
+        print(error_msg)
+        print(traceback.format_exc())
+        return error_msg
 
 @main.route('/health')
 def health():

@@ -2,7 +2,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 import os
 
-db = SQLAlchemy()  # ✅ SOLO UNA instancia aquí
+db = SQLAlchemy()
 
 def create_app():
     app = Flask(__name__)
@@ -18,15 +18,24 @@ def create_app():
     
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 
-    # ✅ Inicializar DB con la app
+    # Inicializar DB
     db.init_app(app)
+    
+    # ✅ AGREGAR DEBUG PARA VER QUÉ PASA
+    print("🔧 Inicializando base de datos...")
     
     # Rutas
     from app.routes import main
     app.register_blueprint(main)
     
-    # Tablas
+    # Crear tablas CON MANEJO DE ERRORES
     with app.app_context():
-        db.create_all()
+        try:
+            print("🔄 Creando tablas...")
+            db.create_all()
+            print("✅ Tablas creadas exitosamente")
+        except Exception as e:
+            print(f"❌ Error creando tablas: {e}")
+            # No relanzar el error para que la app siga funcionando
 
     return app
