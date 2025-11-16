@@ -14,9 +14,18 @@ def create_app():
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'gina_2025_secure')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
-    # DATABASE_URL
-    database_url = os.environ.get('DATABASE_URL', 'sqlite:///app.db')
-    if database_url and database_url.startswith('postgres://'):
+    # CONEXIÓN DIRECTA a PostgreSQL de Railway
+    database_url = os.environ.get('DATABASE_URL')
+    
+    # Si no hay DATABASE_URL, usar la URL directa de tu PostgreSQL
+    if not database_url:
+        database_url = "postgresql://postgres:aJPvUmFIgozAjhuKLPOUZTlsSQVvnJZU@centerbeam.proxy.rlwy.net:11700/railway"
+        print("⚠️  Usando DATABASE_URL manual", file=sys.stderr)
+    else:
+        print("✅ DATABASE_URL de variables", file=sys.stderr)
+    
+    # Arreglar formato si es necesario
+    if database_url.startswith('postgres://'):
         database_url = database_url.replace('postgres://', 'postgresql://', 1)
     
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
