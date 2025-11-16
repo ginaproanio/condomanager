@@ -1,8 +1,10 @@
 from flask import Blueprint, request, render_template
-from app.models import User, db
+from app import db  # ✅ Importar desde app
+from app.models import User  # ✅ Importar modelos
 import hashlib
 
 main = Blueprint('main', __name__)
+
 
 # ✅ AGREGA ESTA RUTA RAÍZ
 @main.route('/')
