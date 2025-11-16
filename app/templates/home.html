@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Inicio - CondoManager{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row align-items-center">
+        <div class="col-lg-6">
+            <h1 class="display-4 fw-bold text-primary mb-4">
+                Gestión Inteligente de Condominios
+            </h1>
+            <p class="lead mb-4">
+                Sistema SaaS completo para la administración eficiente de condominios. 
+                Desarrollado inicialmente para <strong>Punta Blanca</strong>, listo para escalar.
+            </p>
+            <div class="d-grid gap-2 d-md-flex">
+                <a href="/registro" class="btn btn-primary btn-lg px-4">
+                    Comenzar Registro
+                </a>
+                <a href="/login" class="btn btn-outline-primary btn-lg px-4">
+                    Acceso Usuarios
+                </a>
+            </div>
+        </div>
+        <div class="col-lg-6 text-center">
+            <div class="card border-0 shadow-lg">
+                <div class="card-body p-5">
+                    <h3 class="text-primary">¿Primera vez?</h3>
+                    <p class="text-muted">Regístrate y espera la aprobación del administrador</p>
+                    <a href="/registro" class="btn btn-primary">Registrarse Ahora</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Características -->
+    <div class="row mt-5 pt-5">
+        <div class="col-md-4 text-center mb-4">
+            <div class="card border-0 h-100">
+                <div class="card-body">
+                    <h4 class="text-primary">🏠 Multi-Condominio</h4>
+                    <p>Arquitectura preparada para múltiples condominios independientes</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 text-center mb-4">
+            <div class="card border-0 h-100">
+                <div class="card-body">
+                    <h4 class="text-primary">👥 Gestión de Usuarios</h4>
+                    <p>Sistema completo de registro, aprobación y roles</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 text-center mb-4">
+            <div class="card border-0 h-100">
+                <div class="card-body">
+                    <h4 class="text-primary">💳 Sistema de Pagos</h4>
+                    <p>Integración con PayPhone y seguimiento de transacciones</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

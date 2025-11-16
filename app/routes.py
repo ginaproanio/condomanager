@@ -8,11 +8,7 @@ main = Blueprint('main', __name__)
 
 @main.route('/')
 def home():
-    return """
-    <h1>¡CondoManager SaaS - Funcionando!</h1>
-    <p><a href='/registro'>Registrarse</a></p>
-    <p>Sistema de gestión multi-condominios</p>
-    """
+    return render_template('home.html')
 
 @main.route('/registro', methods=['GET', 'POST'])
 def registro():
