@@ -1,0 +1,569 @@
+ El volumen de la unidad C es Disco local
+ El número de serie del volumen es: 10B5-3456
+
+ Directorio de C:\condomanager-saas
+
+16/11/2025  15:04    <DIR>          .
+15/11/2025  23:27    <DIR>          app
+16/11/2025  01:00               274 config.py
+15/11/2025  23:29    <DIR>          docs
+15/11/2025  23:24    <DIR>          migrations
+15/11/2025  23:41                21 Procfile
+16/11/2025  01:06               101 requirements.txt
+16/11/2025  01:06               188 run.py
+16/11/2025  15:04                 0 todo.txt
+               5 archivos            584 bytes
+
+ Directorio de C:\condomanager-saas\.git
+
+16/11/2025  15:04    <DIR>          ..
+16/11/2025  01:16                74 COMMIT_EDITMSG
+16/11/2025  01:19               439 config
+15/11/2025  23:35                73 description
+16/11/2025  01:28               103 FETCH_HEAD
+15/11/2025  23:35                21 HEAD
+15/11/2025  23:35    <DIR>          hooks
+16/11/2025  01:16             1,653 index
+15/11/2025  23:35    <DIR>          info
+15/11/2025  23:35    <DIR>          logs
+16/11/2025  01:16    <DIR>          objects
+15/11/2025  23:35    <DIR>          refs
+               6 archivos          2,363 bytes
+
+ Directorio de C:\condomanager-saas\.git\hooks
+
+15/11/2025  23:35    <DIR>          .
+15/11/2025  23:35               478 applypatch-msg.sample
+15/11/2025  23:35               896 commit-msg.sample
+15/11/2025  23:35             4,726 fsmonitor-watchman.sample
+15/11/2025  23:35               189 post-update.sample
+15/11/2025  23:35               424 pre-applypatch.sample
+15/11/2025  23:35             1,649 pre-commit.sample
+15/11/2025  23:35               416 pre-merge-commit.sample
+15/11/2025  23:35             1,374 pre-push.sample
+15/11/2025  23:35             4,898 pre-rebase.sample
+15/11/2025  23:35               544 pre-receive.sample
+15/11/2025  23:35             1,492 prepare-commit-msg.sample
+15/11/2025  23:35             2,783 push-to-checkout.sample
+15/11/2025  23:35             2,308 sendemail-validate.sample
+15/11/2025  23:35             3,650 update.sample
+              14 archivos         25,827 bytes
+
+ Directorio de C:\condomanager-saas\.git\info
+
+15/11/2025  23:35    <DIR>          .
+15/11/2025  23:35               240 exclude
+               1 archivos            240 bytes
+
+ Directorio de C:\condomanager-saas\.git\logs
+
+15/11/2025  23:35    <DIR>          .
+16/11/2025  01:16             1,755 HEAD
+15/11/2025  23:35    <DIR>          refs
+               1 archivos          1,755 bytes
+
+ Directorio de C:\condomanager-saas\.git\logs\refs
+
+15/11/2025  23:35    <DIR>          .
+15/11/2025  23:35    <DIR>          ..
+15/11/2025  23:35    <DIR>          heads
+15/11/2025  23:35    <DIR>          remotes
+               0 archivos              0 bytes
+
+ Directorio de C:\condomanager-saas\.git\logs\refs\heads
+
+15/11/2025  23:35    <DIR>          .
+15/11/2025  23:35    <DIR>          ..
+16/11/2025  01:16             1,563 main
+               1 archivos          1,563 bytes
+
+ Directorio de C:\condomanager-saas\.git\logs\refs\remotes
+
+15/11/2025  23:35    <DIR>          .
+15/11/2025  23:35    <DIR>          ..
+15/11/2025  23:41    <DIR>          origin
+               0 archivos              0 bytes
+
+ Directorio de C:\condomanager-saas\.git\logs\refs\remotes\origin
+
+15/11/2025  23:41    <DIR>          .
+15/11/2025  23:35    <DIR>          ..
+15/11/2025  23:41               145 HEAD
+16/11/2025  01:03               924 main
+               2 archivos          1,069 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects
+
+16/11/2025  01:28    <DIR>          .
+16/11/2025  00:29    <DIR>          02
+15/11/2025  23:35    <DIR>          09
+16/11/2025  01:16    <DIR>          13
+16/11/2025  01:16    <DIR>          19
+15/11/2025  23:35    <DIR>          1e
+15/11/2025  23:35    <DIR>          28
+15/11/2025  23:35    <DIR>          29
+15/11/2025  23:42    <DIR>          40
+16/11/2025  00:49    <DIR>          43
+16/11/2025  01:16    <DIR>          49
+16/11/2025  01:03    <DIR>          4d
+15/11/2025  23:35    <DIR>          52
+16/11/2025  01:16    <DIR>          53
+15/11/2025  23:35    <DIR>          68
+15/11/2025  23:35    <DIR>          69
+16/11/2025  01:03    <DIR>          6d
+16/11/2025  01:16    <DIR>          71
+15/11/2025  23:35    <DIR>          7a
+16/11/2025  00:29    <DIR>          7f
+15/11/2025  23:42    <DIR>          80
+16/11/2025  01:16    <DIR>          8b
+16/11/2025  00:52    <DIR>          8d
+16/11/2025  00:49    <DIR>          93
+16/11/2025  00:29    <DIR>          9b
+15/11/2025  23:35    <DIR>          9c
+15/11/2025  23:35    <DIR>          a8
+16/11/2025  01:02    <DIR>          a9
+16/11/2025  01:16    <DIR>          b0
+16/11/2025  00:49    <DIR>          b3
+16/11/2025  00:52    <DIR>          b5
+15/11/2025  23:35    <DIR>          b6
+16/11/2025  01:16    <DIR>          c6
+15/11/2025  23:35    <DIR>          ca
+15/11/2025  23:35    <DIR>          cc
+15/11/2025  23:35    <DIR>          ce
+15/11/2025  23:35    <DIR>          d1
+15/11/2025  23:35    <DIR>          d6
+15/11/2025  23:35    <DIR>          d8
+16/11/2025  01:16    <DIR>          da
+16/11/2025  00:52    <DIR>          db
+15/11/2025  23:35    <DIR>          e4
+15/11/2025  23:35    <DIR>          e6
+15/11/2025  23:42    <DIR>          e7
+16/11/2025  01:16    <DIR>          f3
+16/11/2025  01:03    <DIR>          fc
+16/11/2025  01:16    <DIR>          fe
+15/11/2025  23:35    <DIR>          info
+15/11/2025  23:35    <DIR>          pack
+               0 archivos              0 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\02
+
+16/11/2025  00:29    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+16/11/2025  00:29               157 94f80591891c805d7c8f3dd25cf621e62f97dc
+               1 archivos            157 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\09
+
+15/11/2025  23:35    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+15/11/2025  23:35               223 0e9199206f6603ced850c5f07b40934aa9db21
+               1 archivos            223 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\13
+
+16/11/2025  01:16    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+16/11/2025  01:16               110 1d7722e3f6dd595e6debd8a24f4de1fa8b5237
+               1 archivos            110 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\19
+
+16/11/2025  01:16    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+16/11/2025  01:16               212 48673e020e9361bedd7f30bd7462e552b05294
+               1 archivos            212 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\1e
+
+15/11/2025  23:35    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+15/11/2025  23:35               143 17db7ecc1e3ea6a824533bb54529ce173db4d1
+               1 archivos            143 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\28
+
+15/11/2025  23:35    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+15/11/2025  23:35             2,285 312cf8f80cbbbfae6eb6ba752c1aa1c8deaf63
+               1 archivos          2,285 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\29
+
+15/11/2025  23:35    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+15/11/2025  23:35             2,490 53fa603875156cc693c578071f2044044ef497
+               1 archivos          2,490 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\40
+
+15/11/2025  23:42    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+15/11/2025  23:42               212 56edf81f350481c56575705db3820feb173741
+               1 archivos            212 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\43
+
+16/11/2025  00:49    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+16/11/2025  00:49               222 22dfbf5624c72c89215602758a7d7f14eefb4a
+16/11/2025  00:49               150 26e40ac2636cfb16e0f61fd2ec3d49498dcb5e
+               2 archivos            372 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\49
+
+16/11/2025  01:16    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+16/11/2025  01:16               345 5a68f2f49051660b3da2b2207e662865fde7bc
+               1 archivos            345 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\4d
+
+16/11/2025  01:03    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+16/11/2025  01:03               150 8e0371b1feb840f12f0159ae3df16a82315689
+               1 archivos            150 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\52
+
+15/11/2025  23:35    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+15/11/2025  23:35             1,913 354ba5cd87ad57b4c2dcdb995ab92d344fd9d1
+               1 archivos          1,913 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\53
+
+16/11/2025  01:16    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+16/11/2025  01:16               537 9bf115b9f8a36603fbe3a537ffaf19c46a7d50
+               1 archivos            537 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\68
+
+15/11/2025  23:35    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+15/11/2025  23:35             1,982 0aece0d2fcc264b4d70054b9f86c41bb85b252
+               1 archivos          1,982 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\69
+
+15/11/2025  23:35    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+15/11/2025  23:42               109 162f88e68cc1287f628ae1116401b7e7e26284
+               1 archivos            109 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\6d
+
+16/11/2025  01:03    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+16/11/2025  01:03               168 edaf043abd318e146d26c3e90ead2b51cb8a33
+               1 archivos            168 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\71
+
+16/11/2025  01:16    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+16/11/2025  01:16               185 4b90e492b6e8ecb8b8692eb8df0a517ace8d26
+               1 archivos            185 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\7a
+
+15/11/2025  23:35    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+15/11/2025  23:35             2,901 1ef3e83434800f54f5f879272e749c3294f36f
+               1 archivos          2,901 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\7f
+
+16/11/2025  00:29    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+15/11/2025  23:35               110 02ae0656738b3cd405101cc062bd611ce5296c
+16/11/2025  00:29               212 33d3dcc37f9734fbed849c558f059093678714
+               2 archivos            322 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\80
+
+15/11/2025  23:42    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+15/11/2025  23:42                37 a980e842106a95ca0e8ca1d69a5e8c9b091106
+               1 archivos             37 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\8b
+
+16/11/2025  01:16    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+16/11/2025  01:16               205 bbb43002dce68c760bfc049b60b4423b3d9921
+               1 archivos            205 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\8d
+
+16/11/2025  00:52    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+16/11/2025  00:52               420 2ae4cc3f58a82937a924421d51e49dcaf7e65d
+               1 archivos            420 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\93
+
+16/11/2025  00:49    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+16/11/2025  00:49               414 379c9ee4ef5e3385f4e2560320432da46e6bb5
+               1 archivos            414 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\9b
+
+16/11/2025  00:29    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+16/11/2025  00:29               195 57565c412d6fc534a124d8a1db27a187cf5287
+               1 archivos            195 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\9c
+
+15/11/2025  23:35    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+15/11/2025  23:35             2,694 df63c5516db9247a42143aa7bee30be94db563
+               1 archivos          2,694 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\a8
+
+15/11/2025  23:35    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+15/11/2025  23:35             1,516 df33cfa3c5ae85182ff20a078e5efcb5dbb0f2
+               1 archivos          1,516 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\a9
+
+16/11/2025  01:02    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+16/11/2025  01:02               689 b2e2baa261473c21e91ff6d97e428618f3735c
+               1 archivos            689 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\b0
+
+16/11/2025  01:16    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+16/11/2025  01:16               753 9a1ce6fe9aed7425d91f2669a52eb50c9f111e
+               1 archivos            753 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\b3
+
+16/11/2025  00:49    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+16/11/2025  00:49               212 b851e570312406ca201a7a26d6adf041acc141
+               1 archivos            212 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\b5
+
+16/11/2025  00:52    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+16/11/2025  00:52               150 2e2f80214a214df453a999521f7e494ee4d22f
+               1 archivos            150 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\b6
+
+15/11/2025  23:35    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+15/11/2025  23:35               180 993015aa29816d7e9a8fe65adc17824acee63f
+               1 archivos            180 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\c6
+
+16/11/2025  01:16    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+16/11/2025  01:16                58 9db8dbf526338eba1715de0a9bf62a42b5aea7
+               1 archivos             58 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\ca
+
+15/11/2025  23:35    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+15/11/2025  23:35               180 c6ec4199ecd1134617061d4284f3713fe2f131
+               1 archivos            180 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\cc
+
+15/11/2025  23:35    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+15/11/2025  23:35               171 f62ce27b97d347a786fc91614b1b57db313b7c
+               1 archivos            171 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\ce
+
+15/11/2025  23:35    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+15/11/2025  23:35               359 d1d9a9293a664289f3e3a39da78e19db44863b
+               1 archivos            359 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\d1
+
+15/11/2025  23:35    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+15/11/2025  23:35             1,953 a026558977aa4ab1dd261e43f79d39381b6ab1
+               1 archivos          1,953 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\d6
+
+15/11/2025  23:35    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+15/11/2025  23:35             2,335 5625fe1b10f5886a664c7b5963f53b41091a9f
+               1 archivos          2,335 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\d8
+
+15/11/2025  23:35    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+15/11/2025  23:35               150 6e50db73b9e7a64c7094ea81f2eb3b6bb4e174
+               1 archivos            150 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\da
+
+16/11/2025  01:16    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+16/11/2025  01:16               212 d96c90813722e00871fa8270c42d68b50ad235
+               1 archivos            212 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\db
+
+16/11/2025  00:52    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+16/11/2025  00:52               212 63ce286fd63e7d822f0bc574d07c49330a8be9
+               1 archivos            212 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\e4
+
+15/11/2025  23:35    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+15/11/2025  23:35               701 99e0ede02cf3d6f0cdd1ec4f9ef781922dca13
+               1 archivos            701 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\e6
+
+15/11/2025  23:35    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+15/11/2025  23:35               262 ef5f685dafd97ed4a665fb2fc2ddcc7c58c71c
+               1 archivos            262 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\e7
+
+15/11/2025  23:42    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+15/11/2025  23:42               192 ea62403e2238894fa88b5495cf5343d65cdb10
+               1 archivos            192 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\f3
+
+16/11/2025  01:16    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+16/11/2025  00:52               200 15b74679bcfed8a11a73dfdf44273d4fbaa255
+16/11/2025  01:16               222 e12ac33d555a77c19c1f99b6d7d6959a27fd19
+               2 archivos            422 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\fc
+
+16/11/2025  01:03    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+16/11/2025  01:03               212 4291ebfe56d593d94d01f0b8dd6e2924e610ab
+               1 archivos            212 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\fe
+
+16/11/2025  01:16    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+16/11/2025  01:16               243 f75fa10b7cf5d0157ea5e25253091e8efbbeda
+               1 archivos            243 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\info
+
+15/11/2025  23:35    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+               0 archivos              0 bytes
+
+ Directorio de C:\condomanager-saas\.git\objects\pack
+
+15/11/2025  23:35    <DIR>          .
+16/11/2025  01:28    <DIR>          ..
+               0 archivos              0 bytes
+
+ Directorio de C:\condomanager-saas\.git\refs
+
+15/11/2025  23:35    <DIR>          .
+16/11/2025  01:16    <DIR>          heads
+15/11/2025  23:35    <DIR>          remotes
+15/11/2025  23:35    <DIR>          tags
+               0 archivos              0 bytes
+
+ Directorio de C:\condomanager-saas\.git\refs\heads
+
+16/11/2025  01:16    <DIR>          .
+15/11/2025  23:35    <DIR>          ..
+16/11/2025  01:16                41 main
+               1 archivos             41 bytes
+
+ Directorio de C:\condomanager-saas\.git\refs\remotes
+
+15/11/2025  23:35    <DIR>          .
+15/11/2025  23:35    <DIR>          ..
+16/11/2025  01:28    <DIR>          origin
+               0 archivos              0 bytes
+
+ Directorio de C:\condomanager-saas\.git\refs\remotes\origin
+
+16/11/2025  01:28    <DIR>          .
+15/11/2025  23:35    <DIR>          ..
+15/11/2025  23:41                30 HEAD
+16/11/2025  01:03                41 main
+               2 archivos             71 bytes
+
+ Directorio de C:\condomanager-saas\.git\refs\tags
+
+15/11/2025  23:35    <DIR>          .
+15/11/2025  23:35    <DIR>          ..
+               0 archivos              0 bytes
+
+ Directorio de C:\condomanager-saas\app
+
+15/11/2025  23:27    <DIR>          .
+16/11/2025  15:04    <DIR>          ..
+16/11/2025  01:14               609 models.py
+16/11/2025  01:14             1,606 routes.py
+15/11/2025  23:24    <DIR>          static
+16/11/2025  00:23    <DIR>          templates
+16/11/2025  01:12               411 tenant.py
+16/11/2025  01:11               958 __init__.py
+               4 archivos          3,584 bytes
+
+ Directorio de C:\condomanager-saas\app\static
+
+15/11/2025  23:24    <DIR>          .
+15/11/2025  23:27    <DIR>          ..
+               0 archivos              0 bytes
+
+ Directorio de C:\condomanager-saas\app\templates
+
+16/11/2025  00:23    <DIR>          .
+15/11/2025  23:27    <DIR>          ..
+16/11/2025  00:23               452 registro.html
+               1 archivos            452 bytes
+
+ Directorio de C:\condomanager-saas\docs
+
+15/11/2025  23:29    <DIR>          .
+16/11/2025  15:04    <DIR>          ..
+18/02/2025  14:32             3,092 01_MANUAL_USUARIO.md
+18/02/2025  15:28             5,681 02_ARQUITECTURA.md
+18/02/2025  08:24             4,242 03_API.md
+18/02/2025  16:47             6,409 04_DATABASE.md
+18/02/2025  06:53             5,838 05_INSTALACION.md
+18/02/2025  08:23             7,125 06_DEPLOYMENT.md
+18/02/2025  16:16             6,501 07_REGLAS_NEGOCIO.md
+18/02/2025  16:05             4,592 08_ROLES_Y_PERMISOS.md
+18/02/2025  16:39             5,286 README.md
+               9 archivos         48,766 bytes
+
+ Directorio de C:\condomanager-saas\migrations
+
+15/11/2025  23:24    <DIR>          .
+16/11/2025  15:04    <DIR>          ..
+               0 archivos              0 bytes
+
+     Total de archivos en la lista:
+              96 archivos        116,258 bytes
+             195 dirs  21,790,638,080 bytes libres
