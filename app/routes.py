@@ -22,39 +22,32 @@ def registro():
             name = request.form['name']
             password = request.form['password']
             pwd_hash = hashlib.sha256(password.encode()).hexdigest()
-            tenant = 'puntablanca'
             
-            # ✅ VERIFICAR SI LA TABLA EXISTE
-            print(f"🔧 Intentando crear usuario: {email}")
+            # ✅ USAR TENANT DINÁMICO
+            from app.tenant import get_tenant
+            tenant = get_tenant()
             
             user = User(
                 email=email, 
                 name=name, 
                 password_hash=pwd_hash, 
                 tenant=tenant,
-                status='pending'  # ✅ AGREGAR ESTE CAMPO
+                status='pending'
             )
             
             db.session.add(user)
             db.session.commit()
             
-            return f"✅ Registrado: {email} en {tenant}. Espera aprobación."
+            # ✅ REDIRIGIR a página de éxito
+            return render_template('auth/registro.html', 
+                                mensaje=f"✅ Registrado exitosamente. Tu email {email} está pendiente de aprobación en {tenant}.")
         
-        return """
-        <form method="post">
-            <h2>Registro - CondoManager</h2>
-            Email: <input type="email" name="email" required><br><br>
-            Nombre: <input type="text" name="name" required><br><br>
-            Contraseña: <input type="password" name="password" required><br><br>
-            <button>Registrarse</button>
-        </form>
-        """
+        # ✅ USAR EL NUEVO TEMPLATE PROFESIONAL
+        return render_template('auth/registro.html')
     
     except Exception as e:
-        error_msg = f"❌ Error en registro: {str(e)}"
-        print(error_msg)
-        print(traceback.format_exc())
-        return error_msg
+        return render_template('auth/registro.html', 
+                             error=f"❌ Error en registro: {str(e)}")
 
 @main.route('/health')
 def health():
