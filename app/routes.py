@@ -4,13 +4,13 @@ import hashlib
 
 main = Blueprint('main', __name__)
 
-# ✅ AGREGA ESTA RUTA
+# ✅ AGREGA ESTA RUTA RAÍZ
 @main.route('/')
 def home():
     return """
-    <h1>¡CondoManager Funcionando!</h1>
-    <p><a href='/registro'>Ir al Registro</a></p>
-    <p><a href='/health'>Health Check</a></p>
+    <h1>¡CondoManager SaaS - Funcionando!</h1>
+    <p><a href='/registro'>Registrarse</a></p>
+    <p>Sistema de gestión multi-condominios</p>
     """
 
 @main.route('/registro', methods=['GET', 'POST'])
@@ -19,8 +19,11 @@ def registro():
         email = request.form['email']
         name = request.form['name']
         pwd = hashlib.sha256(request.form['password'].encode()).hexdigest()
-        # ... resto de tu código ...
-        return f"Registrado: {email}"
+        tenant = 'puntablanca'  # Temporalmente fijo
+        user = User(email=email, name=name, password_hash=pwd, tenant=tenant)
+        db.session.add(user)
+        db.session.commit()
+        return f"Registrado: {email} en {tenant}"
     
     return """
     <form method="post">
