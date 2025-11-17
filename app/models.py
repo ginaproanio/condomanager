@@ -1,12 +1,10 @@
 from app import db
-from datetime import datetime
+from datetime import datetime, date  # ← AGREGADO para Date/DateTime
 
 def get_tenant_default():
     return 'puntablanca'
 
-# =============================================
-# 1. USUARIO
-# =============================================
+# 1. USER (primero, para que las FK lo encuentren)
 class User(db.Model):
     __tablename__ = 'users'
     __table_args__ = {'extend_existing': True}
@@ -19,39 +17,33 @@ class User(db.Model):
     country = db.Column(db.String(50))
     password_hash = db.Column(db.String(255))
     tenant = db.Column(db.String(50), default=get_tenant_default)
-    role = db.Column(db.String(20), default='user')  # user, admin, MASTER
-    status = db.Column(db.String(20), default='pending')  # pending, active, rejected
-    created_at = db.Column(db.DateTime, default=db.func.now())
+    role = db.Column(db.String(20), default='user')
+    status = db.Column(db.String(20), default='pending')
+    created_at = db.Column(db.DateTime, default=datetime.now)
 
-# =============================================
-# 2. CONFIGURACIÓN POR TENANT
-# =============================================
+# 2. CONFIGURACIÓN CONDOMINIO
 class CondominioConfig(db.Model):
     __tablename__ = 'condominio_config'
+    __table_args__ = {'extend_existing': True}
+
     tenant = db.Column(db.String(50), primary_key=True)
     primary_color = db.Column(db.String(7), default='#2c5aa0')
     logo_url = db.Column(db.String(255))
     nombre_comercial = db.Column(db.String(100))
-    created_at = db.Column(db.DateTime, default=db.func.now())
+    created_at = db.Column(db.DateTime, default=datetime.now)
 
     def __repr__(self):
         return f'<CondominioConfig {self.tenant}>'
 
-# =============================================
-# 3. CONDOMINIO (solo UNA definición)
-# =============================================
+# 3. CONDOMINIUM (UNA SOLA CLASE, COMPLETA)
 class Condominium(db.Model):
     __tablename__ = 'condominiums'
     __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.Integer, primary_key=True)
-    
-    # Información básica
     name = db.Column(db.String(200), nullable=False)
     legal_name = db.Column(db.String(200))
     ruc = db.Column(db.String(20), unique=True)
-    
-    # Ubicación
     main_street = db.Column(db.String(100), nullable=False)
     cross_street = db.Column(db.String(100), nullable=False)
     house_number = db.Column(db.String(20))
@@ -59,23 +51,20 @@ class Condominium(db.Model):
     country = db.Column(db.String(50), nullable=False, default='Ecuador')
     latitude = db.Column(db.Float)
     longitude = db.Column(db.Float)
-    
-    # Configuración SaaS
     subdomain = db.Column(db.String(100), unique=True)
     status = db.Column(db.String(30), default='PENDIENTE_APROBACION')
     billing_day = db.Column(db.Integer, default=1)
     grace_days = db.Column(db.Integer, default=5)
-    trial_start_date = db.Column(db.Date)
-    trial_end_date = db.Column(db.Date)
-    
-    # Relaciones con usuarios
-    admin_user_id = db.Column(db.Integer, db.ForeignKey('users.id'))     # ← CORREGIDO
-    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))        # ← CORREGIDO
-    
-    # Metadatos
+    trial_start_date = db.Column(date)
+    trial_end_date = db.Column(date)
     notes = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=db.func.now())
-    updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
+
+    # FK corregidas a 'users.id'
+    admin_user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
     # Relaciones
     admin_user = db.relationship('User', foreign_keys=[admin_user_id], backref='admin_condominiums')
@@ -100,9 +89,34 @@ class Condominium(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
 
-# =============================================
-# 4. UNIDADES
-# =============================================
+# 4. USER SPECIAL ROLE
+class UserSpecialRole(db.Model):
+    __tablename__ = 'user_special_roles'
+    __table_args__ = {'extend_existing': True}
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    condominium_id = db.Column(db.Integer, db.ForeignKey('condominiums.id'), nullable=False)
+    role = db.Column(db.String(20), nullable=False)
+    asignado_por = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    fecha_inicio = db.Column(date, nullable=False)
+    fecha_fin = db.Column(date)
+    activo = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+
+# 5. INVOICE
+class Invoice(db.Model):
+    __tablename__ = 'invoices'
+    __table_args__ = {'extend_existing': True}
+
+    id = db.Column(db.Integer, primary_key=True)
+    condominium_id = db.Column(db.Integer, db.ForeignKey('condominiums.id'), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    due_date = db.Column(date, nullable=False)
+    status = db.Column(db.String(20), default='PENDING')
+    created_at = db.Column(db.DateTime, default=datetime.now)
+
+# 6. UNIT (última, para que todas las FK estén definidas)
 class Unit(db.Model):
     __tablename__ = 'units'
     __table_args__ = {'extend_existing': True}
@@ -130,40 +144,9 @@ class Unit(db.Model):
     topography = db.Column(db.String(50))
     land_use = db.Column(db.String(100))
     notes = db.Column(db.Text)
-    
+
     condominium_id = db.Column(db.Integer, db.ForeignKey('condominiums.id'), nullable=False)
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # ← CORREGIDO
     status = db.Column(db.String(20), default='disponible')
-    created_at = db.Column(db.DateTime, default=db.func.now())
-    updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
-
-# =============================================
-# 5. ROLES ESPECIALES (PRESIDENTE, etc.)
-# =============================================
-class UserSpecialRole(db.Model):
-    __tablename__ = 'user_special_roles'
-    __table_args__ = {'extend_existing': True}
-
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    condominium_id = db.Column(db.Integer, db.ForeignKey('condominiums.id'), nullable=False)
-    role = db.Column(db.String(20), nullable=False)
-    asignado_por = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    fecha_inicio = db.Column(db.Date, nullable=False)
-    fecha_fin = db.Column(db.Date)
-    activo = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=db.func.now())
-
-# =============================================
-# 6. FACTURAS (próximamente)
-# =============================================
-class Invoice(db.Model):
-    __tablename__ = 'invoices'
-    __table_args__ = {'extend_existing': True}
-
-    id = db.Column(db.Integer, primary_key=True)
-    condominium_id = db.Column(db.Integer, db.ForeignKey('condominiums.id'), nullable=False)
-    amount = db.Column(db.Float, nullable=False)
-    due_date = db.Column(db.Date, nullable=False)
-    status = db.Column(db.String(20), default='PENDING')
-    created_at = db.Column(db.DateTime, default=db.func.now())
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
