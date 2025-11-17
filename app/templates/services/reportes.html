@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Reportes - CondoManager{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-5">
+                    <div class="text-primary mb-4">
+                        <i class="fas fa-chart-bar fa-4x"></i>
+                    </div>
+                    <h2 class="text-primary mb-3">Reportes y Estadísticas</h2>
+                    
+                    {% if mensaje %}
+                    <div class="alert alert-info alert-dismissible fade show w-75 mx-auto" role="alert">
+                        <i class="fas fa-info-circle me-2"></i>{{ mensaje }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endif %}
+
+                    <p class="lead text-muted mb-4">
+                        Módulo en desarrollo. Próximamente tendrás acceso a reportes detallados y métricas de tu condominio.
+                    </p>
+
+                    <div class="row text-start w-75 mx-auto mb-4">
+                        <div class="col-md-6 mb-3">
+                            <i class="fas fa-chart-line text-primary me-2"></i>Reportes financieros
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <i class="fas fa-users text-primary me-2"></i>Estadísticas de usuarios
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <i class="fas fa-home text-primary me-2"></i>Reportes de unidades
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <i class="fas fa-download text-primary me-2"></i>Exportación a Excel/PDF
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <a href="/" class="btn btn-primary me-2">
+                            <i class="fas fa-arrow-left me-2"></i>Volver al Inicio
+                        </a>
+                        <a href="/admin" class="btn btn-outline-primary">
+                            <i class="fas fa-cog me-2"></i>Panel de Admin
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

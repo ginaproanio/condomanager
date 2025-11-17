@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Sistema de Pagos - CondoManager{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-5">
+                    <div class="text-primary mb-4">
+                        <i class="fas fa-credit-card fa-4x"></i>
+                    </div>
+                    <h2 class="text-primary mb-3">Sistema de Pagos</h2>
+                    
+                    {% if mensaje %}
+                    <div class="alert alert-info alert-dismissible fade show w-75 mx-auto" role="alert">
+                        <i class="fas fa-info-circle me-2"></i>{{ mensaje }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endif %}
+
+                    <p class="lead text-muted mb-4">
+                        Módulo en desarrollo. Próximamente podrás realizar pagos seguros mediante PayPhone y llevar el control de tus transacciones.
+                    </p>
+
+                    <div class="row text-start w-75 mx-auto mb-4">
+                        <div class="col-md-6 mb-3">
+                            <i class="fas fa-mobile-alt text-primary me-2"></i>Pagos con PayPhone
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <i class="fas fa-exchange-alt text-primary me-2"></i>Registro de transferencias
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <i class="fas fa-file-invoice-dollar text-primary me-2"></i>Estados de cuenta
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <i class="fas fa-receipt text-primary me-2"></i>Comprobantes digitales
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <a href="/" class="btn btn-primary me-2">
+                            <i class="fas fa-arrow-left me-2"></i>Volver al Inicio
+                        </a>
+                        <a href="/dashboard" class="btn btn-outline-primary">
+                            <i class="fas fa-tachometer-alt me-2"></i>Ir al Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

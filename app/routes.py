@@ -1,4 +1,4 @@
-from flask import Blueprint, request, render_template
+from flask import Blueprint, request, render_template, redirect, url_for
 from app import db
 from app.models import User
 import hashlib
@@ -8,10 +8,12 @@ main = Blueprint('main', __name__)
 
 @main.route('/')
 def home():
+    """Página principal del sistema"""
     return render_template('home.html')
 
 @main.route('/registro', methods=['GET', 'POST'])
 def registro():
+    """Registro de nuevos usuarios"""
     try:
         if request.method == 'POST':
             email = request.form['email']
@@ -19,9 +21,15 @@ def registro():
             password = request.form['password']
             pwd_hash = hashlib.sha256(password.encode()).hexdigest()
             
-            # ✅ USAR TENANT DINÁMICO
+            # USAR TENANT DINÁMICO
             from app.tenant import get_tenant
             tenant = get_tenant()
+            
+            # Verificar si el usuario ya existe
+            existing_user = User.query.filter_by(email=email).first()
+            if existing_user:
+                return render_template('auth/registro.html', 
+                                    error="❌ Este email ya está registrado")
             
             user = User(
                 email=email, 
@@ -34,84 +42,122 @@ def registro():
             db.session.add(user)
             db.session.commit()
             
-            # ✅ REDIRIGIR a página de éxito
             return render_template('auth/registro.html', 
                                 mensaje=f"✅ Registrado exitosamente. Tu email {email} está pendiente de aprobación en {tenant}.")
         
-        # ✅ USAR EL NUEVO TEMPLATE PROFESIONAL
         return render_template('auth/registro.html')
     
     except Exception as e:
         return render_template('auth/registro.html', 
                              error=f"❌ Error en registro: {str(e)}")
 
-@main.route('/health')
-def health():
-    return "OK", 200
-
-# Agregar a routes.py
 @main.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
-        pwd_hash = hashlib.sha256(password.encode()).hexdigest()
+    """Login de usuarios"""
+    try:
+        if request.method == 'POST':
+            email = request.form['email']
+            password = request.form['password']
+            pwd_hash = hashlib.sha256(password.encode()).hexdigest()
+            
+            user = User.query.filter_by(email=email, password_hash=pwd_hash).first()
+            
+            if user:
+                if user.status == 'pending':
+                    return render_template('auth/login.html',
+                                        error="⏳ Tu cuenta está pendiente de aprobación")
+                elif user.status == 'rejected':
+                    return render_template('auth/login.html',
+                                        error="❌ Tu cuenta fue rechazada. Contacta al administrador")
+                
+                return render_template('auth/login.html', 
+                                    mensaje=f"🎉 Bienvenido {user.name}!")
+            else:
+                return render_template('auth/login.html',
+                                    error="❌ Credenciales incorrectas")
         
-        user = User.query.filter_by(email=email, password_hash=pwd_hash).first()
-        
-        if user:
-            return f"Bienvenido {user.name}!"
-        else:
-            return "Credenciales incorrectas"
+        return render_template('auth/login.html')
     
-    return """
-    <form method="post">
-        <h2>Login</h2>
-        Email: <input type="email" name="email" required><br>
-        Contraseña: <input type="password" name="password" required><br>
-        <button>Ingresar</button>
-    </form>
-    <p><a href='/registro'>¿No tienes cuenta? Regístrate</a></p>
-    """
-    
-    # Agregar a routes.py
+    except Exception as e:
+        return render_template('auth/login.html', 
+                             error=f"❌ Error en login: {str(e)}")
+
 @main.route('/admin')
 def admin_panel():
-    # Listar usuarios pendientes de aprobación
-    pending_users = User.query.filter_by(status='pending').all()
+    """Panel de administración para aprobar usuarios"""
+    try:
+        # Listar usuarios pendientes de aprobación
+        pending_users = User.query.filter_by(status='pending').all()
+        
+        return render_template('admin/panel.html', 
+                             pending_users=pending_users)
     
-    users_html = ""
-    for user in pending_users:
-        users_html += f"""
-        <div>
-            <strong>{user.name}</strong> ({user.email})
-            <a href='/aprobar/{user.id}'>Aprobar</a>
-            <a href='/rechazar/{user.id}'>Rechazar</a>
-        </div>
-        """
-    
-    return f"""
-    <h1>Panel de Administración - Punta Blanca</h1>
-    <h2>Usuarios Pendientes:</h2>
-    {users_html if users_html else "<p>No hay usuarios pendientes</p>"}
-    """
-    
-    
-    # Agregar a routes.py
+    except Exception as e:
+        return render_template('admin/panel.html',
+                             error=f"Error cargando panel: {str(e)}")
+
 @main.route('/aprobar/<int:user_id>')
 def aprobar_usuario(user_id):
-    user = User.query.get(user_id)
-    if user:
-        user.status = 'active'
-        db.session.commit()
-        return f"Usuario {user.email} APROBADO"
-    return "Usuario no encontrado"
+    """Aprobar usuario pendiente"""
+    try:
+        user = User.query.get(user_id)
+        if user:
+            user.status = 'active'
+            db.session.commit()
+            return redirect('/admin')
+        return redirect('/admin')
+    except Exception as e:
+        return redirect('/admin')
 
 @main.route('/rechazar/<int:user_id>')
 def rechazar_usuario(user_id):
-    user = User.query.get(user_id)
-    if user:
-        user.status = 'rejected' 
-        db.session.commit()
-        return f"Usuario {user.email} RECHAZADO"
-    return "Usuario no encontrado"
+    """Rechazar usuario pendiente"""
+    try:
+        user = User.query.get(user_id)
+        if user:
+            user.status = 'rejected' 
+            db.session.commit()
+            return redirect('/admin')
+        return redirect('/admin')
+    except Exception as e:
+        return redirect('/admin')
+
+@main.route('/dashboard')
+def dashboard():
+    """Dashboard para usuarios aprobados"""
+    return render_template('user/dashboard.html', 
+                         mensaje="🏠 Panel de usuario - Próximamente")
+
+@main.route('/usuarios')
+def listar_usuarios():
+    """Listar todos los usuarios (solo admin)"""
+    try:
+        users = User.query.all()
+        return render_template('admin/usuarios.html',
+                             users=users)
+    except Exception as e:
+        return f"Error listando usuarios: {str(e)}"
+
+@main.route('/health')
+def health():
+    """Health check para monitoreo"""
+    return "OK", 200
+
+# ✅ RUTAS DE SERVICIOS FUTUROS
+@main.route('/unidades')
+def unidades():
+    """Gestión de unidades (próximamente)"""
+    return render_template('services/unidades.html',
+                         mensaje="🏢 Gestión de Unidades - Próximamente")
+
+@main.route('/pagos')
+def pagos():
+    """Sistema de pagos (próximamente)"""
+    return render_template('services/pagos.html',
+                         mensaje="💳 Sistema de Pagos - Próximamente")
+
+@main.route('/reportes')
+def reportes():
+    """Reportes del sistema (próximamente)"""
+    return render_template('services/reportes.html',
+                         mensaje="📊 Reportes - Próximamente")

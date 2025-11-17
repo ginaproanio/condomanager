@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}Usuarios - CondoManager{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="text-primary">
+                    <i class="fas fa-users me-2"></i>Gestión de Usuarios
+                </h1>
+                <a href="/admin" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-2"></i>Volver al Panel
+                </a>
+            </div>
+
+            <!-- Filtros -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label class="form-label">Filtrar por estado:</label>
+                            <select class="form-select" onchange="filterUsers(this.value)">
+                                <option value="all">Todos los usuarios</option>
+                                <option value="pending">Pendientes</option>
+                                <option value="active">Activos</option>
+                                <option value="rejected">Rechazados</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Buscar usuario:</label>
+                            <input type="text" class="form-control" placeholder="Nombre o email..." 
+                                   onkeyup="searchUsers(this.value)">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">&nbsp;</label>
+                            <div>
+                                <span class="badge bg-primary fs-6">Total: {{ users|length }} usuarios</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de usuarios -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    {% if users %}
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="usersTable">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Email</th>
+                                        <th>Tenant</th>
+                                        <th>Estado</th>
+                                        <th>Rol</th>
+                                        <th>Último Acceso</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user in users %}
+                                    <tr data-status="{{ user.status }}">
+                                        <td>
+                                            <strong>{{ user.name }}</strong>
+                                        </td>
+                                        <td>{{ user.email }}</td>
+                                        <td>
+                                            <span class="badge bg-primary">{{ user.tenant }}</span>
+                                        </td>
+                                        <td>
+                                            {% if user.status == 'active' %}
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-check-circle me-1"></i>Activo
+                                                </span>
+                                            {% elif user.status == 'pending' %}
+                                                <span class="badge bg-warning">
+                                                    <i class="fas fa-clock me-1"></i>Pendiente
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-danger">
+                                                    <i class="fas fa-times-circle me-1"></i>Rechazado
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">{{ user.role }}</span>
+                                        </td>
+                                        <td>
+                                            {% if user.ultimo_acceso %}
+                                                {{ user.ultimo_acceso.strftime('%d/%m/%Y %H:%M') }}
+                                            {% else %}
+                                                <span class="text-muted">Nunca</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                {% if user.status == 'pending' %}
+                                                    <a href="/aprobar/{{ user.id }}" class="btn btn-success" 
+                                                       title="Aprobar usuario">
+                                                        <i class="fas fa-check"></i>
+                                                    </a>
+                                                    <a href="/rechazar/{{ user.id }}" class="btn btn-danger"
+                                                       title="Rechazar usuario">
+                                                        <i class="fas fa-times"></i>
+                                                    </a>
+                                                {% elif user.status == 'active' %}
+                                                    <button class="btn btn-outline-secondary" disabled
+                                                            title="Usuario activo">
+                                                        <i class="fas fa-user-check"></i>
+                                                    </button>
+                                                {% else %}
+                                                    <a href="/aprobar/{{ user.id }}" class="btn btn-outline-success"
+                                                       title="Re-activar usuario">
+                                                        <i class="fas fa-redo"></i>
+                                                    </a>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-users-slash fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No hay usuarios registrados</h5>
+                            <p class="text-muted">Los usuarios aparecerán aquí una vez se registren en el sistema.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function filterUsers(status) {
+    const rows = document.querySelectorAll('#usersTable tbody tr');
+    rows.forEach(row => {
+        if (status === 'all' || row.getAttribute('data-status') === status) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function searchUsers(query) {
+    const rows = document.querySelectorAll('#usersTable tbody tr');
+    const searchTerm = query.toLowerCase();
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        if (text.includes(searchTerm)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+</script>
+{% endblock %}

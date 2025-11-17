@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Unidades - CondoManager{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-5">
+                    <div class="text-primary mb-4">
+                        <i class="fas fa-building fa-4x"></i>
+                    </div>
+                    <h2 class="text-primary mb-3">Gestión de Unidades</h2>
+                    
+                    {% if mensaje %}
+                    <div class="alert alert-info alert-dismissible fade show w-75 mx-auto" role="alert">
+                        <i class="fas fa-info-circle me-2"></i>{{ mensaje }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endif %}
+
+                    <p class="lead text-muted mb-4">
+                        Módulo en desarrollo. Próximamente podrás gestionar todas las unidades de tu condominio.
+                    </p>
+
+                    <div class="mt-4">
+                        <a href="/" class="btn btn-primary">
+                            <i class="fas fa-arrow-left me-2"></i>Volver al Inicio
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

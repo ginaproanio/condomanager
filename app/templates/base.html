@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}CondoManager - Sistema de Gestión{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
             --primary: #2c5aa0;
@@ -24,34 +25,70 @@
             border-color: var(--secondary);
         }
         .text-primary { color: var(--primary) !important; }
-        .navbar-brand { font-weight: 600; }
+        .border-primary { border-color: var(--primary) !important; }
+        
+        .navbar-brand { font-weight: 600; font-size: 1.5rem; }
+        .hero-bg {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+        }
     </style>
 </head>
 <body>
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow">
         <div class="container">
             <a class="navbar-brand" href="/">
-                🏠 CondoManager
+                <i class="fas fa-building me-2"></i>CondoManager
             </a>
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="/registro">Registro</a>
-                <a class="nav-link" href="/login">Login</a>
-                <a class="nav-link" href="/admin">Admin</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <div class="navbar-nav ms-auto">
+                    <a class="nav-link" href="/"><i class="fas fa-home me-1"></i> Inicio</a>
+                    <a class="nav-link" href="/registro"><i class="fas fa-user-plus me-1"></i> Registro</a>
+                    <a class="nav-link" href="/login"><i class="fas fa-sign-in-alt me-1"></i> Login</a>
+                    <a class="nav-link" href="/admin"><i class="fas fa-cog me-1"></i> Admin</a>
+                    <a class="nav-link" href="/dashboard"><i class="fas fa-tachometer-alt me-1"></i> Dashboard</a>
+                </div>
             </div>
         </div>
     </nav>
 
-    <!-- Contenido -->
-    <main>
+    <!-- Mensajes Flash -->
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="container mt-3">
+                {% for message in messages %}
+                    <div class="alert alert-info alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Contenido Principal -->
+    <main class="min-vh-100">
         {% block content %}{% endblock %}
     </main>
 
     <!-- Footer -->
     <footer class="bg-dark text-light py-4 mt-5">
-        <div class="container text-center">
-            <p class="mb-0">Sistema de Gestión de Condominios &copy; 2024</p>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5><i class="fas fa-building me-2"></i>CondoManager</h5>
+                    <p class="mb-0">Sistema de Gestión de Condominios</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="mb-0">&copy; 2024 CondoManager. Todos los derechos reservados.</p>
+                </div>
+            </div>
         </div>
     </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

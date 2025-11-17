@@ -3,62 +3,89 @@
 {% block title %}Inicio - CondoManager{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="row align-items-center">
-        <div class="col-lg-6">
-            <h1 class="display-4 fw-bold text-primary mb-4">
-                Gestión Inteligente de Condominios
-            </h1>
-            <p class="lead mb-4">
-                Sistema SaaS completo para la administración eficiente de condominios. 
-                Desarrollado inicialmente para <strong>Punta Blanca</strong>, listo para escalar.
-            </p>
-            <div class="d-grid gap-2 d-md-flex">
-                <a href="/registro" class="btn btn-primary btn-lg px-4">
-                    Comenzar Registro
-                </a>
-                <a href="/login" class="btn btn-outline-primary btn-lg px-4">
-                    Acceso Usuarios
-                </a>
+<!-- Hero Section -->
+<section class="hero-bg text-white py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-4">
+                    Gestión Inteligente de Condominios
+                </h1>
+                <p class="lead mb-4">
+                    Sistema SaaS completo para la administración eficiente de condominios. 
+                    Desarrollado inicialmente para <strong>Punta Blanca</strong>, listo para escalar a múltiples condominios.
+                </p>
+                <div class="d-grid gap-2 d-md-flex">
+                    <a href="/registro" class="btn btn-light btn-lg px-4 me-md-2">
+                        <i class="fas fa-user-plus me-2"></i>Comenzar Registro
+                    </a>
+                    <a href="/login" class="btn btn-outline-light btn-lg px-4">
+                        <i class="fas fa-sign-in-alt me-2"></i>Acceso Usuarios
+                    </a>
+                </div>
             </div>
-        </div>
-        <div class="col-lg-6 text-center">
-            <div class="card border-0 shadow-lg">
-                <div class="card-body p-5">
-                    <h3 class="text-primary">¿Primera vez?</h3>
-                    <p class="text-muted">Regístrate y espera la aprobación del administrador</p>
-                    <a href="/registro" class="btn btn-primary">Registrarse Ahora</a>
+            <div class="col-lg-6 text-center">
+                <div class="card border-0 shadow-lg">
+                    <div class="card-body p-5">
+                        <h3 class="text-primary mb-3">¿Primera vez?</h3>
+                        <p class="text-muted mb-4">Regístrate y espera la aprobación del administrador de tu condominio</p>
+                        <a href="/registro" class="btn btn-primary btn-lg">
+                            <i class="fas fa-rocket me-2"></i>Registrarse Ahora
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+</section>
 
-    <!-- Características -->
-    <div class="row mt-5 pt-5">
-        <div class="col-md-4 text-center mb-4">
-            <div class="card border-0 h-100">
-                <div class="card-body">
-                    <h4 class="text-primary">🏠 Multi-Condominio</h4>
-                    <p>Arquitectura preparada para múltiples condominios independientes</p>
-                </div>
+<!-- Características -->
+<section class="py-5">
+    <div class="container">
+        <div class="row text-center mb-5">
+            <div class="col">
+                <h2 class="text-primary">Características Principales</h2>
+                <p class="lead">Todo lo que necesitas para gestionar condominios eficientemente</p>
             </div>
         </div>
-        <div class="col-md-4 text-center mb-4">
-            <div class="card border-0 h-100">
-                <div class="card-body">
-                    <h4 class="text-primary">👥 Gestión de Usuarios</h4>
-                    <p>Sistema completo de registro, aprobación y roles</p>
+        
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="text-primary mb-3">
+                            <i class="fas fa-sitemap fa-3x"></i>
+                        </div>
+                        <h4 class="text-primary">Multi-Condominio</h4>
+                        <p class="text-muted">Arquitectura preparada para múltiples condominios independientes con datos separados</p>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="col-md-4 text-center mb-4">
-            <div class="card border-0 h-100">
-                <div class="card-body">
-                    <h4 class="text-primary">💳 Sistema de Pagos</h4>
-                    <p>Integración con PayPhone y seguimiento de transacciones</p>
+            
+            <div class="col-md-4 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="text-primary mb-3">
+                            <i class="fas fa-users-cog fa-3x"></i>
+                        </div>
+                        <h4 class="text-primary">Gestión de Usuarios</h4>
+                        <p class="text-muted">Sistema completo de registro, aprobación y roles con permisos granular</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="text-primary mb-3">
+                            <i class="fas fa-credit-card fa-3x"></i>
+                        </div>
+                        <h4 class="text-primary">Sistema de Pagos</h4>
+                        <p class="text-muted">Integración con PayPhone y seguimiento completo de transacciones</p>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
+</section>
 {% endblock %}
