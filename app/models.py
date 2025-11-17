@@ -1,5 +1,6 @@
 from app import db
-from datetime import datetime, date  # ← AGREGADO para Date/DateTime
+from sqlalchemy import Boolean, Date     # ← ESTA LÍNEA ES LA CLAVE FINAL
+from datetime import datetime
 
 def get_tenant_default():
     return 'puntablanca'
