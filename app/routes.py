@@ -3,8 +3,17 @@ from app import db
 from app.models import User
 import hashlib
 import traceback
+from datetime import datetime
 
 main = Blueprint('main', __name__)
+
+@main.route('/api/test')
+def test_api():
+    return {
+        "status": "✅ API funcionando correctamente", 
+        "timestamp": datetime.utcnow().isoformat(),
+        "message": "Backend Flask activo en Railway"
+    }
 
 @main.route('/')
 def home():
