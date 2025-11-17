@@ -56,8 +56,8 @@ class Condominium(db.Model):
     status = db.Column(db.String(30), default='PENDIENTE_APROBACION')
     billing_day = db.Column(db.Integer, default=1)
     grace_days = db.Column(db.Integer, default=5)
-    trial_start_date = db.Column(date)
-    trial_end_date = db.Column(date)
+    trial_start_date = db.Column(Date)
+    trial_end_date = db.Column(Date)
     notes = db.Column(db.Text)
 
     # FK corregidas a 'users.id'
@@ -100,9 +100,9 @@ class UserSpecialRole(db.Model):
     condominium_id = db.Column(db.Integer, db.ForeignKey('condominiums.id'), nullable=False)
     role = db.Column(db.String(20), nullable=False)
     asignado_por = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    fecha_inicio = db.Column(date, nullable=False)
-    fecha_fin = db.Column(date)
-    activo = db.Column(db.Boolean, default=True)
+    fecha_inicio = db.Column(Date, nullable=False)
+    fecha_fin = db.Column(Date)
+    activo = db.Column(Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.now)
 
 # 5. INVOICE
@@ -113,7 +113,7 @@ class Invoice(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     condominium_id = db.Column(db.Integer, db.ForeignKey('condominiums.id'), nullable=False)
     amount = db.Column(db.Float, nullable=False)
-    due_date = db.Column(date, nullable=False)
+    due_date = db.Column(Date, nullable=False)
     status = db.Column(db.String(20), default='PENDING')
     created_at = db.Column(db.DateTime, default=datetime.now)
 
