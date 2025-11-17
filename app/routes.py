@@ -215,12 +215,37 @@ def api_master_estadisticas():
     user = get_current_user()
     if not user or user.role != 'MASTER':
         return jsonify({"error": "Acceso denegado"}), 403
-    return jsonify({
-        "total_condominios": Condominium.query.count(),
-        "total_usuarios": User.query.count(),
-        "usuarios_pendientes": User.query.filter_by(status='pending').count(),
-        "unidades_totales": Unit.query.count(),
-    })
+    try:
+        total_condominios = Condominium.query.count()
+        total_usuarios = User.query.count()
+        usuarios_pendientes = User.query.filter_by(status='pending').count()
+        unidades_totales = Unit.query.count()
+
+        # Para mostrar en el frontend, se espera 'condominios_activos' y 'condominios_pendientes'
+        # que no están en la API actual. Podríamos calcularlos aquí o agregarlos al modelo de Condominium.
+        # Por ahora, usaré valores por defecto o ceros si no tenemos esa data.
+        condominios_activos = Condominium.query.filter_by(status='ACTIVO').count() # Asumiendo un campo de estado
+        condominios_pendientes = Condominium.query.filter_by(status='PENDIENTE_APROBACION').count() # Asumiendo un campo de estado
+        
+        # Obtener condominios recientes (por ejemplo, los últimos 5)
+        condominios_recientes = Condominium.query.order_by(Condominium.created_at.desc()).limit(5).all()
+        condominios_recientes_data = [
+            {'name': c.name, 'status': c.status, 'total_usuarios': len(c.units), 'created_at': c.created_at.isoformat()}
+            for c in condominios_recientes
+        ] # Asumiendo 'units' es una relación y 'status' existe
+
+        return jsonify({
+            "total_condominios": total_condominios,
+            "total_usuarios": total_usuarios,
+            "usuarios_pendientes": usuarios_pendientes,
+            "unidades_totales": unidades_totales,
+            "condominios_activos": condominios_activos,
+            "condominios_pendientes": condominios_pendientes,
+            "condominios_recientes": condominios_recientes_data
+        })
+    except Exception as e:
+        current_app.logger.error(f"Error al obtener estadísticas del maestro: {e}")
+        return jsonify({"error": "Error interno del servidor al obtener estadísticas"}), 500
 
 @main.route('/master/descargar-plantilla-unidades')
 @jwt_required()

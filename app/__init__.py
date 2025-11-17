@@ -1,4 +1,4 @@
-from flask import Flask, session
+from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
@@ -122,5 +122,13 @@ def create_app():
         return config
 
     app.get_tenant_config = get_tenant_config
+
+    # ========================
+    # Manejo de la sesión de base de datos
+    # Asegurar que la sesión se cierre correctamente después de cada solicitud
+    # ========================
+    @app.teardown_appcontext
+    def shutdown_session(exception=None):
+        db.session.remove()
 
     return app
