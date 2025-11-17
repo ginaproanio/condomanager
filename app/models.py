@@ -4,6 +4,7 @@ def get_tenant_default():
     return 'puntablanca'
 
 class User(db.Model):
+    __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(255), unique=True, nullable=False)
     name = db.Column(db.String(100))
@@ -82,79 +83,37 @@ class Invoice(db.Model):
     created_at = db.Column(db.DateTime, default=db.func.now())
     
 class Unit(db.Model):
-    __tablename__ = 'units'
-    
+    __tablename__ = 'units'                    # ← Obligatorio para evitar conflictos
+    __table_args__ = {'extend_existing': True} # ← Evita errores si ya existe
+
     id = db.Column(db.Integer, primary_key=True)
-    
-    # ✅ IDENTIFICACIÓN Y NUMERACIÓN (OBLIGATORIO PARA TODOS)
-    code = db.Column(db.String(50), nullable=False, unique=True)  # "TORRE-A-APT-101", "TERRENO-A5"
-    property_number = db.Column(db.String(20), nullable=False)    # "A-101", "C-25", "BOD-12"
-    name = db.Column(db.String(100), nullable=False)              # "Apartamento 101", "Casa 25", "Bodega 12"
-    property_type = db.Column(db.String(30), nullable=False)      # "apartamento", "casa", "local_comercial", "parqueadero", "bodega", "galpon", "terreno"
-    
-    # ✅ UBICACIÓN GEOGRÁFICA Y DIRECCIÓN (OBLIGATORIO PARA TODOS)
-    latitude = db.Column(db.Float)       # -0.180653
-    longitude = db.Column(db.Float)      # -78.467834
-    
-    # ✅ CALLES (OBLIGATORIO PARA TODOS)
-    main_street = db.Column(db.String(100), nullable=False)       # "Av. Principal"
-    cross_street = db.Column(db.String(100), nullable=False)      # "Calle Segunda"
-    house_number = db.Column(db.String(20))                       # "S/N", "25-A", "102"
-    address_reference = db.Column(db.Text)                        # "Frente al parque", "Entre calles 1 y 2"
-    
-    # ✅ UBICACIÓN FÍSICA EN CONDOMINIO (OPCIONAL)
-    building = db.Column(db.String(50))  # "Torre A", "Edificio Principal" (null para terrenos/casas)
-    floor = db.Column(db.String(20))     # "1", "PB", "Sótano 2" (null para terrenos/casas)
-    sector = db.Column(db.String(50))    # "Zona Residencial", "Área Comercial", "Manzana A"
-    
-    # ✅ DIMENSIONES (OBLIGATORIO PARA TODOS)
-    area_m2 = db.Column(db.Float, nullable=False)  # 85.5, 350.0 (metros cuadrados)
-    
-    # ✅ CAMPOS PARA CONSTRUCCIONES (NO TERRENOS)
-    area_construction_m2 = db.Column(db.Float)  # Área construida (null para terrenos)
-    bedrooms = db.Column(db.Integer)            # 2, 3 (null para terrenos/bodegas)
-    bathrooms = db.Column(db.Integer)           # 2, 1 (null para terrenos/bodegas)
-    parking_spaces = db.Column(db.Integer)      # 1, 2 (null para terrenos)
-    
-    # ✅ CAMPOS ESPECÍFICOS PARA TERRENOS
-    front_meters = db.Column(db.Float)          # 15.0 (solo terrenos)
-    depth_meters = db.Column(db.Float)          # 23.3 (solo terrenos)
-    topography = db.Column(db.String(20))       # "plano", "inclinado", "irregular" (solo terrenos)
-    land_use = db.Column(db.String(30))         # "residencial", "comercial", "industrial" (solo terrenos)
-    
-    # ✅ ESTADO Y ASIGNACIÓN (OBLIGATORIO PARA TODOS)
-    status = db.Column(db.String(20), default='disponible')  # "disponible", "ocupado", "mantenimiento", "alquilado"
-    current_owner_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    current_tenant_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    
-    # ✅ RELACIONES
+    property_number = db.Column(db.String(50), nullable=False)
+    name = db.Column(db.String(100))
+    property_type = db.Column(db.String(50))
+    main_street = db.Column(db.String(200))
+    cross_street = db.Column(db.String(200))
+    house_number = db.Column(db.String(20))
+    address_reference = db.Column(db.Text)
+    latitude = db.Column(db.Float)
+    longitude = db.Column(db.Float)
+    building = db.Column(db.String(50))
+    floor = db.Column(db.String(20))
+    sector = db.Column(db.String(50))
+    area_m2 = db.Column(db.Float)
+    area_construction_m2 = db.Column(db.Float, nullable=True)
+    bedrooms = db.Column(db.Integer, nullable=True)
+    bathrooms = db.Column(db.Integer, nullable=True)
+    parking_spaces = db.Column(db.Integer, nullable=True)
+    front_meters = db.Column(db.Float, nullable=True)
+    depth_meters = db.Column(db.Float, nullable=True)
+    topography = db.Column(db.String(50))
+    land_use = db.Column(db.String(100))
+    notes = db.Column(db.Text)
     condominium_id = db.Column(db.Integer, db.ForeignKey('condominiums.id'), nullable=False)
-    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
-    
-    # ✅ METADATOS
-    notes = db.Column(db.Text)  # Observaciones adicionales
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # ← referencia a tabla 'users'
+    status = db.Column(db.String(20), default='disponible')
     created_at = db.Column(db.DateTime, default=db.func.now())
     updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
-    
-    # ✅ MÉTODOS DE DIRECCIÓN COMPLETA
-    def get_full_address(self):
-        """Genera dirección completa automáticamente"""
-        parts = []
-        if self.house_number:
-            parts.append(f"{self.main_street} #{self.house_number}")
-        else:
-            parts.append(self.main_street)
-        
-        parts.append(f"y {self.cross_street}")
-        
-        if self.address_reference:
-            parts.append(f"({self.address_reference})")
-            
-        return ", ".join(parts)
-    
-    def get_short_address(self):
-        """Dirección resumida para listas"""
-        return f"{self.main_street} y {self.cross_street}"    
 
 class Condominium(db.Model):
     __tablename__ = 'condominiums'
