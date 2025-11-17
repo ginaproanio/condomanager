@@ -6,7 +6,7 @@ from datetime import timedelta
 import os
 
 from config import Config
-from app.models import User, Condominium, Unit, CondominioConfig  # Importar todos los modelos necesarios
+# from app.models import User, Condominium, Unit, CondominioConfig  # Mover esta importación
 
 db = SQLAlchemy()
 jwt = JWTManager()
@@ -16,23 +16,16 @@ cors = CORS()
 def create_app():
     app = Flask(__name__)
 
-    # ========================
-    # CONFIGURACIÓN CLAVE
-    # ========================
-    app.config.from_object(Config) # Cargar configuración desde el objeto Config
+    app.config.from_object(Config)
 
-    # JWT con cookies (el estándar moderno y seguro)
     app.config['JWT_TOKEN_LOCATION'] = ['cookies']
-    app.config['JWT_COOKIE_SECURE'] = True          # Obligatorio en producción (HTTPS)
+    app.config['JWT_COOKIE_SECURE'] = True
     app.config['JWT_COOKIE_SAMESITE'] = 'Lax'
-    app.config['JWT_SESSION_COOKIE'] = False        # ← DESACTIVA la sesión tradicional de Flask
-    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=12)   # Token de acceso dura 12h
-    app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=30)   # Refresh opcional
-    app.config['JWT_COOKIE_CSRF_PROTECT'] = False   # Puedes activarlo después si quieres
+    app.config['JWT_SESSION_COOKIE'] = False
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=12)
+    app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=30)
+    app.config['JWT_COOKIE_CSRF_PROTECT'] = False
 
-    # Base de datos
-    # SQLALCHEMY_DATABASE_URI ya se carga de Config
-    # Pero necesitamos ajustar el driver para Railway si es necesario
     database_url = app.config.get('SQLALCHEMY_DATABASE_URI', '')
     if database_url.startswith('postgres://'):
         database_url = database_url.replace('postgres://', 'postgresql+pg8000://', 1)
@@ -43,30 +36,27 @@ def create_app():
 
     print(f"URL de base de datos: {app.config['SQLALCHEMY_DATABASE_URI']}")
 
-    # Inicializaciones
     db.init_app(app)
     jwt.init_app(app)
-    cors.init_app(app, supports_credentials=True)  # Importante para cookies JWT
+    cors.init_app(app, supports_credentials=True)
 
-    # ========================
-    # Crear tablas + usuario maestro (solo si no existe)
-    # Asegurarse de que las tablas existen antes de intentar cargar configuraciones
-    # ========================
+    # Importar modelos aquí para evitar importación circular
+    from app import models
+
     with app.app_context():
         try:
             print("Creando tablas...")
             db.create_all()
             print("Tablas creadas exitosamente")
 
-            # Aquí ya no es necesario importar User de nuevo
             import hashlib
 
             master_email = os.environ.get('MASTER_EMAIL', 'maestro@condomanager.com')
-            if not User.query.filter_by(email=master_email).first():
+            if not models.User.query.filter_by(email=master_email).first():
                 master_password = os.environ.get('MASTER_PASSWORD', 'Master2025!')
                 pwd_hash = hashlib.sha256(master_password.encode()).hexdigest()
 
-                master = User(
+                master = models.User(
                     email=master_email,
                     name='Administrador Maestro',
                     phone='+593999999999',
@@ -86,33 +76,22 @@ def create_app():
         except Exception as e:
             print(f"Error en inicialización: {e}")
 
-    # ========================
-    # JWT: Cargar usuario actual
-    # ========================
     @jwt.user_identity_loader
     def user_identity_lookup(user):
         return user.id
 
     @jwt.user_lookup_loader
     def user_lookup_callback(_jwt_header, jwt_data):
-        # Aquí ya no es necesario importar User de nuevo
         identity = jwt_data["sub"]
-        return User.query.get(identity)
+        return models.User.query.get(identity)
 
-    # ========================
-    # Registrar rutas
-    # ========================
     from app.routes import main
     app.register_blueprint(main)
 
-    # ========================
-    # Configuración automática de tenant
-    # ========================
     def get_tenant_config(tenant):
-        # Aquí ya no es necesario importar CondominioConfig de nuevo
-        config = CondominioConfig.query.get(tenant)
+        config = models.CondominioConfig.query.get(tenant)
         if not config:
-            config = CondominioConfig(
+            config = models.CondominioConfig(
                 tenant=tenant,
                 primary_color='#2c5aa0',
                 nombre_comercial=tenant.replace('_', ' ').title()
@@ -124,10 +103,6 @@ def create_app():
 
     app.get_tenant_config = get_tenant_config
 
-    # ========================
-    # Manejo de la sesión de base de datos
-    # Asegurar que la sesión se cierre correctamente después de cada solicitud
-    # ========================
     @app.teardown_appcontext
     def shutdown_session(exception=None):
         db.session.remove()
