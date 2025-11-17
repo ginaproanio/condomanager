@@ -17,6 +17,10 @@ def create_app():
 
     app.config.from_object(Config)
 
+    # Imprimir variables de entorno para depuración
+    print(f"DEBUG: SECRET_KEY = {app.config.get('SECRET_KEY')}")
+    print(f"DEBUG: JWT_SECRET_KEY = {app.config.get('JWT_SECRET_KEY')}")
+
     app.config['JWT_TOKEN_LOCATION'] = ['cookies']
     app.config['JWT_COOKIE_SECURE'] = True
     app.config['JWT_COOKIE_SAMESITE'] = 'Lax'
