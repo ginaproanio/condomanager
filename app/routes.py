@@ -79,22 +79,26 @@ def login():
             user = models.User.query.filter_by(email=email, password_hash=pwd_hash).first()
         except Exception as e:
             current_app.logger.error(f"Error de base de datos durante el login para {email}: {e}")
-            flash("Error de conexión con la base de datos. Intenta nuevamente.", "error")
-            return render_template('auth/login.html', config=config)
+            # flash("Error de conexión con la base de datos. Intenta nuevamente.", "error") # Eliminar flash para API
+            # return render_template('auth/login.html', config=config) # Eliminar render_template para API
+            return jsonify({"error": "Error de conexión con la base de datos."}), 500
 
         if not user:
-            flash("Credenciales incorrectas", "error")
-            return render_template('auth/login.html', config=config)
+            # flash("Credenciales incorrectas", "error") # Eliminar flash para API
+            # return render_template('auth/login.html', config=config) # Eliminar render_template para API
+            return jsonify({"error": "Credenciales incorrectas"}), 401
 
         if user.status != 'active':
-            flash("Tu cuenta está pendiente de aprobación o fue rechazada", "warning")
-            return render_template('auth/login.html', config=config)
+            # flash("Tu cuenta está pendiente de aprobación o fue rechazada", "warning") # Eliminar flash para API
+            # return render_template('auth/login.html', config=config) # Eliminar render_template para API
+            return jsonify({"error": "Tu cuenta está pendiente de aprobación o fue rechazada"}), 403
 
         # GUARDAMOS SOLO EL ID EN EL TOKEN (ESTÁNDAR PROFESIONAL)
         access_token = create_access_token(identity=user.id, expires_delta=timedelta(hours=12))
-        response = make_response(redirect('/dashboard'))
-        set_access_cookies(response, access_token)
-        return response
+        # response = make_response(redirect('/dashboard')) # Eliminar redirect para API
+        # set_access_cookies(response, access_token)
+        # return response
+        return jsonify({"access_token": access_token, "user": {"id": user.id, "email": user.email, "name": user.name, "role": user.role, "status": user.status}}), 200
 
     return render_template('auth/login.html', config=config)
 
