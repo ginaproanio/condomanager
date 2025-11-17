@@ -1,8 +1,8 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity
+from flask_jwt_extended import JWTManager
 from flask_cors import CORS
-
+from app.models import User  # ✅ AGREGAR ESTE IMPORT
 import os
 
 db = SQLAlchemy()
@@ -19,7 +19,6 @@ def create_app():
     # ✅ FORZAR pg8000 explícitamente
     database_url = os.environ.get('DATABASE_URL')
     if database_url:
-        # Reemplazar postgresql:// por postgresql+pg8000://
         if database_url.startswith('postgresql://'):
             database_url = database_url.replace('postgresql://', 'postgresql+pg8000://', 1)
         elif database_url.startswith('postgres://'):
@@ -43,7 +42,7 @@ def create_app():
     @jwt.user_lookup_loader
     def user_lookup_callback(_jwt_header, jwt_data):
         identity = jwt_data['sub']
-        return User.query.filter_by(id=identity).first()
+        return User.query.filter_by(id=identity).first()  # ✅ Ahora User está disponible
     
     cors.init_app(app)
     
@@ -60,12 +59,11 @@ def create_app():
         except Exception as e:
             print(f"❌ Error creando tablas: {e}")
 
-    # ✅ FUNCIÓN para configuración de tenants (¡IMPORTANTE: ANTES del return!)
+    # ✅ FUNCIÓN para configuración de tenants
     def get_tenant_config(tenant):
-        from app.models import CondominioConfig  # Import aquí para evitar circular imports
+        from app.models import CondominioConfig
         config = CondominioConfig.query.get(tenant)
         if not config:
-            # ✅ CREAR AUTOMÁTICAMENTE con valores por defecto
             config = CondominioConfig(
                 tenant=tenant,
                 primary_color='#2c5aa0',
@@ -76,7 +74,6 @@ def create_app():
             print(f"✅ Configuración creada automáticamente para: {tenant}")
         return config
 
-    # Hacer la función disponible en la app
     app.get_tenant_config = get_tenant_config
 
-    return app  # ✅ ÚNICO return - todo lo demás VA ANTES
+    return app
