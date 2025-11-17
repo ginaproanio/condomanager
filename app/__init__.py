@@ -40,42 +40,42 @@ def create_app():
     cors.init_app(app, supports_credentials=True)
 
     # Importar app.models aquí para registrar los modelos con SQLAlchemy
-    # Esto debe hacerse DESPUÉS de db.init_app(app) y ANTES de db.create_all()
-    with app.app_context():
-        from app import models # Importar el módulo models
+    # Esto debe hacerse DESPUÉS de db.init_app(app) y ANTES de que las rutas lo necesiten
+    from app import models
 
-    with app.app_context():
-        try:
-            print("Creando tablas...")
-            db.create_all()
-            print("Tablas creadas exitosamente")
-
-            import hashlib
-
-            master_email = os.environ.get('MASTER_EMAIL', 'maestro@condomanager.com')
-            if not models.User.query.filter_by(email=master_email).first():
-                master_password = os.environ.get('MASTER_PASSWORD', 'Master2025!')
-                pwd_hash = hashlib.sha256(master_password.encode()).hexdigest()
-
-                master = models.User(
-                    email=master_email,
-                    name='Administrador Maestro',
-                    phone='+593999999999',
-                    city='Guayaquil',
-                    country='Ecuador',
-                    password_hash=pwd_hash,
-                    tenant='master',
-                    role='MASTER',
-                    status='active'
-                )
-                db.session.add(master)
-                db.session.commit()
-                print(f"USUARIO MAESTRO CREADO: {master_email}")
-            else:
-                print("Usuario maestro ya existe")
-
-        except Exception as e:
-            print(f"Error en inicialización: {e}")
+    # El bloque de creación de tablas y usuario maestro se ha movido a initialize_db.py
+    # con app.app_context():
+    #     try:
+    #         print("Creando tablas...")
+    #         db.create_all()
+    #         print("Tablas creadas exitosamente")
+    #
+    #         import hashlib
+    #
+    #         master_email = os.environ.get('MASTER_EMAIL', 'maestro@condomanager.com')
+    #         if not models.User.query.filter_by(email=master_email).first():
+    #             master_password = os.environ.get('MASTER_PASSWORD', 'Master2025!')
+    #             pwd_hash = hashlib.sha256(master_password.encode()).hexdigest()
+    #
+    #             master = models.User(
+    #                 email=master_email,
+    #                 name='Administrador Maestro',
+    #                 phone='+593999999999',
+    #                 city='Guayaquil',
+    #                 country='Ecuador',
+    #                 password_hash=pwd_hash,
+    #                 tenant='master',
+    #                 role='MASTER',
+    #                 status='active'
+    #             )
+    #             db.session.add(master)
+    #             db.session.commit()
+    #             print(f"USUARIO MAESTRO CREADO: {master_email}")
+    #         else:
+    #             print("Usuario maestro ya existe")
+    #
+    #     except Exception as e:
+    #         print(f"Error en inicialización: {e}")
 
     @jwt.user_identity_loader
     def user_identity_lookup(user):
