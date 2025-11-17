@@ -5,7 +5,8 @@ from flask_cors import CORS
 from datetime import timedelta
 import os
 
-from config import Config  # Importar la clase de configuración
+from config import Config
+from app.models import User, Condominium, Unit, CondominioConfig  # Importar todos los modelos necesarios
 
 db = SQLAlchemy()
 jwt = JWTManager()
@@ -57,7 +58,7 @@ def create_app():
             db.create_all()
             print("Tablas creadas exitosamente")
 
-            from app.models import User
+            # Aquí ya no es necesario importar User de nuevo
             import hashlib
 
             master_email = os.environ.get('MASTER_EMAIL', 'maestro@condomanager.com')
@@ -94,7 +95,7 @@ def create_app():
 
     @jwt.user_lookup_loader
     def user_lookup_callback(_jwt_header, jwt_data):
-        from app.models import User
+        # Aquí ya no es necesario importar User de nuevo
         identity = jwt_data["sub"]
         return User.query.get(identity)
 
@@ -108,7 +109,7 @@ def create_app():
     # Configuración automática de tenant
     # ========================
     def get_tenant_config(tenant):
-        from app.models import CondominioConfig
+        # Aquí ya no es necesario importar CondominioConfig de nuevo
         config = CondominioConfig.query.get(tenant)
         if not config:
             config = CondominioConfig(
