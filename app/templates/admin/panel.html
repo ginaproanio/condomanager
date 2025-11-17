@@ -20,6 +20,15 @@
             </div>
             {% endif %}
 
+            {% if user and user.role in ['ADMIN', 'MASTER'] %}
+                <p>Bienvenido, <strong>{{ user.name }}</strong> ({{ user.role }})</p>
+                <p>Usuarios pendientes de aprobación: {{ pending_users|length }}</p>
+                <p>Usuarios activos: {{ active_count }}</p>
+                <p>Usuarios rechazados: {{ rejected_count }}</p>
+            {% else %}
+                <p>No tienes acceso a este contenido.</p>
+            {% endif %}
+
             <!-- Estadísticas -->
             <div class="row mb-4">
                 <div class="col-md-4">

@@ -13,6 +13,13 @@
                 <span class="badge bg-warning fs-6">MASTER</span>
             </div>
 
+            {% if user and user.role == 'MASTER' %}
+                <p>Bienvenido, <strong>{{ user.name }}</strong> ({{ user.role }})</p>
+                <p>Este es el panel exclusivo para usuarios MASTER.</p>
+            {% else %}
+                <p>No tienes acceso a este contenido.</p>
+            {% endif %}
+
             <!-- Estadísticas Globales -->
             <div class="row mb-4">
                 <div class="col-md-3">

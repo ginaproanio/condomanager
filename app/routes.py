@@ -1,178 +1,20 @@
-from flask import Blueprint, request, render_template, redirect, url_for, current_app, jsonify
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+from flask import (
+    Blueprint, request, render_template, redirect, url_for,
+    current_app, jsonify, make_response, flash
+)
+from flask_jwt_extended import (
+    create_access_token, set_access_cookies, unset_jwt_cookies,
+    jwt_required, get_jwt_identity
+)
 from app import db
-from app.models import User, Condominium, Unit  # Asegúrate de importar los modelos correctamente
+from app.models import User, Condominium, Unit
 import hashlib
-import traceback
 from datetime import datetime, timedelta
 
 main = Blueprint('main', __name__)
 
-@main.route('/api/test')
-def test_api():
-    return jsonify({
-        "status": "✅ API funcionando correctamente", 
-        "timestamp": datetime.utcnow().isoformat(),
-        "message": "Backend Flask activo en Railway"
-    })
-
 # =============================================================================
-# AUTENTICACIÓN JWT - NUEVOS ENDPOINTS
-# =============================================================================
-
-@main.route('/api/auth/register', methods=['POST'])
-def api_register():
-    """Registro de usuario con JWT"""
-    try:
-        data = request.get_json()
-        
-        if not data or not data.get('email') or not data.get('password'):
-            return jsonify({"error": "Email y contraseña requeridos"}), 400
-        
-        email = data['email']
-        name = data.get('name', '')
-        password = data['password']
-        
-        # Verificar si el usuario ya existe
-        existing_user = User.query.filter_by(email=email).first()
-        if existing_user:
-            return jsonify({"error": "Este email ya está registrado"}), 400
-        
-        # Hash de contraseña
-        pwd_hash = hashlib.sha256(password.encode()).hexdigest()
-        
-        # Obtener tenant
-        from app.tenant import get_tenant
-        tenant = get_tenant()
-        
-        # Crear usuario
-        user = User(
-            email=email,
-            name=name,
-            phone=data.get('phone', ''),      # ✅ NUEVO
-            city=data.get('city', ''),        # ✅ NUEVO
-            country=data.get('country', ''),  # ✅ NUEVO
-            password_hash=pwd_hash,
-            tenant=tenant,
-            role='USER',
-            status='active'
-        )
-        
-        db.session.add(user)
-        db.session.commit()
-        
-        # Crear token JWT
-        access_token = create_access_token(
-            identity=user,
-            expires_delta=timedelta(days=30)
-        )
-        
-        return jsonify({
-            "message": "Usuario registrado exitosamente",
-            "user": {
-                "id": user.id,
-                "name": user.name,
-                "email": user.email,
-                "phone": user.phone,    # ✅ NUEVO
-                "city": user.city,      # ✅ NUEVO
-                "country": user.country, # ✅ NUEVO
-                "role": user.role
-            },
-            "access_token": access_token
-        }), 201
-        
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"error": f"Error en registro: {str(e)}"}), 500
-
-@main.route('/api/auth/login', methods=['POST'])
-def api_login():
-    """Login de usuario con JWT"""
-    try:
-        data = request.get_json()
-        
-        if not data or not data.get('email') or not data.get('password'):
-            return jsonify({"error": "Email y contraseña requeridos"}), 400
-        
-        email = data['email']
-        password = data['password']
-        pwd_hash = hashlib.sha256(password.encode()).hexdigest()
-        
-        # Buscar usuario
-        user = User.query.filter_by(email=email, password_hash=pwd_hash).first()
-        
-        if not user:
-            return jsonify({"error": "Credenciales incorrectas"}), 401
-        
-        if user.status != 'active':
-            return jsonify({"error": "Cuenta pendiente de aprobación"}), 403
-        
-        # Crear token JWT
-        access_token = create_access_token(
-            identity=user,
-            expires_delta=timedelta(days=30)
-        )
-        
-        return jsonify({
-            "message": "Login exitoso",
-            "user": {
-                "id": user.id,
-                "name": user.name,
-                "email": user.email,
-                "role": user.role
-            },
-            "access_token": access_token
-        })
-        
-    except Exception as e:
-        return jsonify({"error": f"Error en login: {str(e)}"}), 500
-
-@main.route('/api/auth/me', methods=['GET'])
-@jwt_required()
-def api_get_me():
-    """Obtener información del usuario actual"""
-    try:
-        current_user = get_jwt_identity()
-        
-        return jsonify({
-            "user": {
-                "id": current_user.id,
-                "name": current_user.name,
-                "email": current_user.email,
-                "role": current_user.role,
-                "status": current_user.status
-            }
-        })
-        
-    except Exception as e:
-        return jsonify({"error": f"Error obteniendo usuario: {str(e)}"}), 500
-
-@main.route('/api/auth/protected', methods=['GET'])
-@jwt_required()
-def api_protected():
-    """Ruta protegida de ejemplo"""
-    current_user = get_jwt_identity()
-    return jsonify({
-        "message": f"Acceso concedido para {current_user.email}",
-        "user_role": current_user.role
-    })
-
-@main.route('/api/auth/admin-only', methods=['GET'])
-@jwt_required()
-def api_admin_only():
-    """Ruta solo para administradores"""
-    current_user = get_jwt_identity()
-    
-    if current_user.role not in ['ADMIN', 'MASTER']:
-        return jsonify({"error": "Acceso denegado. Se requiere rol de administrador"}), 403
-    
-    return jsonify({
-        "message": "Bienvenido administrador",
-        "user": current_user.email
-    })
-
-# =============================================================================
-# RUTAS EXISTENTES (TUS RUTAS ORIGINALES)
+# RUTAS PÚBLICAS (sin autenticación)
 # =============================================================================
 
 @main.route('/')
@@ -184,184 +26,181 @@ def home():
 
 @main.route('/registro', methods=['GET', 'POST'])
 def registro():
-    """Registro de nuevos usuarios"""
-    try:
-        if request.method == 'POST':
-            email = request.form['email']
-            name = request.form['name']
-            password = request.form['password']
-            pwd_hash = hashlib.sha256(password.encode()).hexdigest()
-            
-            # USAR TENANT DINÁMICO
-            from app.tenant import get_tenant
-            tenant = get_tenant()
-            
-            # Obtener configuración para el template
-            config = current_app.get_tenant_config(tenant)
-            
-            # Verificar si el usuario ya existe
-            existing_user = User.query.filter_by(email=email).first()
-            if existing_user:
-                return render_template('auth/registro.html', 
-                                    error="❌ Este email ya está registrado",
-                                    config=config)
-            
-            user = User(
-                email=email, 
-                name=name, 
-                phone=request.form['phone'],      # ✅ NUEVO
-                city=request.form['city'],        # ✅ NUEVO
-                country=request.form['country'],  # ✅ NUEVO
-                password_hash=pwd_hash, 
-                tenant=tenant,
-                status='pending'
-            )
-            
-            db.session.add(user)
-            db.session.commit()
-            
-            return render_template('auth/registro.html', 
-                                mensaje=f"✅ Registrado exitosamente. Tu email {email} está pendiente de aprobación en {tenant}.",
-                                config=config)
-        
-        # GET request - obtener configuración
-        from app.tenant import get_tenant
-        tenant = get_tenant()
-        config = current_app.get_tenant_config(tenant)
-        return render_template('auth/registro.html', config=config)
-    
-    except Exception as e:
-        from app.tenant import get_tenant
-        tenant = get_tenant()
-        config = current_app.get_tenant_config(tenant)
-        return render_template('auth/registro.html', 
-                             error=f"❌ Error en registro: {str(e)}",
-                             config=config)
-
-@main.route('/login', methods=['GET', 'POST'])
-def login():
-    """Login de usuarios"""
-    try:
-        # Obtener configuración
-        from app.tenant import get_tenant
-        tenant = get_tenant()
-        config = current_app.get_tenant_config(tenant)
-        
-        if request.method == 'POST':
-            email = request.form['email']
-            password = request.form['password']
-            pwd_hash = hashlib.sha256(password.encode()).hexdigest()
-            
-            user = User.query.filter_by(email=email, password_hash=pwd_hash).first()
-            
-            if user:
-                if user.status == 'pending':
-                    return render_template('auth/login.html',
-                                        error="⏳ Tu cuenta está pendiente de aprobación",
-                                        config=config)
-                elif user.status == 'rejected':
-                    return render_template('auth/login.html',
-                                        error="❌ Tu cuenta fue rechazada. Contacta al administrador",
-                                        config=config)
-                
-                return render_template('auth/login.html', 
-                                    mensaje=f"🎉 Bienvenido {user.name}!",
-                                    config=config)
-            else:
-                return render_template('auth/login.html',
-                                    error="❌ Credenciales incorrectas",
-                                    config=config)
-        
-        return render_template('auth/login.html', config=config)
-    
-    except Exception as e:
-        from app.tenant import get_tenant
-        tenant = get_tenant()
-        config = current_app.get_tenant_config(tenant)
-        return render_template('auth/login.html', 
-                             error=f"❌ Error en login: {str(e)}",
-                             config=config)
-
-@main.route('/admin')
-def admin_panel():
-    """Panel de administración para aprobar usuarios"""
-    try:
-        # Obtener configuración
-        from app.tenant import get_tenant
-        tenant = get_tenant()
-        config = current_app.get_tenant_config(tenant)
-        
-        # Listar usuarios pendientes de aprobación
-        pending_users = User.query.filter_by(status='pending').all()
-        active_users = User.query.filter_by(status='active').all()
-        rejected_users = User.query.filter_by(status='rejected').all()
-        
-        return render_template('admin/panel.html', 
-                             pending_users=pending_users,
-                             active_count=len(active_users),
-                             rejected_count=len(rejected_users),
-                             config=config)
-    
-    except Exception as e:
-        from app.tenant import get_tenant
-        tenant = get_tenant()
-        config = current_app.get_tenant_config(tenant)
-        return render_template('admin/panel.html',
-                             error=f"Error cargando panel: {str(e)}",
-                             config=config)
-
-@main.route('/aprobar/<int:user_id>')
-def aprobar_usuario(user_id):
-    """Aprobar usuario pendiente"""
-    try:
-        user = User.query.get(user_id)
-        if user:
-            user.status = 'active'
-            db.session.commit()
-        return redirect('/admin')
-    except Exception as e:
-        return redirect('/admin')
-
-@main.route('/rechazar/<int:user_id>')
-def rechazar_usuario(user_id):
-    """Rechazar usuario pendiente"""
-    try:
-        user = User.query.get(user_id)
-        if user:
-            user.status = 'rejected' 
-            db.session.commit()
-        return redirect('/admin')
-    except Exception as e:
-        return redirect('/admin')
-
-@main.route('/dashboard')
-def dashboard():
-    """Dashboard para usuarios aprobados"""
     from app.tenant import get_tenant
     tenant = get_tenant()
     config = current_app.get_tenant_config(tenant)
-    return render_template('user/dashboard.html', 
-                         mensaje="🏠 Panel de usuario - Próximamente",
-                         config=config)
 
-@main.route('/usuarios')
-def listar_usuarios():
-    """Listar todos los usuarios (solo admin)"""
-    try:
-        from app.tenant import get_tenant
-        tenant = get_tenant()
-        config = current_app.get_tenant_config(tenant)
-        
-        users = User.query.all()
-        return render_template('admin/usuarios.html',
-                             users=users,
-                             config=config)
-    except Exception as e:
-        return f"Error listando usuarios: {str(e)}"
+    if request.method == 'POST':
+        email = request.form['email'].strip()
+        name = request.form.get('name', '').strip()
+        password = request.form['password']
+        phone = request.form.get('phone', '')
+        city = request.form.get('city', '')
+        country = request.form.get('country', 'Ecuador')
+
+        if User.query.filter_by(email=email).first():
+            flash("Este email ya está registrado", "error")
+            return render_template('auth/registro.html', config=config)
+
+        pwd_hash = hashlib.sha256(password.encode()).hexdigest()
+        user = User(
+            email=email,
+            name=name or email.split('@')[0],
+            phone=phone,
+            city=city,
+            country=country,
+            password_hash=pwd_hash,
+            tenant=tenant,
+            role='USER',
+            status='pending'
+        )
+        db.session.add(user)
+        db.session.commit()
+
+        flash(f"Registro exitoso. Tu cuenta está pendiente de aprobación.", "success")
+        return render_template('auth/registro.html', config=config)
+
+    return render_template('auth/registro.html', config=config)
+
+
+@main.route('/login', methods=['GET', 'POST'])
+def login():
+    from app.tenant import get_tenant
+    tenant = get_tenant()
+    config = current_app.get_tenant_config(tenant)
+
+    if request.method == 'POST':
+        email = request.form['email'].strip()
+        password = request.form['password']
+        pwd_hash = hashlib.sha256(password.encode()).hexdigest()
+
+        user = User.query.filter_by(email=email, password_hash=pwd_hash).first()
+
+        if not user:
+            flash("Credenciales incorrectas", "error")
+            return render_template('auth/login.html', config=config)
+
+        if user.status != 'active':
+            flash("Tu cuenta está pendiente de aprobación o fue rechazada", "warning")
+            return render_template('auth/login.html', config=config)
+
+        # GENERAR TOKEN JWT + COOKIE
+        access_token = create_access_token(identity=user, expires_delta=timedelta(hours=12))
+        response = make_response(redirect('/dashboard'))
+        set_access_cookies(response, access_token)
+        return response
+
+    return render_template('auth/login.html', config=config)
+
+
+@main.route('/logout')
+def logout():
+    response = make_response(redirect('/login'))
+    unset_jwt_cookies(response)
+    flash("Has cerrado sesión correctamente", "info")
+    return response
+
+
+# =============================================================================
+# RUTAS PROTEGIDAS (requieren login)
+# =============================================================================
+
+@main.route('/dashboard')
+@jwt_required()
+def dashboard():
+    user = get_jwt_identity()
+    from app.tenant import get_tenant
+    tenant = get_tenant()
+    config = current_app.get_tenant_config(tenant)
+    return render_template('user/dashboard.html', user=user, config=config)
+
+
+@main.route('/admin')
+@jwt_required()
+def admin_panel():
+    user = get_jwt_identity()
+    if user.role not in ['ADMIN', 'MASTER']:
+        flash("Acceso denegado", "error")
+        return redirect('/dashboard')
+
+    from app.tenant import get_tenant
+    tenant = get_tenant()
+    config = current_app.get_tenant_config(tenant)
+
+    pending = User.query.filter_by(status='pending').all()
+    active = User.query.filter_by(status='active').count()
+    rejected = User.query.filter_by(status='rejected').count()
+
+    return render_template('admin/panel.html',
+                           pending_users=pending,
+                           active_count=active,
+                           rejected_count=rejected,
+                           config=config)
+
+
+@main.route('/aprobar/<int:user_id>')
+@jwt_required()
+def aprobar_usuario(user_id):
+    current = get_jwt_identity()
+    if current.role not in ['ADMIN', 'MASTER']:
+        return redirect('/dashboard')
+    user = User.query.get_or_404(user_id)
+    user.status = 'active'
+    db.session.commit()
+    flash(f"Usuario {user.email} aprobado", "success")
+    return redirect('/admin')
+
+
+@main.route('/rechazar/<int:user_id>')
+@jwt_required()
+def rechazar_usuario(user_id):
+    current = get_jwt_identity()
+    if current.role not in ['ADMIN', 'MASTER']:
+        return redirect('/dashboard')
+    user = User.query.get_or_404(user_id)
+    user.status = 'rejected'
+    db.session.commit()
+    flash(f"Usuario {user.email} rechazado", "info")
+    return redirect('/admin')
+
+
+@main.route('/master')
+@jwt_required()
+def master_panel():
+    user = get_jwt_identity()
+    if user.role != 'MASTER':
+        flash("Acceso denegado", "error")
+        return redirect('/dashboard')
+
+    from app.tenant import get_tenant
+    config = current_app.get_tenant_config(get_tenant())
+    return render_template('master/panel.html', user=user, config=config)
+
+
+# =============================================================================
+# API JWT (para frontend React/Vue en el futuro)
+# =============================================================================
+
+@main.route('/api/auth/me')
+@jwt_required()
+def api_me():
+    user = get_jwt_identity()
+    return jsonify({
+        "id": user.id,
+        "email": user.email,
+        "name": user.name,
+        "role": user.role,
+        "status": user.status
+    })
+
+
+@main.route('/api/test')
+def test_api():
+    return jsonify({"status": "API activa", "time": datetime.utcnow().isoformat()})
+
 
 @main.route('/health')
 def health():
-    """Health check para monitoreo"""
     return "OK", 200
 
 # ✅ RUTAS DE SERVICIOS FUTUROS
