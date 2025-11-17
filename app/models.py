@@ -1,6 +1,4 @@
-# app/models.py - DEJAR SOLO ESTO:
-from flask_sqlalchemy import SQLAlchemy
-db = SQLAlchemy()
+from app import db
 
 def get_tenant_default():
     return 'puntablanca'
