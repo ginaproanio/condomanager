@@ -41,4 +41,23 @@ def create_app():
         except Exception as e:
             print(f"❌ Error creando tablas: {e}")
 
-    return app
+    # ✅ FUNCIÓN para configuración de tenants (¡IMPORTANTE: ANTES del return!)
+    def get_tenant_config(tenant):
+        from app.models import CondominioConfig  # Import aquí para evitar circular imports
+        config = CondominioConfig.query.get(tenant)
+        if not config:
+            # ✅ CREAR AUTOMÁTICAMENTE con valores por defecto
+            config = CondominioConfig(
+                tenant=tenant,
+                primary_color='#2c5aa0',
+                nombre_comercial=tenant.title()
+            )
+            db.session.add(config)
+            db.session.commit()
+            print(f"✅ Configuración creada automáticamente para: {tenant}")
+        return config
+
+    # Hacer la función disponible en la app
+    app.get_tenant_config = get_tenant_config
+
+    return app  # ✅ ÚNICO return - todo lo demás VA ANTES

@@ -1,4 +1,4 @@
-from flask import Blueprint, request, render_template, redirect, url_for
+from flask import Blueprint, request, render_template, redirect, url_for, current_app
 from app import db
 from app.models import User
 import hashlib
@@ -8,8 +8,10 @@ main = Blueprint('main', __name__)
 
 @main.route('/')
 def home():
-    """Página principal del sistema"""
-    return render_template('home.html')
+    from app.tenant import get_tenant
+    tenant = get_tenant()
+    config = current_app.get_tenant_config(tenant)  # ✅ Obtener configuración
+    return render_template('home.html', config=config)
 
 @main.route('/registro', methods=['GET', 'POST'])
 def registro():
@@ -25,11 +27,15 @@ def registro():
             from app.tenant import get_tenant
             tenant = get_tenant()
             
+            # Obtener configuración para el template
+            config = current_app.get_tenant_config(tenant)
+            
             # Verificar si el usuario ya existe
             existing_user = User.query.filter_by(email=email).first()
             if existing_user:
                 return render_template('auth/registro.html', 
-                                    error="❌ Este email ya está registrado")
+                                    error="❌ Este email ya está registrado",
+                                    config=config)
             
             user = User(
                 email=email, 
@@ -43,18 +49,32 @@ def registro():
             db.session.commit()
             
             return render_template('auth/registro.html', 
-                                mensaje=f"✅ Registrado exitosamente. Tu email {email} está pendiente de aprobación en {tenant}.")
+                                mensaje=f"✅ Registrado exitosamente. Tu email {email} está pendiente de aprobación en {tenant}.",
+                                config=config)
         
-        return render_template('auth/registro.html')
+        # GET request - obtener configuración
+        from app.tenant import get_tenant
+        tenant = get_tenant()
+        config = current_app.get_tenant_config(tenant)
+        return render_template('auth/registro.html', config=config)
     
     except Exception as e:
+        from app.tenant import get_tenant
+        tenant = get_tenant()
+        config = current_app.get_tenant_config(tenant)
         return render_template('auth/registro.html', 
-                             error=f"❌ Error en registro: {str(e)}")
+                             error=f"❌ Error en registro: {str(e)}",
+                             config=config)
 
 @main.route('/login', methods=['GET', 'POST'])
 def login():
     """Login de usuarios"""
     try:
+        # Obtener configuración
+        from app.tenant import get_tenant
+        tenant = get_tenant()
+        config = current_app.get_tenant_config(tenant)
+        
         if request.method == 'POST':
             email = request.form['email']
             password = request.form['password']
@@ -65,40 +85,58 @@ def login():
             if user:
                 if user.status == 'pending':
                     return render_template('auth/login.html',
-                                        error="⏳ Tu cuenta está pendiente de aprobación")
+                                        error="⏳ Tu cuenta está pendiente de aprobación",
+                                        config=config)
                 elif user.status == 'rejected':
                     return render_template('auth/login.html',
-                                        error="❌ Tu cuenta fue rechazada. Contacta al administrador")
+                                        error="❌ Tu cuenta fue rechazada. Contacta al administrador",
+                                        config=config)
                 
                 return render_template('auth/login.html', 
-                                    mensaje=f"🎉 Bienvenido {user.name}!")
+                                    mensaje=f"🎉 Bienvenido {user.name}!",
+                                    config=config)
             else:
                 return render_template('auth/login.html',
-                                    error="❌ Credenciales incorrectas")
+                                    error="❌ Credenciales incorrectas",
+                                    config=config)
         
-        return render_template('auth/login.html')
+        return render_template('auth/login.html', config=config)
     
     except Exception as e:
+        from app.tenant import get_tenant
+        tenant = get_tenant()
+        config = current_app.get_tenant_config(tenant)
         return render_template('auth/login.html', 
-                             error=f"❌ Error en login: {str(e)}")
+                             error=f"❌ Error en login: {str(e)}",
+                             config=config)
 
 @main.route('/admin')
 def admin_panel():
     """Panel de administración para aprobar usuarios"""
     try:
+        # Obtener configuración
+        from app.tenant import get_tenant
+        tenant = get_tenant()
+        config = current_app.get_tenant_config(tenant)
+        
         # Listar usuarios pendientes de aprobación
         pending_users = User.query.filter_by(status='pending').all()
-        active_users = User.query.filter_by(status='active').all()  # ✅ NUEVO
-        rejected_users = User.query.filter_by(status='rejected').all()  # ✅ NUEVO
+        active_users = User.query.filter_by(status='active').all()
+        rejected_users = User.query.filter_by(status='rejected').all()
         
         return render_template('admin/panel.html', 
                              pending_users=pending_users,
-                             active_count=len(active_users),  # ✅ Pasar contadores
-                             rejected_count=len(rejected_users))  # ✅ Pasar contadores
+                             active_count=len(active_users),
+                             rejected_count=len(rejected_users),
+                             config=config)
     
     except Exception as e:
+        from app.tenant import get_tenant
+        tenant = get_tenant()
+        config = current_app.get_tenant_config(tenant)
         return render_template('admin/panel.html',
-                             error=f"Error cargando panel: {str(e)}")
+                             error=f"Error cargando panel: {str(e)}",
+                             config=config)
 
 @main.route('/aprobar/<int:user_id>')
 def aprobar_usuario(user_id):
@@ -108,7 +146,6 @@ def aprobar_usuario(user_id):
         if user:
             user.status = 'active'
             db.session.commit()
-            return redirect('/admin')
         return redirect('/admin')
     except Exception as e:
         return redirect('/admin')
@@ -121,7 +158,6 @@ def rechazar_usuario(user_id):
         if user:
             user.status = 'rejected' 
             db.session.commit()
-            return redirect('/admin')
         return redirect('/admin')
     except Exception as e:
         return redirect('/admin')
@@ -129,16 +165,25 @@ def rechazar_usuario(user_id):
 @main.route('/dashboard')
 def dashboard():
     """Dashboard para usuarios aprobados"""
+    from app.tenant import get_tenant
+    tenant = get_tenant()
+    config = current_app.get_tenant_config(tenant)
     return render_template('user/dashboard.html', 
-                         mensaje="🏠 Panel de usuario - Próximamente")
+                         mensaje="🏠 Panel de usuario - Próximamente",
+                         config=config)
 
 @main.route('/usuarios')
 def listar_usuarios():
     """Listar todos los usuarios (solo admin)"""
     try:
+        from app.tenant import get_tenant
+        tenant = get_tenant()
+        config = current_app.get_tenant_config(tenant)
+        
         users = User.query.all()
         return render_template('admin/usuarios.html',
-                             users=users)
+                             users=users,
+                             config=config)
     except Exception as e:
         return f"Error listando usuarios: {str(e)}"
 
@@ -151,17 +196,29 @@ def health():
 @main.route('/unidades')
 def unidades():
     """Gestión de unidades (próximamente)"""
+    from app.tenant import get_tenant
+    tenant = get_tenant()
+    config = current_app.get_tenant_config(tenant)
     return render_template('services/unidades.html',
-                         mensaje="🏢 Gestión de Unidades - Próximamente")
+                         mensaje="🏢 Gestión de Unidades - Próximamente",
+                         config=config)
 
 @main.route('/pagos')
 def pagos():
     """Sistema de pagos (próximamente)"""
+    from app.tenant import get_tenant
+    tenant = get_tenant()
+    config = current_app.get_tenant_config(tenant)
     return render_template('services/pagos.html',
-                         mensaje="💳 Sistema de Pagos - Próximamente")
+                         mensaje="💳 Sistema de Pagos - Próximamente",
+                         config=config)
 
 @main.route('/reportes')
 def reportes():
     """Reportes del sistema (próximamente)"""
+    from app.tenant import get_tenant
+    tenant = get_tenant()
+    config = current_app.get_tenant_config(tenant)
     return render_template('services/reportes.html',
-                         mensaje="📊 Reportes - Próximamente")
+                         mensaje="📊 Reportes - Próximamente",
+                         config=config)
