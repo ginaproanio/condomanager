@@ -246,7 +246,7 @@ class AuthForms {
         };
 
         try {
-            const response = await fetch('/api/auth/login', {
+            const response = await fetch('/api/auth/login', { // CAMBIAR A /api/auth/login
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
@@ -262,10 +262,8 @@ class AuthForms {
                 alert(`❌ Error: ${result.error}`);
             }
         } catch (error) {
-            console.error('❌ Error de conexión:', error); // Cambiado de alert a console.error
-            console.error('Detalle del error:', error); // Añadido para más detalle
-            // alert('❌ Error de conexión'); // Descomenta si necesitas la alerta de nuevo
-            // console.error('Error en login:', error);
+            console.error('❌ Error de conexión:', error);
+            console.error('Detalle del error:', error);
         }
     }
 }

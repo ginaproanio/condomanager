@@ -63,44 +63,44 @@ def registro():
 
     return render_template('auth/registro.html', config=config)
 
-@main.route('/login', methods=['GET', 'POST'])
+@main.route('/login', methods=['GET'])
 def login():
     from app.tenant import get_tenant
     tenant = get_tenant()
     config = current_app.get_tenant_config(tenant)
-
-    if request.method == 'POST':
-        email = request.form['email'].strip()
-        password = request.form['password']
-        pwd_hash = hashlib.sha256(password.encode()).hexdigest()
-
-        try:
-            from app import models  # Importar models localmente para esta función
-            user = models.User.query.filter_by(email=email, password_hash=pwd_hash).first()
-        except Exception as e:
-            current_app.logger.error(f"Error de base de datos durante el login para {email}: {e}")
-            # flash("Error de conexión con la base de datos. Intenta nuevamente.", "error") # Eliminar flash para API
-            # return render_template('auth/login.html', config=config) # Eliminar render_template para API
-            return jsonify({"error": "Error de conexión con la base de datos."}), 500
-
-        if not user:
-            # flash("Credenciales incorrectas", "error") # Eliminar flash para API
-            # return render_template('auth/login.html', config=config) # Eliminar render_template para API
-            return jsonify({"error": "Credenciales incorrectas"}), 401
-
-        if user.status != 'active':
-            # flash("Tu cuenta está pendiente de aprobación o fue rechazada", "warning") # Eliminar flash para API
-            # return render_template('auth/login.html', config=config) # Eliminar render_template para API
-            return jsonify({"error": "Tu cuenta está pendiente de aprobación o fue rechazada"}), 403
-
-        # GUARDAMOS SOLO EL ID EN EL TOKEN (ESTÁNDAR PROFESIONAL)
-        access_token = create_access_token(identity=user.id, expires_delta=timedelta(hours=12))
-        # response = make_response(redirect('/dashboard')) # Eliminar redirect para API
-        # set_access_cookies(response, access_token)
-        # return response
-        return jsonify({"access_token": access_token, "user": {"id": user.id, "email": user.email, "name": user.name, "role": user.role, "status": user.status}}), 200
-
     return render_template('auth/login.html', config=config)
+
+@main.route('/api/auth/login', methods=['POST'])
+def api_login():
+    from app.tenant import get_tenant
+    tenant = get_tenant()
+    config = current_app.get_tenant_config(tenant) # Se usa el config para flash messages, pero para API no es necesario
+
+    # En una API RESTful, esperamos JSON
+    data = request.get_json()
+    if not data or not 'email' in data or not 'password' in data:
+        return jsonify({"error": "Faltan datos de email o contraseña."}), 400
+
+    email = data['email'].strip()
+    password = data['password']
+    pwd_hash = hashlib.sha256(password.encode()).hexdigest()
+
+    try:
+        from app import models
+        user = models.User.query.filter_by(email=email, password_hash=pwd_hash).first()
+    except Exception as e:
+        current_app.logger.error(f"Error de base de datos durante el login para {email}: {e}")
+        return jsonify({"error": "Error de conexión con la base de datos."}), 500
+
+    if not user:
+        return jsonify({"error": "Credenciales incorrectas"}), 401
+
+    if user.status != 'active':
+        return jsonify({"error": "Tu cuenta está pendiente de aprobación o fue rechazada"}), 403
+
+    access_token = create_access_token(identity=user.id, expires_delta=timedelta(hours=12))
+    # set_access_cookies(response, access_token) # No se usa directamente en la respuesta JSON
+    return jsonify({"access_token": access_token, "user": {"id": user.id, "email": user.email, "name": user.name, "role": user.role, "status": user.status}}), 200
 
 @main.route('/logout')
 def logout():
