@@ -210,64 +210,53 @@ def test_api():
 def health():
     return "OK", 200
 
-# ✅ RUTAS DE SERVICIOS FUTUROS
+# RUTAS DE SERVICIOS FUTUROS
 @main.route('/unidades')
 def unidades():
-    """Gestión de unidades (próximamente)"""
     from app.tenant import get_tenant
     tenant = get_tenant()
     config = current_app.get_tenant_config(tenant)
     return render_template('services/unidades.html',
-                         mensaje="🏢 Gestión de Unidades - Próximamente",
+                         mensaje="Gestión de Unidades - Próximamente",
                          config=config)
 
 @main.route('/pagos')
 def pagos():
-    """Sistema de pagos (próximamente)"""
     from app.tenant import get_tenant
     tenant = get_tenant()
     config = current_app.get_tenant_config(tenant)
     return render_template('services/pagos.html',
-                         mensaje="💳 Sistema de Pagos - Próximamente",
+                         mensaje="Sistema de Pagos - Próximamente",
                          config=config)
 
 @main.route('/reportes')
 def reportes():
-    """Reportes del sistema (próximamente)"""
     from app.tenant import get_tenant
     tenant = get_tenant()
     config = current_app.get_tenant_config(tenant)
     return render_template('services/reportes.html',
-                         mensaje="📊 Reportes - Próximamente",
+                         mensaje="Reportes - Próximamente",
                          config=config)
-    
-    # =============================================================================
-# RUTAS MAESTRO
+
+
+# =============================================================================
+# RUTAS MAESTRO (todo lo de MASTER, CSV, etc.)
 # =============================================================================
 
 @main.route('/api/master/estadisticas')
 @jwt_required()
 def api_master_estadisticas():
-    """Estadísticas globales del sistema para MASTER"""
-    try:
-        current_user = get_jwt_identity()
-        
-        if current_user.role != 'MASTER':
-            return jsonify({"error": "Acceso denegado"}), 403
-        
-        # Aquí irá la lógica para obtener estadísticas
-        # Por ahora devolvemos datos de ejemplo
-        return jsonify({
-            "total_condominios": 0,
-            "total_usuarios": User.query.count(),
-            "condominios_activos": 0,
-            "condominios_pendientes": 0,
-            "condominios_recientes": []
-        })
-        
-    except Exception as e:
-        return jsonify({"error": f"Error obteniendo estadísticas: {str(e)}"}), 500
-    
+    current_user = get_jwt_identity()
+    if current_user.role != 'MASTER':
+        return jsonify({"error": "Acceso denegado"}), 403
+    return jsonify({
+        "total_condominios": 0,
+        "total_usuarios": User.query.count(),
+        "condominios_activos": 0,
+        "condominios_pendientes": 0,
+        "condominios_recientes": []
+    })
+      
 @main.route('/master/descargar-plantilla-unidades')
 @jwt_required()
 def descargar_plantilla_unidades():
@@ -511,5 +500,5 @@ def get_condominiums():
         condominiums = Condominium.query.all()
         return jsonify([condo.to_dict() for condo in condominiums])
     except Exception as e:
-        print(f"❌ Error al obtener condominios: {e}")
+        print(f"Error al obtener condominios: {e}")
         return jsonify({'error': 'Error al obtener condominios'}), 500
