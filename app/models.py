@@ -155,3 +155,80 @@ class Unit(db.Model):
     def get_short_address(self):
         """Dirección resumida para listas"""
         return f"{self.main_street} y {self.cross_street}"
+    
+class Condominium(db.Model):
+    __tablename__ = 'condominiums'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # ✅ INFORMACIÓN BÁSICA
+    name = db.Column(db.String(200), nullable=False)                    # "Condominio Las Palmas"
+    legal_name = db.Column(db.String(200))                             # "CONDOMINIO LAS PALMAS S.A."
+    ruc = db.Column(db.String(20), unique=True)                        # "1791234567001"
+    
+    # ✅ UBICACIÓN GEOGRÁFICA
+    main_street = db.Column(db.String(100), nullable=False)            # "Av. Principal"
+    cross_street = db.Column(db.String(100), nullable=False)           # "Calle Segunda" 
+    house_number = db.Column(db.String(20))                            # "S/N", "25-A"
+    city = db.Column(db.String(50), nullable=False)                    # "Quito"
+    country = db.Column(db.String(50), nullable=False)                 # "Ecuador"
+    latitude = db.Column(db.Float)                                     # -0.180653
+    longitude = db.Column(db.Float)                                    # -78.467834
+    
+    # ✅ CONFIGURACIÓN DEL SISTEMA
+    subdomain = db.Column(db.String(100), unique=True)                 # "laspalmas", "puntablanca"
+    status = db.Column(db.String(20), default='PENDIENTE_APROBACION')  # PENDIENTE_APROBACION, ACTIVO, BLOQUEADO, INACTIVO
+    billing_day = db.Column(db.Integer, default=1)                     # Día del mes para facturación (1-28)
+    grace_days = db.Column(db.Integer, default=5)                      # Días de gracia para pagos
+    
+    # ✅ PERIODO DE PRUEBA
+    trial_start_date = db.Column(db.Date)
+    trial_end_date = db.Column(db.Date)
+    
+    # ✅ ADMINISTRADOR ASIGNADO
+    admin_user_id = db.Column(db.Integer, db.ForeignKey('users.id'))   # Administrador principal
+    
+    # ✅ METADATOS
+    notes = db.Column(db.Text)                                         # Observaciones
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))      # MAESTRO que lo creó
+    created_at = db.Column(db.DateTime, default=db.func.now())
+    updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
+    
+    # ✅ RELACIONES
+    admin_user = db.relationship('User', foreign_keys=[admin_user_id], backref='admin_condominiums')
+    creator = db.relationship('User', foreign_keys=[created_by], backref='created_condominiums')
+    units = db.relationship('Unit', backref='condominium', lazy=True)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'legal_name': self.legal_name,
+            'ruc': self.ruc,
+            'main_street': self.main_street,
+            'cross_street': self.cross_street,
+            'city': self.city,
+            'country': self.country,
+            'subdomain': self.subdomain,
+            'status': self.status,
+            'admin_user': {
+                'id': self.admin_user.id,
+                'name': self.admin_user.name,
+                'email': self.admin_user.email
+            } if self.admin_user else None,
+            'total_units': len(self.unities),
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+    
+    def get_full_address(self):
+        """Genera dirección completa"""
+        parts = []
+        if self.house_number:
+            parts.append(f"{self.main_street} #{self.house_number}")
+        else:
+            parts.append(self.main_street)
+        
+        parts.append(f"y {self.cross_street}")
+        parts.append(f"- {self.city}, {self.country}")
+        
+        return " ".join(parts)
