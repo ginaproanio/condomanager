@@ -167,14 +167,21 @@ def rechazar_usuario(user_id):
 @main.route('/master')
 @jwt_required()
 def master_panel():
-    user = get_jwt_identity()
-    if user.role != 'MASTER':
-        flash("Acceso denegado", "error")
-        return redirect('/dashboard')
-
-    from app.tenant import get_tenant
-    config = current_app.get_tenant_config(get_tenant())
-    return render_template('master/panel.html', user=user, config=config)
+    """Panel exclusivo para usuarios MASTER"""
+    try:
+        current_user = get_jwt_identity()
+        
+        if current_user.role != 'MASTER':
+            return jsonify({"error": "Acceso denegado. Se requiere rol MASTER"}), 403
+        
+        from app.tenant import get_tenant
+        tenant = get_tenant()
+        config = current_app.get_tenant_config(tenant)
+        
+        return render_template('master/panel.html', config=config)
+        
+    except Exception as e:
+        return jsonify({"error": f"Error accediendo al panel maestro: {str(e)}"}), 500
 
 
 # =============================================================================
@@ -238,25 +245,6 @@ def reportes():
 # RUTAS MAESTRO
 # =============================================================================
 
-@main.route('/master')
-@jwt_required()
-def master_panel():
-    """Panel exclusivo para usuarios MASTER"""
-    try:
-        current_user = get_jwt_identity()
-        
-        if current_user.role != 'MASTER':
-            return jsonify({"error": "Acceso denegado. Se requiere rol MASTER"}), 403
-        
-        from app.tenant import get_tenant
-        tenant = get_tenant()
-        config = current_app.get_tenant_config(tenant)
-        
-        return render_template('master/panel.html', config=config)
-        
-    except Exception as e:
-        return jsonify({"error": f"Error accediendo al panel maestro: {str(e)}"}), 500
-
 @main.route('/api/master/estadisticas')
 @jwt_required()
 def api_master_estadisticas():
@@ -279,7 +267,6 @@ def api_master_estadisticas():
         
     except Exception as e:
         return jsonify({"error": f"Error obteniendo estadísticas: {str(e)}"}), 500
-    
     
 @main.route('/master/descargar-plantilla-unidades')
 @jwt_required()
@@ -413,8 +400,8 @@ def cargar_unidades_csv():
                     bedrooms=int(row['bedrooms']) if row.get('bedrooms') else None,
                     bathrooms=int(row['bathrooms']) if row.get('bathrooms') else None,
                     parking_spaces=int(row['parking_spaces']) if row.get('parking_spaces') else None,
-                    front_meters=float(row['front_meters']) if row.get('front_meters') else None,
-                    depth_meters=float(row['depth_meters']) if row.get('depth_meters') else None,
+                    front_meters=float(row['front_meters']) if row.get('front_meters']) else None,
+                    depth_meters=float(row['depth_meters']) if row.get('depth_meters']) else None,
                     topography=row.get('topography'),
                     land_use=row.get('land_use'),
                     notes=row.get('notes', ''),
@@ -491,8 +478,8 @@ def crear_unidad_individual():
             bedrooms=int(data['bedrooms']) if data.get('bedrooms') else None,
             bathrooms=int(data['bathrooms']) if data.get('bathrooms') else None,
             parking_spaces=int(data['parking_spaces']) if data.get('parking_spaces') else None,
-            front_meters=float(data['front_meters']) if data.get('front_meters') else None,
-            depth_meters=float(data['depth_meters']) if data.get('depth_meters') else None,
+            front_meters=float(data['front_meters']) if data.get('front_meters']) else None,
+            depth_meters=float(data['depth_meters']) if data.get('depth_meters']) else None,
             topography=data.get('topography'),
             land_use=data.get('land_use'),
             notes=data.get('notes', ''),
