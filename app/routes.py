@@ -1,7 +1,7 @@
 from flask import Blueprint, request, render_template, redirect, url_for, current_app, jsonify
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from app import db
-from app.models import User
+from app.models import User, Condominium, Unit  # Asegúrate de importar los modelos correctamente
 import hashlib
 import traceback
 from datetime import datetime, timedelta
@@ -678,3 +678,12 @@ def crear_unidad_individual():
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": f"Error creando unidad: {str(e)}"}), 500
+
+@main.route('/condominiums', methods=['GET'])
+def get_condominiums():
+    try:
+        condominiums = Condominium.query.all()
+        return jsonify([condo.to_dict() for condo in condominiums])
+    except Exception as e:
+        print(f"❌ Error al obtener condominios: {e}")
+        return jsonify({'error': 'Error al obtener condominios'}), 500

@@ -15,7 +15,7 @@ class User(db.Model):
     role = db.Column(db.String(20), default='user')
     status = db.Column(db.String(20), default='pending')
     created_at = db.Column(db.DateTime, default=db.func.now())
-    
+
 # Modelo para configuración de condominios (AGREGAR al final del archivo)
 class CondominioConfig(db.Model):
     tenant = db.Column(db.String(50), primary_key=True)  # 'puntablanca', 'nuevocondo'
@@ -27,7 +27,7 @@ class CondominioConfig(db.Model):
     def __repr__(self):
         return f'<CondominioConfig {self.tenant}>'
     
-    # =============================================================================
+# =============================================================================
 # NUEVOS MODELOS PARA EL SISTEMA DE ROLES Y CONDOMINIOS
 # =============================================================================
 
@@ -62,10 +62,10 @@ class UserSpecialRole(db.Model):
     __tablename__ = 'user_special_roles'
     
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)  # Corregir referencia a 'user.id'
     condominium_id = db.Column(db.Integer, db.ForeignKey('condominiums.id'), nullable=False)
     role = db.Column(db.String(20), nullable=False)  # PRESIDENTE, SECRETARIO, TESORERO, CONTADOR, VOCAL
-    asignado_por = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    asignado_por = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)  # Corregir referencia a 'user.id'
     fecha_inicio = db.Column(db.Date, nullable=False)
     fecha_fin = db.Column(db.Date)
     activo = db.Column(db.Boolean, default=True)
