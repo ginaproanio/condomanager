@@ -14,6 +14,24 @@ def create_app():
     
     # Configuración
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'gina_2025_secure')
+    
+        # =============================================
+    # CONFIGURACIÓN JWT + SESIÓN PERMANENTE (CLAVE)
+    # =============================================
+    app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'gina2025-jwt-super-secreto-cambia-esto')
+    app.config['JWT_TOKEN_LOCATION'] = ['cookies', 'headers']  # permite ambos
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=8)     # token dura 8 horas
+    app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=30)    # refresh 30 días
+    app.config['JWT_COOKIE_SECURE'] = True        # solo HTTPS (Railway lo tiene)
+    app.config['JWT_SESSION_COOKIE'] = False       # evita conflicto con Flask session
+    app.config['JWT_COOKIE_CSRF_PROTECT'] = False  # si no usas CSRF por ahora
+
+    # Configuración de sesión Flask (por si usas login_user de Flask-Login)
+    app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=8)
+    app.config['SESSION_COOKIE_SECURE'] = True
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    
+    
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
     # ✅ FORZAR pg8000 explícitamente
@@ -104,4 +122,9 @@ def create_app():
 
     app.get_tenant_config = get_tenant_config
 
+
+    @app.before_request
+    def make_session_permanent():
+        session.permanent = True
+        
     return app
