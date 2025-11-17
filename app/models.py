@@ -46,7 +46,7 @@ class Condominium(db.Model):
     grace_days = db.Column(db.Integer, default=5)
     trial_start_date = db.Column(db.Date)
     trial_end_date = db.Column(db.Date)
-    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'))
     created_at = db.Column(db.DateTime, default=db.func.now())
     
     def to_dict(self):
@@ -187,11 +187,11 @@ class Condominium(db.Model):
     trial_end_date = db.Column(db.Date)
     
     # ✅ ADMINISTRADOR ASIGNADO
-    admin_user_id = db.Column(db.Integer, db.ForeignKey('users.id'))   # Administrador principal
+    admin_user_id = db.Column(db.Integer, db.ForeignKey('user.id'))   # Administrador principal
     
     # ✅ METADATOS
     notes = db.Column(db.Text)                                         # Observaciones
-    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))      # MAESTRO que lo creó
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'))      # MAESTRO que lo creó
     created_at = db.Column(db.DateTime, default=db.func.now())
     updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
     
