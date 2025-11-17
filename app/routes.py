@@ -94,7 +94,7 @@ def admin_panel():
         return render_template('admin/panel.html', 
                              pending_users=pending_users,
                              active_count=len(active_users),  # ✅ Pasar contadores
-                             rejected_count=len(rejected_users))
+                             rejected_count=len(rejected_users))  # ✅ Pasar contadores
     
     except Exception as e:
         return render_template('admin/panel.html',
