@@ -209,6 +209,9 @@ def registro():
             user = User(
                 email=email, 
                 name=name, 
+                phone=request.form['phone'],      # ✅ NUEVO
+                city=request.form['city'],        # ✅ NUEVO
+                country=request.form['country'],  # ✅ NUEVO
                 password_hash=pwd_hash, 
                 tenant=tenant,
                 status='pending'
