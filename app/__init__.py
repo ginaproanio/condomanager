@@ -5,6 +5,8 @@ from flask_cors import CORS
 from datetime import timedelta
 import os
 
+from config import Config  # Importar la clase de configuración
+
 db = SQLAlchemy()
 jwt = JWTManager()
 cors = CORS()
@@ -16,8 +18,7 @@ def create_app():
     # ========================
     # CONFIGURACIÓN CLAVE
     # ========================
-    app.config['SECRET_KEY'] = os.environ.get('-secret_key', 'gina2025-super-secreto-cambia-en-produccion')
-    app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'gina2025-jwt-ultra-secreto-123456789')
+    app.config.from_object(Config) # Cargar configuración desde el objeto Config
 
     # JWT con cookies (el estándar moderno y seguro)
     app.config['JWT_TOKEN_LOCATION'] = ['cookies']
@@ -29,13 +30,17 @@ def create_app():
     app.config['JWT_COOKIE_CSRF_PROTECT'] = False   # Puedes activarlo después si quieres
 
     # Base de datos
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-    database_url = os.environ.get('DATABASE_URL', '')
-    if database_url.startswith(('postgres://', 'postgresql://')):
+    # SQLALCHEMY_DATABASE_URI ya se carga de Config
+    # Pero necesitamos ajustar el driver para Railway si es necesario
+    database_url = app.config.get('SQLALCHEMY_DATABASE_URI', '')
+    if database_url.startswith('postgres://'):
         database_url = database_url.replace('postgres://', 'postgresql+pg8000://', 1)
-    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-    print(f"URL de base de datos: {database_url}")
+        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+    elif database_url.startswith('postgresql://') and not 'pg8000' in database_url:
+        database_url = database_url.replace('postgresql://', 'postgresql+pg8000://', 1)
+        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+
+    print(f"URL de base de datos: {app.config['SQLALCHEMY_DATABASE_URI']}")
 
     # Inicializaciones
     db.init_app(app)
