@@ -1,4 +1,4 @@
-from app import db
+from app.extensions import db
 from sqlalchemy import Boolean, Date     # ← ESTA LÍNEA ES LA CLAVE FINAL
 from datetime import datetime
 

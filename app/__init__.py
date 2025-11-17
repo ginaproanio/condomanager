@@ -1,14 +1,13 @@
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from datetime import timedelta
 import os
 
 from config import Config
-# from app.models import User, Condominium, Unit, CondominioConfig  # Mover esta importación
+from app.extensions import db
+# from app.models import User, Condominium, Unit, CondominioConfig  # Ya no se importan aquí directamente
 
-db = SQLAlchemy()
 jwt = JWTManager()
 cors = CORS()
 
@@ -36,12 +35,14 @@ def create_app():
 
     print(f"URL de base de datos: {app.config['SQLALCHEMY_DATABASE_URI']}")
 
-    db.init_app(app)
+    db.init_app(app) # Inicializar db con la app
     jwt.init_app(app)
     cors.init_app(app, supports_credentials=True)
 
-    # Importar modelos aquí para evitar importación circular
-    from app import models
+    # Importar app.models aquí para registrar los modelos con SQLAlchemy
+    # Esto debe hacerse DESPUÉS de db.init_app(app) y ANTES de db.create_all()
+    with app.app_context():
+        from app import models # Importar el módulo models
 
     with app.app_context():
         try:
