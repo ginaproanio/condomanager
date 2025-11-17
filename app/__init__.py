@@ -1,6 +1,6 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from flask_jwt_extended import JWTManager
+from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity
 from flask_cors import CORS
 
 import os
@@ -32,10 +32,19 @@ def create_app():
 
     # Inicializar DB
     db.init_app(app)
-    # Importar modelos DESPUÉS de inicializar db
-    from app import models
-    # Inicializar JWT y CORS
+
+    # Configuración JWT
     jwt.init_app(app)
+    
+    @jwt.user_identity_loader
+    def user_identity_lookup(user):
+        return user.id
+    
+    @jwt.user_lookup_loader
+    def user_lookup_callback(_jwt_header, jwt_data):
+        identity = jwt_data['sub']
+        return User.query.filter_by(id=identity).first()
+    
     cors.init_app(app)
     
     # Rutas
