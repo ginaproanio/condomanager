@@ -40,6 +40,10 @@
         .btn {
             transition: all 0.2s ease-in-out;
         }
+
+        /* Estilos para elementos de autenticación */
+        .auth-required { display: none; }
+        .admin-only { display: none; }
     </style>
 </head>
 <body>
@@ -60,10 +64,32 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <div class="navbar-nav ms-auto">
                     <a class="nav-link" href="/"><i class="fas fa-home me-1"></i> Inicio</a>
-                    <a class="nav-link" href="/registro"><i class="fas fa-user-plus me-1"></i> Registro</a>
-                    <a class="nav-link" href="/login"><i class="fas fa-sign-in-alt me-1"></i> Login</a>
-                    <a class="nav-link" href="/admin"><i class="fas fa-cog me-1"></i> Admin</a>
-                    <a class="nav-link" href="/dashboard"><i class="fas fa-tachometer-alt me-1"></i> Dashboard</a>
+                    
+                    <!-- Elementos que cambian según autenticación -->
+                    <span id="user-info" class="nav-link" style="display: none;">
+                        <i class="fas fa-user me-1"></i>
+                        <span id="user-name">Usuario</span>
+                    </span>
+                    
+                    <a class="nav-link" href="/registro" id="register-btn">
+                        <i class="fas fa-user-plus me-1"></i> Registro
+                    </a>
+                    
+                    <a class="nav-link" href="/login" id="login-btn">
+                        <i class="fas fa-sign-in-alt me-1"></i> Login
+                    </a>
+                    
+                    <a class="nav-link auth-required admin-only" href="/admin">
+                        <i class="fas fa-cog me-1"></i> Admin
+                    </a>
+                    
+                    <a class="nav-link auth-required" href="/dashboard">
+                        <i class="fas fa-tachometer-alt me-1"></i> Dashboard
+                    </a>
+                    
+                    <a class="nav-link auth-required" href="#" id="logout-btn">
+                        <i class="fas fa-sign-out-alt me-1"></i> Cerrar Sesión
+                    </a>
                 </div>
             </div>
         </div>
@@ -109,6 +135,9 @@
         </div>
     </footer>
 
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html>

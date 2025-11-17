@@ -30,7 +30,8 @@
                     </div>
                     {% endif %}
 
-                    <form method="post">
+                    <!-- Formulario JWT -->
+                    <form id="login-form">
                         <div class="mb-3">
                             <label for="email" class="form-label">Email</label>
                             <div class="input-group">
@@ -53,11 +54,29 @@
                             <i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesión
                         </button>
                     </form>
+
+                    <!-- Formulario tradicional (fallback) -->
+                    <form method="POST" action="/login" id="legacy-login-form" style="display: none;">
+                        <div class="mb-3">
+                            <label for="legacy-email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="legacy-email" name="email" required>
+                        </div>
+                        <div class="mb-4">
+                            <label for="legacy-password" class="form-label">Contraseña</label>
+                            <input type="password" class="form-control" id="legacy-password" name="password" required>
+                        </div>
+                        <button type="submit" class="btn btn-secondary w-100 py-2">Login Tradicional</button>
+                    </form>
                     
                     <div class="text-center">
                         <p class="mb-2">
                             <a href="/registro" class="text-decoration-none">
                                 <i class="fas fa-user-plus me-1"></i>¿No tienes cuenta? Regístrate
+                            </a>
+                        </p>
+                        <p class="mb-1">
+                            <a href="#" onclick="toggleLoginForm()" class="text-decoration-none">
+                                <i class="fas fa-history me-1"></i>Usar sistema tradicional
                             </a>
                         </p>
                         <p class="mb-0">
@@ -71,4 +90,22 @@
         </div>
     </div>
 </div>
+
+<script>
+function toggleLoginForm() {
+    const jwtForm = document.getElementById('login-form');
+    const legacyForm = document.getElementById('legacy-login-form');
+    
+    if (jwtForm.style.display === 'none') {
+        jwtForm.style.display = 'block';
+        legacyForm.style.display = 'none';
+    } else {
+        jwtForm.style.display = 'none';
+        legacyForm.style.display = 'block';
+        // Copiar valores entre formularios
+        document.getElementById('legacy-email').value = document.getElementById('email').value;
+        document.getElementById('legacy-password').value = document.getElementById('password').value;
+    }
+}
+</script>
 {% endblock %}
