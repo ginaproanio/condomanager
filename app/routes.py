@@ -102,8 +102,11 @@ def logout():
 # FUNCIÓN AUXILIAR: obtener usuario actual de forma segura
 # =============================================================================
 def get_current_user():
+    """Obtiene el usuario actual de forma segura (compatible con JWT que guarda solo ID)"""
     user_id = get_jwt_identity()
-    return User.query.get(user_id)
+    if not user_id:
+        return None
+    return User.query.get(int(user_id))
 
 # =============================================================================
 # RUTAS PROTEGIDAS
@@ -114,6 +117,7 @@ def get_current_user():
 def dashboard():
     user = get_current_user()
     if not user:
+        flash("Sesión inválida", "error")
         return redirect('/login')
     
     from app.tenant import get_tenant
