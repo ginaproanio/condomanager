@@ -74,7 +74,14 @@ def login():
         password = request.form['password']
         pwd_hash = hashlib.sha256(password.encode()).hexdigest()
 
-        user = User.query.filter_by(email=email, password_hash=pwd_hash).first()
+        try:
+            from app import models  # Importar models localmente para esta función
+            user = models.User.query.filter_by(email=email, password_hash=pwd_hash).first()
+        except Exception as e:
+            current_app.logger.error(f"Error de base de datos durante el login para {email}: {e}")
+            flash("Error de conexión con la base de datos. Intenta nuevamente.", "error")
+            return render_template('auth/login.html', config=config)
+
         if not user:
             flash("Credenciales incorrectas", "error")
             return render_template('auth/login.html', config=config)
