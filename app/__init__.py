@@ -2,7 +2,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
-from app.models import User  # ✅ AGREGAR ESTE IMPORT
+
 import os
 
 db = SQLAlchemy()
@@ -41,8 +41,9 @@ def create_app():
     
     @jwt.user_lookup_loader
     def user_lookup_callback(_jwt_header, jwt_data):
+        from app.models import User  # ✅ IMPORTAR DENTRO DE LA FUNCIÓN
         identity = jwt_data['sub']
-        return User.query.filter_by(id=identity).first()  # ✅ Ahora User está disponible
+        return User.query.filter_by(id=identity).first()
     
     cors.init_app(app)
     
