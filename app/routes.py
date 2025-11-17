@@ -49,10 +49,13 @@ def api_register():
         user = User(
             email=email,
             name=name,
+            phone=data.get('phone', ''),      # ✅ NUEVO
+            city=data.get('city', ''),        # ✅ NUEVO
+            country=data.get('country', ''),  # ✅ NUEVO
             password_hash=pwd_hash,
             tenant=tenant,
-            role='USER',  # Rol por defecto
-            status='active'  # En producción cambiar a 'pending' para aprobación
+            role='USER',
+            status='active'
         )
         
         db.session.add(user)
@@ -70,6 +73,9 @@ def api_register():
                 "id": user.id,
                 "name": user.name,
                 "email": user.email,
+                "phone": user.phone,    # ✅ NUEVO
+                "city": user.city,      # ✅ NUEVO
+                "country": user.country, # ✅ NUEVO
                 "role": user.role
             },
             "access_token": access_token
