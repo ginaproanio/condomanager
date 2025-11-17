@@ -394,3 +394,49 @@ def reportes():
     return render_template('services/reportes.html',
                          mensaje="📊 Reportes - Próximamente",
                          config=config)
+    
+    # =============================================================================
+# RUTAS MAESTRO
+# =============================================================================
+
+@main.route('/master')
+@jwt_required()
+def master_panel():
+    """Panel exclusivo para usuarios MASTER"""
+    try:
+        current_user = get_jwt_identity()
+        
+        if current_user.role != 'MASTER':
+            return jsonify({"error": "Acceso denegado. Se requiere rol MASTER"}), 403
+        
+        from app.tenant import get_tenant
+        tenant = get_tenant()
+        config = current_app.get_tenant_config(tenant)
+        
+        return render_template('master/panel.html', config=config)
+        
+    except Exception as e:
+        return jsonify({"error": f"Error accediendo al panel maestro: {str(e)}"}), 500
+
+@main.route('/api/master/estadisticas')
+@jwt_required()
+def api_master_estadisticas():
+    """Estadísticas globales del sistema para MASTER"""
+    try:
+        current_user = get_jwt_identity()
+        
+        if current_user.role != 'MASTER':
+            return jsonify({"error": "Acceso denegado"}), 403
+        
+        # Aquí irá la lógica para obtener estadísticas
+        # Por ahora devolvemos datos de ejemplo
+        return jsonify({
+            "total_condominios": 0,
+            "total_usuarios": User.query.count(),
+            "condominios_activos": 0,
+            "condominios_pendientes": 0,
+            "condominios_recientes": []
+        })
+        
+    except Exception as e:
+        return jsonify({"error": f"Error obteniendo estadísticas: {str(e)}"}), 500

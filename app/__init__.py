@@ -51,14 +51,41 @@ def create_app():
     from app.routes import main
     app.register_blueprint(main)
     
-    # Crear tablas
+    # Crear tablas Y usuario maestro
     with app.app_context():
         try:
             print("🔄 Creando tablas...")
             db.create_all()
             print("✅ Tablas creadas exitosamente")
+            
+            # ✅ CREAR USUARIO MAESTRO SI NO EXISTE
+            from app.models import User  # Importar aquí para evitar circular imports
+            import hashlib
+            
+            master_email = os.environ.get('MASTER_EMAIL', 'maestro@condomanager.com')
+            if not User.query.filter_by(email=master_email).first():
+                master_password = os.environ.get('MASTER_PASSWORD', 'Master123!')
+                pwd_hash = hashlib.sha256(master_password.encode()).hexdigest()
+                
+                master_user = User(
+                    email=master_email,
+                    name='Administrador Maestro',
+                    phone='+593 99 999 9999',
+                    city='Quito',
+                    country='Ecuador',
+                    password_hash=pwd_hash,
+                    tenant='master',
+                    role='MASTER',
+                    status='active'
+                )
+                db.session.add(master_user)
+                db.session.commit()
+                print(f"🎯 USUARIO MAESTRO CREADO: {master_email}")
+            else:
+                print("✅ Usuario maestro ya existe")
+            
         except Exception as e:
-            print(f"❌ Error creando tablas: {e}")
+            print(f"❌ Error en inicialización: {e}")
 
     # ✅ FUNCIÓN para configuración de tenants
     def get_tenant_config(tenant):
