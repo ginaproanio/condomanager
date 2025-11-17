@@ -33,7 +33,7 @@ class CondominioConfig(db.Model):
 
 class Condominium(db.Model):
     __tablename__ = 'condominiums'
-    
+    __table_args__ = {'extend_existing': True}  # ← AGREGAR ESTA LÍNEA
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
     subdomain = db.Column(db.String(100), unique=True)
@@ -154,10 +154,10 @@ class Unit(db.Model):
     
     def get_short_address(self):
         """Dirección resumida para listas"""
-        return f"{self.main_street} y {self.cross_street}"
-    
+        return f"{self.main_street} y {self.cross_street}"    
 class Condominium(db.Model):
     __tablename__ = 'condominiums'
+    __table_args__ = {'extend_existing': True}
     
     id = db.Column(db.Integer, primary_key=True)
     
@@ -216,7 +216,7 @@ class Condominium(db.Model):
                 'name': self.admin_user.name,
                 'email': self.admin_user.email
             } if self.admin_user else None,
-            'total_units': len(self.unities),
+            'total_units': len(self.units),
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
     
