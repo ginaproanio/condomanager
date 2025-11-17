@@ -88,9 +88,13 @@ def admin_panel():
     try:
         # Listar usuarios pendientes de aprobación
         pending_users = User.query.filter_by(status='pending').all()
+        active_users = User.query.filter_by(status='active').all()  # ✅ NUEVO
+        rejected_users = User.query.filter_by(status='rejected').all()  # ✅ NUEVO
         
         return render_template('admin/panel.html', 
-                             pending_users=pending_users)
+                             pending_users=pending_users,
+                             active_count=len(active_users),  # ✅ Pasar contadores
+                             rejected_count=len(rejected_users))
     
     except Exception as e:
         return render_template('admin/panel.html',

@@ -40,7 +40,7 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between">
                                 <div>
-                                    <h4>{{ User.query.filter_by(status='active').count() }}</h4>
+                                    <h4>{{ active_count }}</h4>  <!-- ✅ CAMBIADO -->
                                     <p class="mb-0">Activos</p>
                                 </div>
                                 <i class="fas fa-check-circle fa-2x opacity-50"></i>
@@ -53,7 +53,7 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between">
                                 <div>
-                                    <h4>{{ User.query.filter_by(status='rejected').count() }}</h4>
+                                    <h4>{{ rejected_count }}</h4>  <!-- ✅ CAMBIADO -->
                                     <p class="mb-0">Rechazados</p>
                                 </div>
                                 <i class="fas fa-times-circle fa-2x opacity-50"></i>
