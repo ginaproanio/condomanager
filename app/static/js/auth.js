@@ -262,8 +262,10 @@ class AuthForms {
                 alert(`❌ Error: ${result.error}`);
             }
         } catch (error) {
-            alert('❌ Error de conexión');
-            console.error('Error en login:', error);
+            console.error('❌ Error de conexión:', error); // Cambiado de alert a console.error
+            console.error('Detalle del error:', error); // Añadido para más detalle
+            // alert('❌ Error de conexión'); // Descomenta si necesitas la alerta de nuevo
+            // console.error('Error en login:', error);
         }
     }
 }
