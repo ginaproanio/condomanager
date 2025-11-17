@@ -155,6 +155,7 @@ class Unit(db.Model):
     def get_short_address(self):
         """Dirección resumida para listas"""
         return f"{self.main_street} y {self.cross_street}"    
+
 class Condominium(db.Model):
     __tablename__ = 'condominiums'
     __table_args__ = {'extend_existing': True}
