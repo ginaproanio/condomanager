@@ -15,3 +15,7 @@ class Config:
         database_url = database_url.replace('postgres://', 'postgresql://', 1)
     
     SQLALCHEMY_DATABASE_URI = database_url or 'sqlite:///default.db'
+    
+    # AGREGAR ESTO AL FINAL del archivo config.py
+    JWT_SECRET_KEY = os.getenv('JWT_SECRET', 'jwt_fallback_secret_2025')
+    JWT_ACCESS_TOKEN_EXPIRES = 86400  # 24 horas en segundos

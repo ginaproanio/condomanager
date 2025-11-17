@@ -1,8 +1,13 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from flask_jwt_extended import JWTManager
+from flask_cors import CORS
+
 import os
 
 db = SQLAlchemy()
+jwt = JWTManager()
+cors = CORS()
 
 def create_app():
     app = Flask(__name__)
@@ -27,6 +32,11 @@ def create_app():
 
     # Inicializar DB
     db.init_app(app)
+    # Importar modelos DESPUÉS de inicializar db
+    from app import models
+    # Inicializar JWT y CORS
+    jwt.init_app(app)
+    cors.init_app(app)
     
     # Rutas
     from app.routes import main
