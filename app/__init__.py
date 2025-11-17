@@ -43,26 +43,8 @@ def create_app():
     cors.init_app(app, supports_credentials=True)  # Importante para cookies JWT
 
     # ========================
-    # JWT: Cargar usuario actual
-    # ========================
-    @jwt.user_identity_loader
-    def user_identity_lookup(user):
-        return user.id
-
-    @jwt.user_lookup_loader
-    def user_lookup_callback(_jwt_header, jwt_data):
-        from app.models import User
-        identity = jwt_data["sub"]
-        return User.query.get(identity)
-
-    # ========================
-    # Registrar rutas
-    # ========================
-    from app.routes import main
-    app.register_blueprint(main)
-
-    # ========================
     # Crear tablas + usuario maestro (solo si no existe)
+    # Asegurarse de que las tablas existen antes de intentar cargar configuraciones
     # ========================
     with app.app_context():
         try:
@@ -97,6 +79,25 @@ def create_app():
 
         except Exception as e:
             print(f"Error en inicialización: {e}")
+
+    # ========================
+    # JWT: Cargar usuario actual
+    # ========================
+    @jwt.user_identity_loader
+    def user_identity_lookup(user):
+        return user.id
+
+    @jwt.user_lookup_loader
+    def user_lookup_callback(_jwt_header, jwt_data):
+        from app.models import User
+        identity = jwt_data["sub"]
+        return User.query.get(identity)
+
+    # ========================
+    # Registrar rutas
+    # ========================
+    from app.routes import main
+    app.register_blueprint(main)
 
     # ========================
     # Configuración automática de tenant

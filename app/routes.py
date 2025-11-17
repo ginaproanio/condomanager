@@ -180,9 +180,15 @@ def master_panel():
         flash("Acceso denegado – Se requiere rol MASTER", "error")
         return redirect('/dashboard')
     
-    from app.tenant import get_tenant
-    tenant = get_tenant()
-    config = current_app.get_tenant_config(tenant)
+    try:
+        from app.tenant import get_tenant
+        tenant = get_tenant()
+        config = current_app.get_tenant_config(tenant)
+    except Exception as e:
+        current_app.logger.error(f"Error loading master panel for user {user.id if user else 'N/A'}: {e}")
+        flash("Error al cargar el panel maestro", "error")
+        return redirect('/dashboard')
+
     return render_template('master/panel.html', user=user, config=config)
 
 # =============================================================================
