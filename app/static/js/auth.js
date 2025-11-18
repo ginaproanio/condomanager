@@ -279,7 +279,8 @@ class AuthForms {
                 alert(`❌ Error: ${errorResult.error || 'Error desconocido del servidor'}`);
             } else if (response.redirected) {
                 console.log('FLOW: handleLogin() - Redirección del backend detectada a:', response.url);
-                // El navegador ya seguirá la redirección, no hacemos nada aquí.
+                // FORZAR LA NAVEGACIÓN DEL NAVEGADOR A LA URL DE REDIRECCIÓN
+                window.location.href = response.url;
             } else {
                 console.warn('ADVERTENCIA: Respuesta inesperada del servidor: no redirigida y no OK.', response);
                 alert('Error inesperado durante el login.');
