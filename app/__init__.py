@@ -56,8 +56,10 @@ def create_app():
         identity = jwt_data["sub"]
         return models.User.query.get(identity)
 
-    from app import routes
-    routes.init_app(app)
+    # Importar y registrar blueprints DENTRO de la fábrica
+    with app.app_context():
+        from app import routes
+        routes.init_app(app)
 
     def get_tenant_config(tenant):
         config = models.CondominiumConfig.query.get(tenant)

@@ -1,26 +1,24 @@
 def initialize_database():
-    # Paso 1: Importar solo lo absolutamente necesario para crear la app
     print("AUDIT: Iniciando script initialize_db.py")
-    from app import create_app
     
-    app = create_app()
-    print("AUDIT: Instancia de Flask creada.")
-    
-    # Paso 2: Trabajar dentro del contexto de la aplicación
-    with app.app_context():
-        print("AUDIT: Entrando en el contexto de la aplicación.")
-        # Importar extensiones y modelos DESPUÉS de tener un contexto
-        from app.extensions import db
-        from app import models
-        import os
-        import hashlib
-        import sys
-        
-        try:
-            print("AUDIT: Intentando crear tablas...")
+    try:
+        # Importar la fábrica de la aplicación
+        from app import create_app
+        app = create_app()
+        print("AUDIT: Instancia de Flask creada exitosamente.")
+
+        # Trabajar dentro del contexto de la aplicación para acceder a la DB
+        with app.app_context():
+            print("AUDIT: Entrando en el contexto de la aplicación.")
+            from app.extensions import db
+            from app import models
+            import os
+            import hashlib
+
+            print("AUDIT: Intentando crear todas las tablas...")
             db.create_all()
-            print("✅ Tablas creadas exitosamente.")
-            
+            print("✅ AUDIT: db.create_all() ejecutado.")
+
             # Crear usuario maestro
             master_email = os.environ.get('MASTER_EMAIL', 'maestro@condomanager.com')
             if not models.User.query.filter_by(email=master_email).first():
@@ -32,27 +30,32 @@ def initialize_database():
                     tenant=None, role='MASTER', status='active'
                 )
                 db.session.add(master)
-                db.session.commit()
-                print(f"✅ USUARIO MAESTRO CREADO: {master_email}")
+                print("AUDIT: Usuario maestro añadido a la sesión.")
             else:
-                print("✅ Usuario maestro ya existe.")
-                
+                print("✅ AUDIT: Usuario maestro ya existe.")
+
             # Crear configuración de tenant por defecto
             default_tenant = 'puntablanca'
             if not models.CondominiumConfig.query.get(default_tenant):
                 print(f"AUDIT: Creando configuración para el tenant por defecto '{default_tenant}'...")
                 config = models.CondominiumConfig(tenant=default_tenant, commercial_name='Punta Blanca')
                 db.session.add(config)
-                db.session.commit()
-                print(f"✅ Configuración de tenant por defecto creada para '{default_tenant}'.")
+                print("AUDIT: Configuración de tenant añadida a la sesión.")
             else:
-                print(f"✅ Configuración para '{default_tenant}' ya existe.")
-                
-            print("AUDIT: Script de inicialización finalizado con éxito.")
-            
-        except Exception as e:
-            print(f"❌ ERROR CRÍTICO DURANTE LA INICIALIZACIÓN DE LA DB: {e}")
-            sys.exit(1) # Detiene el despliegue si hay un error
+                print(f"✅ AUDIT: Configuración para '{default_tenant}' ya existe.")
+
+            db.session.commit()
+            print("✅ AUDIT: db.session.commit() ejecutado. Cambios guardados en la DB.")
+            print("✅✅✅ Script de inicialización finalizado con ÉXITO.")
+
+    except Exception as e:
+        import traceback
+        print(f"❌ ERROR CRÍTICO EN initialize_db.py: {e}")
+        print("--- TRACEBACK COMPLETO ---")
+        traceback.print_exc()
+        print("--------------------------")
+        import sys
+        sys.exit(1) # Detiene el despliegue si hay un error
 
 if __name__ == '__main__':
     initialize_database()
