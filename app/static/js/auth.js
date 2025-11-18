@@ -286,7 +286,7 @@ class AuthForms {
                 body: JSON.stringify(data)
             });
 
-            // const result = await response.json(); // Esta línea ahora está en el backend para redirección
+            console.log('DEBUG: handleLogin() - Raw response object:', response); // AÑADIDO
             console.log('DEBUG: handleLogin() - Solicitud de login enviada, respuesta recibida:', response.status, response.ok);
 
             // Después de un login exitoso, el backend redirige directamente, no necesitamos procesar JSON aquí.

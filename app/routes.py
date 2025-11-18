@@ -98,7 +98,7 @@ def api_login():
     if user.status != 'active':
         return jsonify({"error": "Tu cuenta está pendiente de aprobación o fue rechazada"}), 403
 
-    access_token = create_access_token(identity=user.id, expires_delta=timedelta(hours=12))
+    access_token = create_access_token(identity=str(user.id), expires_delta=timedelta(hours=12)) # Convertir a string
     
     # Establecer la cookie JWT directamente desde el backend y luego redirigir
     response = make_response(redirect(url_for('main.dashboard')))
