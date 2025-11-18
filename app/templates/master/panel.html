@@ -4,18 +4,91 @@
 
 {% block content %}
 <div class="container py-5">
-    <div class="row">
-        <div class="col">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body text-center py-5">
-                    <h1 class="text-primary mb-3">¡Bienvenido al Panel Maestro!</h1>
-                    {% if user %}
-                        <p>Hola, <strong>{{ user.name }}</strong> ({{ user.role }})</p>
-                        <p>Tu panel maestro básico está funcionando.</p>
-                    {% else %}
-                        <p>No tienes acceso a este contenido. Por favor, <a href="/login">inicia sesión</a>.</p>
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card border-0 shadow-lg">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <h1 class="text-primary">
+                            <i class="fas fa-crown me-2"></i>Panel Maestro
+                        </h1>
+                        <p class="lead text-muted">Gestión Global del Sistema</p>
+                    </div>
+
+                    {% if mensaje %}
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="fas fa-check-circle me-2"></i>{{ mensaje }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
                     {% endif %}
-                    <a href="/logout" class="btn btn-danger mt-3">Cerrar sesión</a>
+
+                    {% if error %}
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>{{ error }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endif %}
+
+                    {% if user and user.role == 'MASTER' %}
+                        <p>Bienvenido, <strong>{{ user.name }}</strong> ({{ user.role }}).</p>
+                        <p>Desde aquí puedes gestionar todos los aspectos del sistema.</p>
+
+                        <div class="row mt-4 g-4">
+                            <!-- Tarjeta de Condominios -->
+                            <div class="col-md-4">
+                                <div class="card h-100 shadow-sm border-primary">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-building fa-3x text-primary mb-3"></i>
+                                        <h5 class="card-title">Condominios</h5>
+                                        <p class="card-text">Administra todos los condominios registrados.</p>
+                                        <a href="/master/condominios" class="btn btn-outline-primary">
+                                            <i class="fas fa-eye me-2"></i>Ver Condominios
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Tarjeta de Usuarios Globales -->
+                            <div class="col-md-4">
+                                <div class="card h-100 shadow-sm border-primary">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-users-cog fa-3x text-primary mb-3"></i>
+                                        <h5 class="card-title">Usuarios Globales</h5>
+                                        <p class="card-text">Gestiona usuarios, administradores y estados.</p>
+                                        <a href="/admin" class="btn btn-outline-primary">
+                                            <i class="fas fa-user-shield me-2"></i>Gestión de Usuarios
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tarjeta de Configuración Global -->
+                            <div class="col-md-4">
+                                <div class="card h-100 shadow-sm border-primary">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-cogs fa-3x text-primary mb-3"></i>
+                                        <h5 class="card-title">Configuración Global</h5>
+                                        <p class="card-text">Ajustes generales del sistema.</p>
+                                        <a href="/master/configuracion" class="btn btn-outline-primary">
+                                            <i class="fas fa-sliders-h me-2"></i>Configurar
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-center mt-5">
+                            <a href="/logout" class="btn btn-danger">
+                                <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión Maestro
+                            </a>
+                        </div>
+
+                    {% else %}
+                        <div class="alert alert-warning text-center" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            No tienes acceso al Panel Maestro. Por favor, <a href="/login" class="alert-link">inicia sesión</a> con una cuenta MASTER.
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
