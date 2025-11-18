@@ -195,6 +195,7 @@ class AuthForms {
 
         // Formulario de login JWT
         const loginForm = document.getElementById('login-form');
+        console.assert(loginForm, 'ERROR: El formulario de login (id="login-form") no fue encontrado en el DOM.');
         if (loginForm) {
             loginForm.addEventListener('submit', (e) => this.handleLogin(e));
         }
@@ -244,6 +245,7 @@ class AuthForms {
 
     // 🔐 MANEJAR LOGIN JWT
     async handleLogin(e) {
+        console.log('DEBUG: handleLogin() - Función llamada.');
         e.preventDefault();
         
         const formData = new FormData(e.target);
