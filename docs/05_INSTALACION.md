@@ -1,20 +1,21 @@
 # Guía de Instalación
 Versión: 2.0.0 (Alineado con Arquitectura de Esquema Compartido)
 
-> **Objetivo**: Esta guía describe cómo configurar un entorno de desarrollo local para poder modificar el código y subirlo a un repositorio Git. El flujo de trabajo se centra en el despliegue a entornos en la nube (ej. Railway), por lo que no se requiere ejecutar la aplicación o una base de datos localmente.
+> **Objetivo**: Esta guía describe cómo configurar un entorno de desarrollo en una PC local con el único fin de **modificar el código y subirlo a GitHub**. No es necesario ejecutar la aplicación ni una base de datos localmente, ya que el flujo de trabajo se centra en el despliegue a entornos en la nube (ej. Railway).
 
 ## 1. Requisitos del Sistema
 
 ### 1.1 Software Base
 - Python 3.8+
 - Git
+- Un editor de código moderno (ej. Visual Studio Code).
 
 ## 2. Configuración Local
 
 ### 2.1 Clonar Repositorio
 ```bash
 git clone https://github.com/ginaproanio/condomanager.git
-cd condomanager-saas
+cd condomanager
 ```
 
 ### 2.2 Entorno Virtual Python

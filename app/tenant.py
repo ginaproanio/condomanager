@@ -6,7 +6,8 @@ def get_tenant():
         # Si hay contexto de request (durante peticiones web)
         if request:
             host = request.host
-            if 'localhost' in host:
+            # Forzar 'puntablanca' en desarrollo local y en el entorno de pruebas de Railway
+            if 'localhost' in host or 'railway.app' in host:
                 return 'puntablanca'
             # Extraer subdominio: admin.condomanager.com → admin
             parts = host.split('.') 
