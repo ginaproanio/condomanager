@@ -13,19 +13,16 @@
                         <p class="lead text-muted">Panel de control global para usuarios del sistema.</p>
                     </div>
 
-                    {% if mensaje %}
-                    <div class="alert alert-info alert-dismissible fade show" role="alert">
-                        <i class="fas fa-info-circle me-2"></i>{{ mensaje }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                    {% endif %}
-
-                    {% if error %}
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <i class="fas fa-exclamation-triangle me-2"></i>{{ error }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                    {% endif %}
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    <i class="fas fa-info-circle me-2"></i>{{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
                     
                     {% if user and user.role == 'MASTER' %}
                         <p>Bienvenido, <strong>{{ user.name }}</strong>. Aquí puedes gestionar todos los usuarios.</p>
@@ -50,6 +47,11 @@
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab" aria-controls="all" aria-selected="false">
                                     Todos <span class="badge bg-secondary ms-2">{{ all_users|length }}</span>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="create-user-tab" data-bs-toggle="tab" data-bs-target="#create-user" type="button" role="tab" aria-controls="create-user" aria-selected="false">
+                                    <i class="fas fa-user-plus me-2"></i>Crear Usuario
                                 </button>
                             </li>
                         </ul>
@@ -91,6 +93,9 @@
                                                                     </a>
                                                                     <a href="/rechazar/{{ u.id }}" class="btn btn-danger">
                                                                         <i class="fas fa-times"></i> Rechazar
+                                                                    </a>
+                                                                    <a href="{{ url_for('main.master_usuarios_editar', user_id=u.id) }}" class="btn btn-info">
+                                                                        <i class="fas fa-edit"></i>
                                                                     </a>
                                                                 </div>
                                                             </td>
@@ -139,10 +144,10 @@
                                                             <td>{{ u.created_at.strftime('%d/%m/%Y %H:%M') if u.created_at else 'N/A' }}</td>
                                                             <td>
                                                                 <div class="btn-group btn-group-sm">
-                                                                    <a href="/master/usuarios/editar/{{ u.id }}" class="btn btn-info">
+                                                                    <a href="{{ url_for('main.master_usuarios_editar', user_id=u.id) }}" class="btn btn-info">
                                                                         <i class="fas fa-edit"></i> Editar
                                                                     </a>
-                                                                    <a href="/master/usuarios/eliminar/{{ u.id }}" class="btn btn-danger">
+                                                                    <a href="{{ url_for('main.master_usuarios_eliminar', user_id=u.id) }}" class="btn btn-danger">
                                                                         <i class="fas fa-trash"></i> Eliminar
                                                                     </a>
                                                                 </div>
@@ -192,11 +197,14 @@
                                                             <td>{{ u.created_at.strftime('%d/%m/%Y %H:%M') if u.created_at else 'N/A' }}</td>
                                                             <td>
                                                                 <div class="btn-group btn-group-sm">
-                                                                    <a href="/master/usuarios/reaprobar/{{ u.id }}" class="btn btn-success">
+                                                                    <a href="{{ url_for('main.master_usuarios_reaprobar', user_id=u.id) }}" class="btn btn-success">
                                                                         <i class="fas fa-redo"></i> Reaprobar
                                                                     </a>
-                                                                    <a href="/master/usuarios/eliminar/{{ u.id }}" class="btn btn-danger">
+                                                                    <a href="{{ url_for('main.master_usuarios_eliminar', user_id=u.id) }}" class="btn btn-danger">
                                                                         <i class="fas fa-trash"></i> Eliminar
+                                                                    </a>
+                                                                    <a href="{{ url_for('main.master_usuarios_editar', user_id=u.id) }}" class="btn btn-info">
+                                                                        <i class="fas fa-edit"></i>
                                                                     </a>
                                                                 </div>
                                                             </td>
@@ -255,10 +263,10 @@
                                                             <td>{{ u.created_at.strftime('%d/%m/%Y %H:%M') if u.created_at else 'N/A' }}</td>
                                                             <td>
                                                                 <div class="btn-group btn-group-sm">
-                                                                    <a href="/master/usuarios/editar/{{ u.id }}" class="btn btn-info">
+                                                                    <a href="{{ url_for('main.master_usuarios_editar', user_id=u.id) }}" class="btn btn-info">
                                                                         <i class="fas fa-edit"></i> Editar
                                                                     </a>
-                                                                    <a href="/master/usuarios/eliminar/{{ u.id }}" class="btn btn-danger">
+                                                                    <a href="{{ url_for('main.master_usuarios_eliminar', user_id=u.id) }}" class="btn btn-danger">
                                                                         <i class="fas fa-trash"></i> Eliminar
                                                                     </a>
                                                                 </div>
@@ -277,6 +285,65 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Pestaña: Crear Usuario -->
+                            <div class="tab-pane fade" id="create-user" role="tabpanel" aria-labelledby="create-user-tab">
+                                <div class="card border-0 shadow-sm mb-4">
+                                    <div class="card-header bg-primary text-white">
+                                        <h5 class="mb-0"><i class="fas fa-user-plus me-2"></i>Crear Nuevo Usuario</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <form action="{{ url_for('main.master_usuarios') }}" method="POST">
+                                            <input type="hidden" name="action" value="create_user">
+                                            <div class="mb-3">
+                                                <label for="new_user_name" class="form-label">Nombre</label>
+                                                <input type="text" class="form-control" id="new_user_name" name="name" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="new_user_email" class="form-label">Email</label>
+                                                <input type="email" class="form-control" id="new_user_email" name="email" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="new_user_password" class="form-label">Contraseña (opcional)</label>
+                                                <input type="password" class="form-control" id="new_user_password" name="password">
+                                                <small class="form-text text-muted">Si no se proporciona, el usuario deberá usar la función de recuperación de contraseña.</small>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="new_user_phone" class="form-label">Teléfono</label>
+                                                <input type="text" class="form-control" id="new_user_phone" name="phone">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="new_user_city" class="form-label">Ciudad</label>
+                                                <input type="text" class="form-control" id="new_user_city" name="city">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="new_user_country" class="form-label">País</label>
+                                                <input type="text" class="form-control" id="new_user_country" name="country" value="Ecuador">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="new_user_role" class="form-label">Rol</label>
+                                                <select class="form-select" id="new_user_role" name="role" required>
+                                                    <option value="USER">Usuario</option>
+                                                    <option value="ADMIN">Administrador</option>
+                                                </select>
+                                            </div>
+                                            <div class="mb-3" id="condominium_select_container" style="display: none;">
+                                                <label for="new_user_condominium" class="form-label">Asignar a Condominio (solo para Administrador)</label>
+                                                <select class="form-select" id="new_user_condominium" name="condominium_id">
+                                                    <option value="">Seleccionar Condominio</option>
+                                                    {% for condo in all_condominiums %}
+                                                        <option value="{{ condo.id }}">{{ condo.name }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-user-plus me-2"></i>Crear Usuario
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
 
                         <div class="text-center mt-5">
@@ -296,4 +363,23 @@
         </div>
     </div>
 </div>
+
+<script>
+    // JavaScript para mostrar/ocultar el selector de condominio basado en el rol
+    document.addEventListener('DOMContentLoaded', function() {
+        const roleSelect = document.getElementById('new_user_role');
+        const condominiumContainer = document.getElementById('condominium_select_container');
+
+        function toggleCondominiumSelect() {
+            if (roleSelect.value === 'ADMIN') {
+                condominiumContainer.style.display = 'block';
+            } else {
+                condominiumContainer.style.display = 'none';
+            }
+        }
+
+        roleSelect.addEventListener('change', toggleCondominiumSelect);
+        toggleCondominiumSelect(); // Llamar al cargar para establecer el estado inicial
+    });
+</script>
 {% endblock %}

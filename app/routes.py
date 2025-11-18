@@ -153,6 +153,10 @@ def admin_panel():
     if not user or user.role not in ['ADMIN', 'MASTER']:
         flash("Acceso denegado", "error")
         return redirect('/dashboard')
+    
+    # Si es ADMIN, redirigir a su panel de condominio específico
+    if user.role == 'ADMIN' and user.condominium_id: # Suponiendo que el usuario ADMIN tiene un campo condominium_id
+        return redirect(url_for('main.admin_condominio_panel', condominium_id=user.condominium_id))
 
     from app.tenant import get_tenant
     tenant = get_tenant()
@@ -168,6 +172,156 @@ def admin_panel():
                            rejected_count=rejected,
                            user=user,
                            config=config)
+
+# Nueva ruta para el panel de administración de un condominio específico
+@main.route('/admin/condominio/<int:condominium_id>', methods=['GET', 'POST'])
+@jwt_required()
+def admin_condominio_panel(condominium_id):
+    user = get_current_user()
+    # Verificar que el usuario es ADMIN y está asignado a este condominio
+    if not user or user.role != 'ADMIN' or user.condominium_id != condominium_id:
+        flash("Acceso denegado o condominio no autorizado.", "error")
+        return redirect('/dashboard')
+
+    condominium = Condominium.query.get_or_404(condominium_id)
+    from app.tenant import get_tenant
+    tenant = get_tenant()
+    config = current_app.get_tenant_config(tenant)
+
+    # Lógica para GET: mostrar el panel con las unidades y usuarios existentes
+    if request.method == 'GET':
+        units = Unit.query.filter_by(condominium_id=condominium.id).all()
+        users_in_condo = User.query.filter_by(condominium_id=condominium.id).all()
+        return render_template('admin/condominio_panel.html', user=user, config=config, condominium=condominium, units=units, users_in_condo=users_in_condo)
+
+    # Lógica para POST: procesar carga masiva de unidades o usuarios
+    if request.method == 'POST':
+        action = request.form.get('action')
+
+        if action == 'import_units_csv':
+            uploaded_file = request.files.get('csv_file')
+            if not uploaded_file or uploaded_file.filename == '':
+                flash("No se seleccionó ningún archivo CSV para importar unidades.", "error")
+                return redirect(url_for('main.admin_condominio_panel', condominium_id=condominium_id))
+
+            if uploaded_file and uploaded_file.filename.endswith('.csv'):
+                try:
+                    content = uploaded_file.read().decode('utf-8')
+                    csv_reader = csv.DictReader(io.StringIO(content))
+                    
+                    created_count = 0
+                    failed_count = 0
+                    for row in csv_reader:
+                        # Asegúrate de que las columnas del CSV coincidan con los campos de tu modelo Unit
+                        # Ejemplo de campos: property_number, name, property_type, area_m2, bedrooms, bathrooms, etc.
+                        property_number = row.get('property_number', '').strip()
+                        name = row.get('name', '').strip()
+                        property_type = row.get('property_type', '').strip()
+                        area_m2 = row.get('area_m2', 0)
+                        bedrooms = row.get('bedrooms', 0)
+                        bathrooms = row.get('bathrooms', 0)
+                        # ... otros campos de Unit que quieras importar ...
+
+                        if not property_number or not name:
+                            failed_count += 1
+                            continue
+
+                        try:
+                            new_unit = Unit(
+                                property_number=property_number,
+                                name=name,
+                                property_type=property_type,
+                                area_m2=float(area_m2),
+                                bedrooms=int(bedrooms),
+                                bathrooms=int(bathrooms),
+                                condominium_id=condominium.id # Asignar al condominio del ADMIN
+                                # ... otros campos ...
+                            )
+                            db.session.add(new_unit)
+                            created_count += 1
+                        except Exception as e:
+                            current_app.logger.error(f"Error al importar unidad '{property_number}' (fila {csv_reader.line_num}): {e}")
+                            failed_count += 1
+
+                    db.session.commit()
+                    flash(f"Importación de unidades completada. {created_count} unidades creadas, {failed_count} fallidas.", "success")
+
+                except Exception as e:
+                    current_app.logger.error(f"Error al leer o procesar el archivo CSV de unidades: {e}")
+                    flash(f"Error al leer o procesar el archivo CSV de unidades: {e}", "error")
+            else:
+                flash("El archivo seleccionado no es un archivo CSV válido para unidades.", "error")
+
+        elif action == 'import_users_csv':
+            uploaded_file = request.files.get('csv_file')
+            if not uploaded_file or uploaded_file.filename == '':
+                flash("No se seleccionó ningún archivo CSV para importar usuarios.", "error")
+                return redirect(url_for('main.admin_condominio_panel', condominium_id=condominium_id))
+
+            if uploaded_file and uploaded_file.filename.endswith('.csv'):
+                try:
+                    content = uploaded_file.read().decode('utf-8')
+                    csv_reader = csv.DictReader(io.StringIO(content))
+
+                    created_count = 0
+                    failed_count = 0
+                    for row in csv_reader:
+                        # Columnas esperadas en el CSV para usuarios: email, name, password, phone, unit_property_number
+                        email = row.get('email', '').strip()
+                        name = row.get('name', '').strip()
+                        password = row.get('password', '').strip()
+                        phone = row.get('phone', '').strip()
+                        unit_property_number = row.get('unit_property_number', '').strip()
+
+                        if not email or not name or not unit_property_number:
+                            failed_count += 1
+                            continue
+                        
+                        # Verificar si el email ya existe
+                        if User.query.filter_by(email=email).first():
+                            flash(f"Error: El email {email} ya existe. Saltando.", "warning")
+                            failed_count += 1
+                            continue
+
+                        # Buscar la unidad por property_number dentro del condominio del ADMIN
+                        unit = Unit.query.filter_by(condominium_id=condominium.id, property_number=unit_property_number).first()
+                        if not unit:
+                            current_app.logger.error(f"Unidad con número de propiedad {unit_property_number} no encontrada en condominio {condominium.name}. Saltando usuario {email}.")
+                            flash(f"Error: Unidad {unit_property_number} no encontrada para el usuario {email}.", "warning")
+                            failed_count += 1
+                            continue
+
+                        try:
+                            pwd_hash = hashlib.sha256(password.encode()).hexdigest() if password else None
+                            new_user_unit = User(
+                                email=email,
+                                name=name,
+                                password_hash=pwd_hash,
+                                phone=phone,
+                                city=condominium.city, # Asumir la ciudad del condominio
+                                country=condominium.country, # Asumir el país del condominio
+                                tenant=condominium.tenant,
+                                role='USER', # Siempre son USERs de unidad
+                                status='active', # Se asumen activos al importar
+                                condominium_id=condominium.id, # Asignar al condominio del ADMIN
+                                unit_id=unit.id # Asignar a la unidad encontrada
+                            )
+                            db.session.add(new_user_unit)
+                            created_count += 1
+                        except Exception as e:
+                            current_app.logger.error(f"Error al importar usuario {email} (fila {csv_reader.line_num}): {e}")
+                            failed_count += 1
+
+                    db.session.commit()
+                    flash(f"Importación de usuarios completada. {created_count} usuarios creados, {failed_count} fallidos.", "success")
+
+                except Exception as e:
+                    current_app.logger.error(f"Error al leer o procesar el archivo CSV de usuarios: {e}")
+                    flash(f"Error al leer o procesar el archivo CSV de usuarios: {e}", "error")
+            else:
+                flash("El archivo seleccionado no es un archivo CSV válido para usuarios.", "error")
+        
+        return redirect(url_for('main.admin_condominio_panel', condominium_id=condominium_id))
 
 @main.route('/aprobar/<int:user_id>')
 @jwt_required()
@@ -448,7 +602,7 @@ def master_condominios():
 
         return render_template('master/condominios.html', user=user, config=config, mensaje="Página de gestión de condominios (Maestro)", all_condominiums=Condominium.query.all())
 
-@main.route('/master/usuarios') # Para gestión global de usuarios, diferente a /admin
+@main.route('/master/usuarios', methods=['GET', 'POST']) # Para gestión global de usuarios, diferente a /admin
 @jwt_required()
 def master_usuarios():
     user = get_current_user()
@@ -458,12 +612,74 @@ def master_usuarios():
     from app.tenant import get_tenant
     tenant = get_tenant()
     config = current_app.get_tenant_config(tenant)
-    # Aquí podrías cargar todos los usuarios o usuarios por tenant, dependiendo de la vista
-    all_users = User.query.all() # Ejemplo: cargar todos los usuarios
-    pending_users = User.query.filter_by(status='pending').all()
-    active_users = User.query.filter_by(status='active').all()
-    rejected_users = User.query.filter_by(status='rejected').all()
-    return render_template('master/usuarios.html', user=user, config=config, all_users=all_users, pending_users=pending_users, active_users=active_users, rejected_users=rejected_users, mensaje="Página de gestión de usuarios (Maestro)")
+
+    if request.method == 'GET':
+        # Obtener todos los usuarios por status
+        pending_users = User.query.filter_by(status='pending').all()
+        active_users = User.query.filter_by(status='active').all()
+        rejected_users = User.query.filter_by(status='rejected').all()
+
+        # Obtener todos los condominios existentes
+        all_condominiums = Condominium.query.all()
+
+        return render_template('master/usuarios.html', user=user, config=config, all_users=all_users, pending_users=pending_users, active_users=active_users, rejected_users=rejected_users, mensaje="Página de gestión de usuarios (Maestro)", all_condominiums=all_condominiums)
+
+    if request.method == 'POST':
+        action = request.form.get('action')
+        if action == 'create_user':
+            name = request.form.get('name', '').strip()
+            email = request.form.get('email', '').strip()
+            password = request.form.get('password', '').strip() # Password is optional for new users
+            phone = request.form.get('phone', '').strip()
+            city = request.form.get('city', '').strip()
+            country = request.form.get('country', '').strip()
+            role = request.form.get('role', 'USER').upper()
+            condominium_id = request.form.get('condominium_id') # For ADMINs
+
+            # Validaciones
+            if not name:
+                flash("El nombre es obligatorio", "error")
+                return render_template('master/usuarios.html', user=user, config=config, all_users=all_users, pending_users=pending_users, active_users=active_users, rejected_users=rejected_users, mensaje="Página de gestión de usuarios (Maestro)", all_condominiums=all_condominiums)
+            if not email:
+                flash("El email es obligatorio", "error")
+                return render_template('master/usuarios.html', user=user, config=config, all_users=all_users, pending_users=pending_users, active_users=active_users, rejected_users=rejected_users, mensaje="Página de gestión de usuarios (Maestro)", all_condominiums=all_condominiums)
+            if User.query.filter_by(email=email).first():
+                flash("Este email ya está en uso por otro usuario", "error")
+                return render_template('master/usuarios.html', user=user, config=config, all_users=all_users, pending_users=pending_users, active_users=active_users, rejected_users=rejected_users, mensaje="Página de gestión de usuarios (Maestro)", all_condominiums=all_condominiums)
+            
+            # Password hashing
+            pwd_hash = hashlib.sha256(password.encode()).hexdigest() if password else None
+
+            try:
+                new_user = User(
+                    name=name,
+                    email=email,
+                    password_hash=pwd_hash,
+                    phone=phone,
+                    city=city,
+                    country=country,
+                    role=role,
+                    status='pending', # New users are pending by default
+                    tenant=tenant
+                )
+                db.session.add(new_user)
+
+                if role == 'ADMIN' and condominium_id:
+                    # Find the condominium by ID
+                    condominium = Condominium.query.get(int(condominium_id))
+                    if condominium:
+                        new_user.condominium = condominium # Assign condominium to the user
+                    else:
+                        flash(f"Condominio con ID {condominium_id} no encontrado.", "error")
+                        return render_template('master/usuarios.html', user=user, config=config, all_users=all_users, pending_users=pending_users, active_users=active_users, rejected_users=rejected_users, mensaje="Página de gestión de usuarios (Maestro)", all_condominiums=all_condominiums)
+
+                db.session.commit()
+                flash(f"Usuario {email} creado exitosamente.", "success")
+            except Exception as e:
+                current_app.logger.error(f"Error al crear usuario {email}: {e}")
+                flash(f"Error al crear usuario {email}: {e}", "error")
+
+        return render_template('master/usuarios.html', user=user, config=config, all_users=all_users, pending_users=pending_users, active_users=active_users, rejected_users=rejected_users, mensaje="Página de gestión de usuarios (Maestro)", all_condominiums=all_condominiums)
 
 @main.route('/master/configuracion')
 @jwt_required()
