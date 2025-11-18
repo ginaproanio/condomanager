@@ -179,6 +179,9 @@ def aprobar_usuario(user_id):
     user.status = 'active'
     db.session.commit()
     flash(f"Usuario {user.email} aprobado", "success")
+    # Redirección inteligente
+    if current_user.role == 'MASTER':
+        return redirect('/master/usuarios')
     return redirect('/admin')
 
 @main.route('/rechazar/<int:user_id>')
@@ -191,6 +194,9 @@ def rechazar_usuario(user_id):
     user.status = 'rejected'
     db.session.commit()
     flash(f"Usuario {user.email} rechazado", "info")
+    # Redirección inteligente
+    if current_user.role == 'MASTER':
+        return redirect('/master/usuarios')
     return redirect('/admin')
 
 @main.route('/master')
@@ -348,7 +354,10 @@ def master_usuarios():
     config = current_app.get_tenant_config(tenant)
     # Aquí podrías cargar todos los usuarios o usuarios por tenant, dependiendo de la vista
     all_users = User.query.all() # Ejemplo: cargar todos los usuarios
-    return render_template('master/usuarios.html', user=user, config=config, all_users=all_users, mensaje="Página de gestión de usuarios (Maestro)")
+    pending_users = User.query.filter_by(status='pending').all()
+    active_users = User.query.filter_by(status='active').all()
+    rejected_users = User.query.filter_by(status='rejected').all()
+    return render_template('master/usuarios.html', user=user, config=config, all_users=all_users, pending_users=pending_users, active_users=active_users, rejected_users=rejected_users, mensaje="Página de gestión de usuarios (Maestro)")
 
 @main.route('/master/configuracion')
 @jwt_required()
@@ -361,6 +370,54 @@ def master_configuracion():
     tenant = get_tenant()
     config = current_app.get_tenant_config(tenant)
     return render_template('master/configuracion.html', user=user, config=config, mensaje="Página de configuración global (Maestro)")
+
+# Rutas de acción para usuarios del Master Panel
+@main.route('/master/usuarios/editar/<int:user_id>', methods=['GET', 'POST'])
+@jwt_required()
+def master_usuarios_editar(user_id):
+    current_user = get_current_user()
+    if not current_user or current_user.role != 'MASTER':
+        flash("Acceso denegado – Se requiere rol MASTER", "error")
+        return redirect('/dashboard')
+    
+    user_to_edit = User.query.get_or_404(user_id)
+    
+    # Aquí iría la lógica para un formulario de edición
+    # Por ahora, solo un mensaje y redirección
+    flash(f"Funcionalidad de edición para {user_to_edit.email} en construcción. Redirigiendo...", "info")
+    return redirect(url_for('main.master_usuarios'))
+
+@main.route('/master/usuarios/eliminar/<int:user_id>')
+@jwt_required()
+def master_usuarios_eliminar(user_id):
+    current_user = get_current_user()
+    if not current_user or current_user.role != 'MASTER':
+        flash("Acceso denegado – Se requiere rol MASTER", "error")
+        return redirect('/dashboard')
+    
+    user_to_delete = User.query.get_or_404(user_id)
+    if user_to_delete.role == 'MASTER': # No permitir eliminar al propio MASTER o a otros MASTERs
+        flash("No puedes eliminar a un usuario MASTER.", "error")
+        return redirect(url_for('main.master_usuarios'))
+
+    db.session.delete(user_to_delete)
+    db.session.commit()
+    flash(f"Usuario {user_to_delete.email} eliminado exitosamente.", "success")
+    return redirect(url_for('main.master_usuarios'))
+
+@main.route('/master/usuarios/reaprobar/<int:user_id>')
+@jwt_required()
+def master_usuarios_reaprobar(user_id):
+    current_user = get_current_user()
+    if not current_user or current_user.role != 'MASTER':
+        flash("Acceso denegado – Se requiere rol MASTER", "error")
+        return redirect('/dashboard')
+    
+    user_to_reapprove = User.query.get_or_404(user_id)
+    user_to_reapprove.status = 'active'
+    db.session.commit()
+    flash(f"Usuario {user_to_reapprove.email} reaprobado y activo.", "success")
+    return redirect(url_for('main.master_usuarios'))
 
 @main.route('/condominiums', methods=['GET'])
 def get_condominiums():
