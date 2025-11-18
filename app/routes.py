@@ -4,7 +4,7 @@ from flask import (
 )
 from flask_jwt_extended import (
     create_access_token, set_access_cookies, unset_jwt_cookies,
-    jwt_required, get_jwt_identity
+    jwt_required # Solo jwt_required si lo necesitamos para login_required
 )
 from app import db
 from app.models import User, Condominium, Unit
@@ -12,6 +12,15 @@ import hashlib
 from datetime import datetime, timedelta
 import csv
 import io
+
+# Importar los decoradores
+from app.decorators import (
+    get_current_user_from_jwt,
+    login_required,
+    master_required,
+    admin_required,
+    admin_condominio_required
+)
 
 main = Blueprint('main', __name__)
 
@@ -120,47 +129,47 @@ def logout():
     return response
 
 # =============================================================================
-# FUNCIÓN AUXILIAR: obtener usuario actual de forma segura
+# FUNCIÓN AUXILIAR: obtener usuario actual de forma segura (AHORA EN app/decorators.py)
 # =============================================================================
-def get_current_user():
-    """Obtiene el usuario actual de forma segura (compatible con JWT que guarda solo ID)"""
-    user_id = get_jwt_identity()
-    if not user_id:
-        return None
-    return User.query.get(int(user_id))
+# def get_current_user():
+#     """Obtiene el usuario actual de forma segura (compatible con JWT que guarda solo ID)"""
+#     user_id = get_jwt_identity()
+#     if not user_id:
+#         return None
+#     return User.query.get(int(user_id))
 
 # =============================================================================
 # RUTAS PROTEGIDAS
 # =============================================================================
 
 @main.route('/dashboard')
-@jwt_required()
-def dashboard():
-    user = get_current_user()
-    if not user:
-        flash("Sesión inválida", "error")
-        return redirect('/login')
+@login_required
+def dashboard(current_user):
+    # user = get_current_user() # Ya se obtiene con el decorador y se pasa como current_user
+    # if not user:
+    #     flash("Sesión inválida", "error")
+    #     return redirect('/login')
     
     from app.tenant import get_tenant
     tenant = get_tenant()
     config = current_app.get_tenant_config(tenant)
     user_unit = None
-    if user and user.unit_id:
-        user_unit = Unit.query.get(user.unit_id)
+    if current_user and current_user.unit_id:
+        user_unit = Unit.query.get(current_user.unit_id)
     
-    return render_template('user/dashboard.html', user=user, config=config, user_unit=user_unit)
+    return render_template('user/dashboard.html', user=current_user, config=config, user_unit=user_unit)
 
 @main.route('/admin')
-@jwt_required()
-def admin_panel():
-    user = get_current_user()
-    if not user or user.role not in ['ADMIN', 'MASTER']:
-        flash("Acceso denegado", "error")
-        return redirect('/dashboard')
+@admin_required
+def admin_panel(current_user):
+    # user = get_current_user() # Ya se obtiene con el decorador y se pasa como current_user
+    # if not user or user.role not in ['ADMIN', 'MASTER']:
+    #     flash("Acceso denegado", "error")
+    #     return redirect('/dashboard')
     
     # Si es ADMIN, redirigir a su panel de condominio específico
-    if user.role == 'ADMIN' and user.condominium_id: # Suponiendo que el usuario ADMIN tiene un campo condominium_id
-        return redirect(url_for('main.admin_condominio_panel', condominium_id=user.condominium_id))
+    if current_user.role == 'ADMIN' and current_user.condominium_id: # Suponiendo que el usuario ADMIN tiene un campo condominium_id
+        return redirect(url_for('main.admin_condominio_panel', condominium_id=current_user.condominium_id))
 
     from app.tenant import get_tenant
     tenant = get_tenant()
@@ -174,18 +183,18 @@ def admin_panel():
                            pending_users=pending,
                            active_count=active,
                            rejected_count=rejected,
-                           user=user,
+                           user=current_user,
                            config=config)
 
 # Nueva ruta para el panel de administración de un condominio específico
 @main.route('/admin/condominio/<int:condominium_id>', methods=['GET', 'POST'])
-@jwt_required()
-def admin_condominio_panel(condominium_id):
-    user = get_current_user()
-    # Verificar que el usuario es ADMIN y está asignado a este condominio
-    if not user or user.role != 'ADMIN' or user.condominium_id != condominium_id:
-        flash("Acceso denegado o condominio no autorizado.", "error")
-        return redirect('/dashboard')
+@admin_condominio_required
+def admin_condominio_panel(condominium_id, current_user):
+    # user = get_current_user() # Ya se obtiene con el decorador y se pasa como current_user
+    # # Verificar que el usuario es ADMIN y está asignado a este condominio
+    # if not user or user.role != 'ADMIN' or user.condominium_id != condominium_id:
+    #     flash("Acceso denegado o condominio no autorizado.", "error")
+    #     return redirect('/dashboard')
 
     condominium = Condominium.query.get_or_404(condominium_id)
     from app.tenant import get_tenant
@@ -196,7 +205,7 @@ def admin_condominio_panel(condominium_id):
     if request.method == 'GET':
         units = Unit.query.filter_by(condominium_id=condominium.id).all()
         users_in_condo = User.query.filter_by(condominium_id=condominium.id).all()
-        return render_template('admin/condominio_panel.html', user=user, config=config, condominium=condominium, units=units, users_in_condo=users_in_condo)
+        return render_template('admin/condominio_panel.html', user=current_user, config=config, condominium=condominium, units=units, users_in_condo=users_in_condo)
 
     # Lógica para POST: procesar carga masiva de unidades o usuarios
     if request.method == 'POST':
@@ -328,78 +337,78 @@ def admin_condominio_panel(condominium_id):
         return redirect(url_for('main.admin_condominio_panel', condominium_id=condominium_id))
 
 @main.route('/aprobar/<int:user_id>')
-@jwt_required()
-def aprobar_usuario(user_id):
-    current_user = get_current_user()
-    if not current_user or current_user.role not in ['ADMIN', 'MASTER']:
-        return redirect('/dashboard')
-    user = User.query.get_or_404(user_id)
-    user.status = 'active'
+@admin_required # ADMIN o MASTER pueden aprobar
+def aprobar_usuario(user_id, current_user):
+    # current_user = get_current_user()
+    # if not current_user or current_user.role not in ['ADMIN', 'MASTER']:
+    #     return redirect('/dashboard')
+    user_to_approve = User.query.get_or_404(user_id) # Renombrar para claridad
+    user_to_approve.status = 'active'
     db.session.commit()
-    flash(f"Usuario {user.email} aprobado", "success")
+    flash(f"Usuario {user_to_approve.email} aprobado", "success")
     # Redirección inteligente
     if current_user.role == 'MASTER':
         return redirect('/master/usuarios')
     return redirect('/admin')
 
 @main.route('/rechazar/<int:user_id>')
-@jwt_required()
-def rechazar_usuario(user_id):
-    current_user = get_current_user()
-    if not current_user or current_user.role not in ['ADMIN', 'MASTER']:
-        return redirect('/dashboard')
-    user = User.query.get_or_404(user_id)
-    user.status = 'rejected'
+@admin_required # ADMIN o MASTER pueden rechazar
+def rechazar_usuario(user_id, current_user):
+    # current_user = get_current_user()
+    # if not current_user or current_user.role not in ['ADMIN', 'MASTER']:
+    #     return redirect('/dashboard')
+    user_to_reject = User.query.get_or_404(user_id) # Renombrar para claridad
+    user_to_reject.status = 'rejected'
     db.session.commit()
-    flash(f"Usuario {user.email} rechazado", "info")
+    flash(f"Usuario {user_to_reject.email} rechazado", "info")
     # Redirección inteligente
     if current_user.role == 'MASTER':
         return redirect('/master/usuarios')
     return redirect('/admin')
 
 @main.route('/master')
-@jwt_required()
-def master_panel():
-    user = get_current_user()
-    if not user or user.role != 'MASTER':
-        flash("Acceso denegado", "error")
-        return redirect('/dashboard')
+@master_required
+def master_panel(current_user):
+    # user = get_current_user() # Ya se obtiene con el decorador y se pasa como current_user
+    # if not user or user.role != 'MASTER':
+    #     flash("Acceso denegado", "error")
+    #     return redirect('/dashboard')
     
     try:
         from app.tenant import get_tenant
         tenant = get_tenant()
         config = current_app.get_tenant_config(tenant)
     except Exception as e:
-        current_app.logger.error(f"Error loading master panel for user {user.id if user else 'N/A'}: {e}")
+        current_app.logger.error(f"Error loading master panel for user {current_user.id if current_user else 'N/A'}: {e}")
         flash("Error al cargar el panel maestro", "error")
         return redirect('/dashboard')
 
-    return render_template('master/panel.html', user=user, config=config)
+    return render_template('master/panel.html', user=current_user, config=config)
 
 # =============================================================================
 # API Y RUTAS MASTER
 # =============================================================================
 
 @main.route('/api/auth/me')
-@jwt_required()
-def api_me():
-    user = get_current_user()
-    if not user:
-        return jsonify({"error": "Usuario no encontrado"}), 401
+@login_required
+def api_me(current_user):
+    # user = get_current_user()
+    # if not user:
+    #     return jsonify({"error": "Usuario no encontrado"}), 401
     return jsonify({
-        "id": user.id,
-        "email": user.email,
-        "name": user.name,
-        "role": user.role,
-        "status": user.status
+        "id": current_user.id,
+        "email": current_user.email,
+        "name": current_user.name,
+        "role": current_user.role,
+        "status": current_user.status
     })
 
 @main.route('/api/master/estadisticas')
-@jwt_required()
-def api_master_estadisticas():
-    user = get_current_user()
-    if not user or user.role != 'MASTER':
-        return jsonify({"error": "Acceso denegado"}), 403
+@master_required
+def api_master_estadisticas(current_user):
+    # user = get_current_user()
+    # if not user or user.role != 'MASTER':
+    #     return jsonify({"error": "Acceso denegado"}), 403
     try:
         total_condominios = Condominium.query.count()
         total_usuarios = User.query.count()
@@ -433,11 +442,11 @@ def api_master_estadisticas():
         return jsonify({"error": "Error interno del servidor al obtener estadísticas"}), 500
 
 @main.route('/master/descargar-plantilla-unidades')
-@jwt_required()
-def descargar_plantilla_unidades():
-    user = get_current_user()
-    if not user or user.role != 'MASTER':
-        return jsonify({"error": "Acceso denegado"}), 403
+@master_required
+def descargar_plantilla_unidades(current_user):
+    # user = get_current_user()
+    # if not user or user.role != 'MASTER':
+    #     return jsonify({"error": "Acceso denegado"}), 403
 
     output = io.StringIO()
     writer = csv.writer(output)
@@ -467,34 +476,37 @@ def health():
     return "OK", 200
 
 @main.route('/unidades')
-def unidades():
+@login_required # Proteger esta ruta también
+def unidades(current_user):
     from app.tenant import get_tenant
     tenant = get_tenant()
     config = current_app.get_tenant_config(tenant)
-    return render_template('services/unidades.html', mensaje="Gestión de Unidades", config=config)
+    return render_template('services/unidades.html', mensaje="Gestión de Unidades", config=config, user=current_user)
 
 @main.route('/pagos')
-def pagos():
+@login_required # Proteger esta ruta también
+def pagos(current_user):
     from app.tenant import get_tenant
     tenant = get_tenant()
     config = current_app.get_tenant_config(tenant)
-    return render_template('services/pagos.html', mensaje="Sistema de Pagos", config=config)
+    return render_template('services/pagos.html', mensaje="Sistema de Pagos", config=config, user=current_user)
 
 @main.route('/reportes')
-def reportes():
+@login_required # Proteger esta ruta también
+def reportes(current_user):
     from app.tenant import get_tenant
     tenant = get_tenant()
     config = current_app.get_tenant_config(tenant)
-    return render_template('services/reportes.html', mensaje="Reportes", config=config)
+    return render_template('services/reportes.html', mensaje="Reportes", config=config, user=current_user)
 
 # Nuevas rutas para el panel maestro
 @main.route('/master/condominios', methods=['GET', 'POST'])
-@jwt_required()
-def master_condominios():
-    user = get_current_user()
-    if not user or user.role != 'MASTER':
-        flash("Acceso denegado", "error")
-        return redirect('/dashboard')
+@master_required
+def master_condominios(current_user):
+    # user = get_current_user() # Ya se obtiene con el decorador y se pasa como current_user
+    # if not user or user.role != 'MASTER':
+    #     flash("Acceso denegado", "error")
+    #     return redirect('/dashboard')
     from app.tenant import get_tenant
     tenant = get_tenant()
     config = current_app.get_tenant_config(tenant)
@@ -502,7 +514,7 @@ def master_condominios():
     if request.method == 'GET':
         # Obtener todos los condominios existentes
         all_condominiums = Condominium.query.all()
-        return render_template('master/condominios.html', user=user, config=config, mensaje="Página de gestión de condominios (Maestro)", all_condominiums=all_condominiums)
+        return render_template('master/condominios.html', user=current_user, config=config, mensaje="Página de gestión de condominios (Maestro)", all_condominiums=all_condominiums)
 
     if request.method == 'POST':
         action = request.form.get('action')
@@ -515,19 +527,19 @@ def master_condominios():
 
             if not name:
                 flash("El nombre del condominio es obligatorio", "error")
-                return render_template('master/condominios.html', user=user, config=config, mensaje="Página de gestión de condominios (Maestro)", all_condominiums=Condominium.query.all())
+                return render_template('master/condominios.html', user=current_user, config=config, mensaje="Página de gestión de condominios (Maestro)", all_condominiums=Condominium.query.all())
             if not address:
                 flash("La dirección del condominio es obligatoria", "error")
-                return render_template('master/condominios.html', user=user, config=config, mensaje="Página de gestión de condominios (Maestro)", all_condominiums=Condominium.query.all())
+                return render_template('master/condominios.html', user=current_user, config=config, mensaje="Página de gestión de condominios (Maestro)", all_condominiums=Condominium.query.all())
             if not city:
                 flash("La ciudad del condominio es obligatoria", "error")
-                return render_template('master/condominios.html', user=user, config=config, mensaje="Página de gestión de condominios (Maestro)", all_condominiums=Condominium.query.all())
+                return render_template('master/condominios.html', user=current_user, config=config, mensaje="Página de gestión de condominios (Maestro)", all_condominiums=Condominium.query.all())
             if not country:
                 flash("El país del condominio es obligatorio", "error")
-                return render_template('master/condominios.html', user=user, config=config, mensaje="Página de gestión de condominios (Maestro)", all_condominiums=Condominium.query.all())
+                return render_template('master/condominios.html', user=current_user, config=config, mensaje="Página de gestión de condominios (Maestro)", all_condominiums=Condominium.query.all())
             if not status:
                 flash("El estado del condominio es obligatorio", "error")
-                return render_template('master/condominios.html', user=user, config=config, mensaje="Página de gestión de condominios (Maestro)", all_condominiums=Condominium.query.all())
+                return render_template('master/condominios.html', user=current_user, config=config, mensaje="Página de gestión de condominios (Maestro)", all_condominiums=Condominium.query.all())
 
             try:
                 new_condominium = Condominium(
@@ -548,7 +560,7 @@ def master_condominios():
             uploaded_file = request.files.get('csv_file')
             if not uploaded_file or uploaded_file.filename == '':
                 flash("No se seleccionó ningún archivo CSV para importar.", "error")
-                return render_template('master/condominios.html', user=user, config=config, mensaje="Página de gestión de condominios (Maestro)", all_condominiums=Condominium.query.all())
+                return render_template('master/condominios.html', user=current_user, config=config, mensaje="Página de gestión de condominios (Maestro)", all_condominiums=Condominium.query.all())
 
             if uploaded_file and uploaded_file.filename.endswith('.csv'):
                 try:
@@ -602,17 +614,17 @@ def master_condominios():
                     flash(f"Error al leer o procesar el archivo CSV: {e}", "error")
             else:
                 flash("El archivo seleccionado no es un archivo CSV válido.", "error")
-                return render_template('master/condominios.html', user=user, config=config, mensaje="Página de gestión de condominios (Maestro)", all_condominiums=Condominium.query.all())
+                return render_template('master/condominios.html', user=current_user, config=config, mensaje="Página de gestión de condominios (Maestro)", all_condominiums=Condominium.query.all())
 
-        return render_template('master/condominios.html', user=user, config=config, mensaje="Página de gestión de condominios (Maestro)", all_condominiums=Condominium.query.all())
+        return render_template('master/condominios.html', user=current_user, config=config, mensaje="Página de gestión de condominios (Maestro)", all_condominiums=Condominium.query.all())
 
 @main.route('/master/usuarios', methods=['GET', 'POST']) # Para gestión global de usuarios, diferente a /admin
-@jwt_required()
-def master_usuarios():
-    user = get_current_user()
-    if not user or user.role != 'MASTER':
-        flash("Acceso denegado", "error")
-        return redirect('/dashboard')
+@master_required
+def master_usuarios(current_user):
+    # user = get_current_user() # Ya se obtiene con el decorador y se pasa como current_user
+    # if not user or user.role != 'MASTER':
+    #     flash("Acceso denegado", "error")
+    #     return redirect('/dashboard')
     from app.tenant import get_tenant
     tenant = get_tenant()
     config = current_app.get_tenant_config(tenant)
@@ -622,11 +634,12 @@ def master_usuarios():
         pending_users = User.query.filter_by(status='pending').all()
         active_users = User.query.filter_by(status='active').all()
         rejected_users = User.query.filter_by(status='rejected').all()
+        all_users = User.query.all() # Necesitamos todos los usuarios para la pestaña 'Todos'
 
         # Obtener todos los condominios existentes
         all_condominiums = Condominium.query.all()
 
-        return render_template('master/usuarios.html', user=user, config=config, all_users=all_users, pending_users=pending_users, active_users=active_users, rejected_users=rejected_users, mensaje="Página de gestión de usuarios (Maestro)", all_condominiums=all_condominiums)
+        return render_template('master/usuarios.html', user=current_user, config=config, all_users=all_users, pending_users=pending_users, active_users=active_users, rejected_users=rejected_users, mensaje="Página de gestión de usuarios (Maestro)", all_condominiums=all_condominiums)
 
     if request.method == 'POST':
         action = request.form.get('action')
@@ -643,13 +656,31 @@ def master_usuarios():
             # Validaciones
             if not name:
                 flash("El nombre es obligatorio", "error")
-                return render_template('master/usuarios.html', user=user, config=config, all_users=all_users, pending_users=pending_users, active_users=active_users, rejected_users=rejected_users, mensaje="Página de gestión de usuarios (Maestro)", all_condominiums=all_condominiums)
+                # Necesitamos volver a cargar todos los datos para renderizar la página correctamente
+                pending_users = User.query.filter_by(status='pending').all()
+                active_users = User.query.filter_by(status='active').all()
+                rejected_users = User.query.filter_by(status='rejected').all()
+                all_users = User.query.all()
+                all_condominiums = Condominium.query.all()
+                return render_template('master/usuarios.html', user=current_user, config=config, all_users=all_users, pending_users=pending_users, active_users=active_users, rejected_users=rejected_users, mensaje="Página de gestión de usuarios (Maestro)", all_condominiums=all_condominiums)
             if not email:
                 flash("El email es obligatorio", "error")
-                return render_template('master/usuarios.html', user=user, config=config, all_users=all_users, pending_users=pending_users, active_users=active_users, rejected_users=rejected_users, mensaje="Página de gestión de usuarios (Maestro)", all_condominiums=all_condominiums)
+                # Necesitamos volver a cargar todos los datos para renderizar la página correctamente
+                pending_users = User.query.filter_by(status='pending').all()
+                active_users = User.query.filter_by(status='active').all()
+                rejected_users = User.query.filter_by(status='rejected').all()
+                all_users = User.query.all()
+                all_condominiums = Condominium.query.all()
+                return render_template('master/usuarios.html', user=current_user, config=config, all_users=all_users, pending_users=pending_users, active_users=active_users, rejected_users=rejected_users, mensaje="Página de gestión de usuarios (Maestro)", all_condominiums=all_condominiums)
             if User.query.filter_by(email=email).first():
                 flash("Este email ya está en uso por otro usuario", "error")
-                return render_template('master/usuarios.html', user=user, config=config, all_users=all_users, pending_users=pending_users, active_users=active_users, rejected_users=rejected_users, mensaje="Página de gestión de usuarios (Maestro)", all_condominiums=all_condominiums)
+                # Necesitamos volver a cargar todos los datos para renderizar la página correctamente
+                pending_users = User.query.filter_by(status='pending').all()
+                active_users = User.query.filter_by(status='active').all()
+                rejected_users = User.query.filter_by(status='rejected').all()
+                all_users = User.query.all()
+                all_condominiums = Condominium.query.all()
+                return render_template('master/usuarios.html', user=current_user, config=config, all_users=all_users, pending_users=pending_users, active_users=active_users, rejected_users=rejected_users, mensaje="Página de gestión de usuarios (Maestro)", all_condominiums=all_condominiums)
             
             # Password hashing
             pwd_hash = hashlib.sha256(password.encode()).hexdigest() if password else None
@@ -675,41 +706,48 @@ def master_usuarios():
                         new_user.condominium = condominium # Assign condominium to the user
                     else:
                         flash(f"Condominio con ID {condominium_id} no encontrado.", "error")
-                        return render_template('master/usuarios.html', user=user, config=config, all_users=all_users, pending_users=pending_users, active_users=active_users, rejected_users=rejected_users, mensaje="Página de gestión de usuarios (Maestro)", all_condominiums=all_condominiums)
+                        # Volver a cargar los datos para renderizar la página
+                        pending_users = User.query.filter_by(status='pending').all()
+                        active_users = User.query.filter_by(status='active').all()
+                        rejected_users = User.query.filter_by(status='rejected').all()
+                        all_users = User.query.all()
+                        all_condominiums = Condominium.query.all()
+                        return render_template('master/usuarios.html', user=current_user, config=config, all_users=all_users, pending_users=pending_users, active_users=active_users, rejected_users=rejected_users, mensaje="Página de gestión de usuarios (Maestro)", all_condominiums=all_condominiums)
 
                 db.session.commit()
                 flash(f"Usuario {email} creado exitosamente.", "success")
             except Exception as e:
                 current_app.logger.error(f"Error al crear usuario {email}: {e}")
                 flash(f"Error al crear usuario {email}: {e}", "error")
-
-        return render_template('master/usuarios.html', user=user, config=config, all_users=all_users, pending_users=pending_users, active_users=active_users, rejected_users=rejected_users, mensaje="Página de gestión de usuarios (Maestro)", all_condominiums=all_condominiums)
+            
+            # Después de POST, recargar la página con los datos actualizados
+            return redirect(url_for('main.master_usuarios'))
 
 @main.route('/master/configuracion')
-@jwt_required()
-def master_configuracion():
-    user = get_current_user()
-    if not user or user.role != 'MASTER':
-        flash("Acceso denegado", "error")
-        return redirect('/dashboard')
+@master_required
+def master_configuracion(current_user):
+    # user = get_current_user() # Ya se obtiene con el decorador y se pasa como current_user
+    # if not user or user.role != 'MASTER':
+    #     flash("Acceso denegado", "error")
+    #     return redirect('/dashboard')
     from app.tenant import get_tenant
     tenant = get_tenant()
     config = current_app.get_tenant_config(tenant)
-    return render_template('master/configuracion.html', user=user, config=config, mensaje="Página de configuración global (Maestro)")
+    return render_template('master/configuracion.html', user=current_user, config=config, mensaje="Página de configuración global (Maestro)")
 
 # Rutas de acción para usuarios del Master Panel
 @main.route('/master/usuarios/editar/<int:user_id>', methods=['GET', 'POST'])
-@jwt_required()
-def master_usuarios_editar(user_id):
-    current_user = get_current_user()
-    if not current_user or current_user.role != 'MASTER':
-        flash("Acceso denegado", "error")
-        return redirect('/dashboard')
+@master_required
+def master_usuarios_editar(user_id, current_user):
+    # current_user = get_current_user() # Ya se obtiene con el decorador y se pasa como current_user
+    # if not current_user or current_user.role != 'MASTER':
+    #     flash("Acceso denegado", "error")
+    #     return redirect('/dashboard')
     
     user_to_edit = User.query.get_or_404(user_id)
     
     if request.method == 'GET':
-        return render_template('master/editar_usuario.html', user=user_to_edit, config=current_app.get_tenant_config(current_user.tenant))
+        return render_template('master/editar_usuario.html', user=user_to_edit, config=current_app.get_tenant_config(current_user.tenant), current_user=current_user)
 
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
@@ -723,19 +761,19 @@ def master_usuarios_editar(user_id):
         # Validaciones
         if not name:
             flash("El nombre es obligatorio", "error")
-            return render_template('master/editar_usuario.html', user=user_to_edit, config=current_app.get_tenant_config(current_user.tenant))
+            return render_template('master/editar_usuario.html', user=user_to_edit, config=current_app.get_tenant_config(current_user.tenant), current_user=current_user)
         if not email:
             flash("El email es obligatorio", "error")
-            return render_template('master/editar_usuario.html', user=user_to_edit, config=current_app.get_tenant_config(current_user.tenant))
+            return render_template('master/editar_usuario.html', user=user_to_edit, config=current_app.get_tenant_config(current_user.tenant), current_user=current_user)
         if User.query.filter_by(email=email).first() and email != user_to_edit.email:
             flash("Este email ya está en uso por otro usuario", "error")
-            return render_template('master/editar_usuario.html', user=user_to_edit, config=current_app.get_tenant_config(current_user.tenant))
+            return render_template('master/editar_usuario.html', user=user_to_edit, config=current_app.get_tenant_config(current_user.tenant), current_user=current_user)
         
         # No permitir que un MASTER cambie su propio rol o el rol de otro MASTER
         if current_user.role == 'MASTER' and user_to_edit.role == 'MASTER':
             if role != 'MASTER':
                 flash("No puedes cambiar el rol de un usuario MASTER a otro rol.", "error")
-                return render_template('master/editar_usuario.html', user=user_to_edit, config=current_app.get_tenant_config(current_user.tenant))
+                return render_template('master/editar_usuario.html', user=user_to_edit, config=current_app.get_tenant_config(current_user.tenant), current_user=current_user)
 
         user_to_edit.name = name
         user_to_edit.email = email
@@ -750,12 +788,12 @@ def master_usuarios_editar(user_id):
         return redirect(url_for('main.master_usuarios'))
 
 @main.route('/master/usuarios/eliminar/<int:user_id>')
-@jwt_required()
-def master_usuarios_eliminar(user_id):
-    current_user = get_current_user()
-    if not current_user or current_user.role != 'MASTER':
-        flash("Acceso denegado", "error")
-        return redirect('/dashboard')
+@master_required
+def master_usuarios_eliminar(user_id, current_user):
+    # current_user = get_current_user() # Ya se obtiene con el decorador y se pasa como current_user
+    # if not current_user or current_user.role != 'MASTER':
+    #     flash("Acceso denegado", "error")
+    #     return redirect('/dashboard')
     
     user_to_delete = User.query.get_or_404(user_id)
     if user_to_delete.role == 'MASTER': # No permitir eliminar al propio MASTER o a otros MASTERs
@@ -768,12 +806,12 @@ def master_usuarios_eliminar(user_id):
     return redirect(url_for('main.master_usuarios'))
 
 @main.route('/master/usuarios/reaprobar/<int:user_id>')
-@jwt_required()
-def master_usuarios_reaprobar(user_id):
-    current_user = get_current_user()
-    if not current_user or current_user.role != 'MASTER':
-        flash("Acceso denegado", "error")
-        return redirect('/dashboard')
+@master_required
+def master_usuarios_reaprobar(user_id, current_user):
+    # current_user = get_current_user() # Ya se obtiene con el decorador y se pasa como current_user
+    # if not current_user or current_user.role != 'MASTER':
+    #     flash("Acceso denegado", "error")
+    #     return redirect('/dashboard')
     
     user_to_reapprove = User.query.get_or_404(user_id)
     user_to_reapprove.status = 'active'
@@ -782,9 +820,25 @@ def master_usuarios_reaprobar(user_id):
     return redirect(url_for('main.master_usuarios'))
 
 @main.route('/condominiums', methods=['GET'])
+# @login_required # Proteger esta API si no es para uso público
 def get_condominiums():
     try:
         condominiums = Condominium.query.all()
-        return jsonify([condo.to_dict() for condo in condominiums])
+        # return jsonify([condo.to_dict() for condo in condominiums]) # Asumiendo que Condominium tiene to_dict()
+        # Para evitar AttributeError si to_dict() no existe o no es adecuado
+        condo_list = []
+        for condo in condominiums:
+            condo_list.append({
+                'id': condo.id,
+                'name': condo.name,
+                'address': condo.address,
+                'city': condo.city,
+                'country': condo.country,
+                'status': condo.status,
+                'tenant': condo.tenant,
+                'created_at': condo.created_at.isoformat() if condo.created_at else None
+            })
+        return jsonify(condo_list)
     except Exception as e:
+        current_app.logger.error(f"Error al obtener condominios vía API: {e}")
         return jsonify({'error': 'Error al obtener condominios'}), 500
