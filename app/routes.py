@@ -144,7 +144,11 @@ def dashboard():
     from app.tenant import get_tenant
     tenant = get_tenant()
     config = current_app.get_tenant_config(tenant)
-    return render_template('user/dashboard.html', user=user, config=config)
+    user_unit = None
+    if user and user.unit_id:
+        user_unit = Unit.query.get(user.unit_id)
+    
+    return render_template('user/dashboard.html', user=user, config=config, user_unit=user_unit)
 
 @main.route('/admin')
 @jwt_required()
@@ -358,7 +362,7 @@ def rechazar_usuario(user_id):
 def master_panel():
     user = get_current_user()
     if not user or user.role != 'MASTER':
-        flash("Acceso denegado – Se requiere rol MASTER", "error")
+        flash("Acceso denegado", "error")
         return redirect('/dashboard')
     
     try:
@@ -489,7 +493,7 @@ def reportes():
 def master_condominios():
     user = get_current_user()
     if not user or user.role != 'MASTER':
-        flash("Acceso denegado – Se requiere rol MASTER", "error")
+        flash("Acceso denegado", "error")
         return redirect('/dashboard')
     from app.tenant import get_tenant
     tenant = get_tenant()
@@ -607,7 +611,7 @@ def master_condominios():
 def master_usuarios():
     user = get_current_user()
     if not user or user.role != 'MASTER':
-        flash("Acceso denegado – Se requiere rol MASTER", "error")
+        flash("Acceso denegado", "error")
         return redirect('/dashboard')
     from app.tenant import get_tenant
     tenant = get_tenant()
@@ -686,7 +690,7 @@ def master_usuarios():
 def master_configuracion():
     user = get_current_user()
     if not user or user.role != 'MASTER':
-        flash("Acceso denegado – Se requiere rol MASTER", "error")
+        flash("Acceso denegado", "error")
         return redirect('/dashboard')
     from app.tenant import get_tenant
     tenant = get_tenant()
@@ -699,7 +703,7 @@ def master_configuracion():
 def master_usuarios_editar(user_id):
     current_user = get_current_user()
     if not current_user or current_user.role != 'MASTER':
-        flash("Acceso denegado – Se requiere rol MASTER", "error")
+        flash("Acceso denegado", "error")
         return redirect('/dashboard')
     
     user_to_edit = User.query.get_or_404(user_id)
@@ -750,7 +754,7 @@ def master_usuarios_editar(user_id):
 def master_usuarios_eliminar(user_id):
     current_user = get_current_user()
     if not current_user or current_user.role != 'MASTER':
-        flash("Acceso denegado – Se requiere rol MASTER", "error")
+        flash("Acceso denegado", "error")
         return redirect('/dashboard')
     
     user_to_delete = User.query.get_or_404(user_id)
@@ -768,7 +772,7 @@ def master_usuarios_eliminar(user_id):
 def master_usuarios_reaprobar(user_id):
     current_user = get_current_user()
     if not current_user or current_user.role != 'MASTER':
-        flash("Acceso denegado – Se requiere rol MASTER", "error")
+        flash("Acceso denegado", "error")
         return redirect('/dashboard')
     
     user_to_reapprove = User.query.get_or_404(user_id)

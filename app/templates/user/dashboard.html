@@ -23,11 +23,34 @@
                     {% if user %}
                         <p>Bienvenido <strong>{{ user.name }}</strong> ({{ user.role }})</p>
                         <p>Este es tu panel de usuario.</p>
+
+                        {% if user_unit %}
+                            <div class="card border-0 shadow-sm mt-4 text-start mx-auto" style="max-width: 600px;">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0"><i class="fas fa-home me-2"></i>Tu Unidad Asignada</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Número de Propiedad:</strong> {{ user_unit.property_number }}</p>
+                                    <p><strong>Nombre:</strong> {{ user_unit.name }}</p>
+                                    <p><strong>Tipo:</strong> {{ user_unit.property_type }}</p>
+                                    <p><strong>Área:</strong> {{ user_unit.area_m2 }} m²</p>
+                                    <p><strong>Habitaciones:</strong> {{ user_unit.bedrooms }}</p>
+                                    <p><strong>Baños:</strong> {{ user_unit.bathrooms }}</p>
+                                    {% if user_unit.condominium %}
+                                        <p><strong>Condominio:</strong> {{ user_unit.condominium.name }}</p>
+                                    {% endif %}
+                                    <!-- Añade más detalles de la unidad aquí si es necesario -->
+                                </div>
+                            </div>
+                        {% else %}
+                            <p class="mt-4 text-warning"><i class="fas fa-exclamation-triangle me-2"></i>No tienes unidades asignadas aún.</p>
+                        {% endif %}
+
                     {% else %}
                         <p>No tienes acceso a este contenido. Por favor, <a href="/login">inicia sesión</a>.</p>
                     {% endif %}
 
-                    <p class="lead text-muted mb-4">
+                    <p class="lead text-muted mb-4 mt-5">
                         Esta sección está en desarrollo. Próximamente podrás:
                     </p>
                     
