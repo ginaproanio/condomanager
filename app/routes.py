@@ -205,7 +205,8 @@ def admin_condominio_panel(condominium_id, current_user):
     if request.method == 'GET':
         units = Unit.query.filter_by(condominium_id=condominium.id).all()
         users_in_condo = User.query.filter_by(condominium_id=condominium.id).all()
-        return render_template('admin/condominio_panel.html', user=current_user, config=config, condominium=condominium, units=units, users_in_condo=users_in_condo)
+        pending_users_in_condo = User.query.filter_by(condominium_id=condominium.id, status='pending').all()
+        return render_template('admin/condominio_panel.html', user=current_user, config=config, condominium=condominium, units=units, users_in_condo=users_in_condo, pending_users_in_condo=pending_users_in_condo)
 
     # Lógica para POST: procesar carga masiva de unidades o usuarios
     if request.method == 'POST':
@@ -339,32 +340,38 @@ def admin_condominio_panel(condominium_id, current_user):
 @main.route('/aprobar/<int:user_id>')
 @admin_required # ADMIN o MASTER pueden aprobar
 def aprobar_usuario(user_id, current_user):
-    # current_user = get_current_user()
-    # if not current_user or current_user.role not in ['ADMIN', 'MASTER']:
-    #     return redirect('/dashboard')
-    user_to_approve = User.query.get_or_404(user_id) # Renombrar para claridad
+    user_to_approve = User.query.get_or_404(user_id)
+
+    # Restringir aprobación/rechazo a usuarios del mismo tenant para ADMINs
+    if current_user.role == 'ADMIN' and user_to_approve.tenant != current_user.tenant:
+        flash("Acceso denegado. No puedes aprobar usuarios de otros condominios.", "error")
+        return redirect(url_for('main.admin_condominio_panel', condominium_id=current_user.condominium_id)) # Redirigir al panel del ADMIN
+
     user_to_approve.status = 'active'
     db.session.commit()
     flash(f"Usuario {user_to_approve.email} aprobado", "success")
     # Redirección inteligente
     if current_user.role == 'MASTER':
         return redirect('/master/usuarios')
-    return redirect('/admin')
+    return redirect(url_for('main.admin_condominio_panel', condominium_id=current_user.condominium_id)) # Redirigir al panel del ADMIN
 
 @main.route('/rechazar/<int:user_id>')
 @admin_required # ADMIN o MASTER pueden rechazar
 def rechazar_usuario(user_id, current_user):
-    # current_user = get_current_user()
-    # if not current_user or current_user.role not in ['ADMIN', 'MASTER']:
-    #     return redirect('/dashboard')
-    user_to_reject = User.query.get_or_404(user_id) # Renombrar para claridad
+    user_to_reject = User.query.get_or_404(user_id)
+
+    # Restringir aprobación/rechazo a usuarios del mismo tenant para ADMINs
+    if current_user.role == 'ADMIN' and user_to_reject.tenant != current_user.tenant:
+        flash("Acceso denegado. No puedes rechazar usuarios de otros condominios.", "error")
+        return redirect(url_for('main.admin_condominio_panel', condominium_id=current_user.condominium_id)) # Redirigir al panel del ADMIN
+
     user_to_reject.status = 'rejected'
     db.session.commit()
     flash(f"Usuario {user_to_reject.email} rechazado", "info")
     # Redirección inteligente
     if current_user.role == 'MASTER':
         return redirect('/master/usuarios')
-    return redirect('/admin')
+    return redirect(url_for('main.admin_condominio_panel', condominium_id=current_user.condominium_id)) # Redirigir al panel del ADMIN
 
 @main.route('/master')
 @master_required
