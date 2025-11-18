@@ -3,177 +3,108 @@
 ## 1. Visión General
 Sistema multi-condominio implementado inicialmente para "Punta Blanca", diseñado para escalar a múltiples instancias.
 
-## 2. Stack Tecnológico
+## 2. Stack Tecnológico Actual
 ### 2.1 Backend
 - Python con Flask Framework
 - SQLAlchemy ORM
-- JWT para autenticación
-- Celery para tareas asíncronas
+- Flask-JWT-Extended para autenticación (con cookies HTTP-Only)
+- Gunicorn para servir la aplicación en producción
+- `hashlib` para hashing de contraseñas
 
 ### 2.2 Frontend
-- Bootstrap 5
-- JavaScript vanilla
-- DataTables y Chart.js
+- Bootstrap 5 (CSS y JS)
+- JavaScript vanilla (para lógica de autenticación y UI dinámica)
 
-### 2.3 Infraestructura
-- MariaDB: Base de datos principal
-- Redis: Caché y sesiones
-- Nginx: Servidor web
-- Supervisor: Gestión de procesos
+### 2.3 Base de Datos
+- PostgreSQL (en producción)
+- SQLite (en desarrollo)
 
-## 1.5 Estructura del Proyecto
+## 3. Estructura del Proyecto Actual
 
-/condominios/              # Directorio raíz del proyecto
-├── app/                    # Código principal de la aplicación
-│   ├── api/               # Endpoints de la API
-│   │   └── v1/           # Versión 1 de la API
-│   ├── core/             # Núcleo de la aplicación
-│   │   ├── config.py     # Configuraciones core
-│   │   └── exceptions.py # Manejo de excepciones
-│   ├── forms/            # Formularios
-│   ├── models/           # Modelos de datos
-│   ├── routes/           # Rutas de la aplicación
-│   ├── schemas/          # Esquemas de validación
-│   ├── services/         # Lógica de negocio
-│   ├── templates/        # Plantillas HTML
-│   │   ├── admin/       # Templates para administradores
-│   │   ├── auth/        # Templates de autenticación
-│   │   ├── unit_user/   # Templates para usuarios de unidades
-│   │   └── shared/      # Templates compartidos
-│   └── utils/            # Utilidades generales
-├── config/               # Configuraciones del proyecto
-│   ├── database.py      # Configuración de base de datos
-│   └── settings.py      # Configuraciones generales
-├── docs/                # Documentación
-├── migrations/          # Migraciones de base de datos (Flask-Migrate)
-│   ├── versions/       # Archivos de migración numerados
-│   ├── script.py.mako  # Template para nuevas migraciones
-│   ├── alembic.ini     # Configuración de Alembic
-│   └── env.py          # Entorno de migraciones
-├── scripts/            # Scripts de utilidad
-├── tests/              # Pruebas unitarias y de integración
-├── .env.example        # Ejemplo de variables de entorno
-├── .gitignore         # Configuración de Git
-└── pyproject.toml     # Configuración del proyecto
+```
+/condomanager-saas/
+├── app/
+│   ├── __init__.py     # Inicialización de la aplicación Flask, JWT, CORS
+│   ├── extensions.py   # Instancia de SQLAlchemy (db) para evitar dependencias circulares
+│   ├── models.py       # Definición de todos los modelos de base de datos (User, Condominium, Unit, etc.)
+│   ├── routes.py       # Definición CENTRALIZADA de TODAS las rutas (públicas, protegidas, API, maestro, admin)
+│   ├── tenant.py       # Lógica para determinar el tenant de la solicitud
+│   ├── static/         # Archivos estáticos (CSS, JS, imágenes)
+│   │   ├── css/
+│   │   ├── js/
+│   │   └── img/
+│   └── templates/      # Plantillas HTML
+│       ├── admin/      # Templates para el panel de administradores (admin/panel.html, admin/condominio_panel.html)
+│       ├── auth/       # Templates de autenticación (login.html, registro.html)
+│       ├── master/     # Templates para el panel maestro (master/panel.html, master/condominios.html, master/usuarios.html, master/configuracion.html, master/editar_usuario.html)
+│       ├── services/   # Templates para servicios (unidades.html, pagos.html, reportes.html)
+│       ├── user/       # Templates para usuarios regulares (dashboard.html)
+│       └── base.html   # Plantilla base compartida
+├── config.py           # Configuración principal de Flask y JWT (cargando de variables de entorno)
+├── initialize_db.py    # Script para inicializar la base de datos (crear tablas, usuario maestro)
+├── Procfile            # Configuración de despliegue en Railway (ejecuta initialize_db.py y gunicorn)
+├── requirements.txt    # Dependencias de Python
+└── docs/               # Documentación del proyecto (este archivo y otros borradores)
+```
 
-La carpeta migrations/ es generada automáticamente por Flask-Migrate y contiene
-el historial de cambios de la estructura de la base de datos. Cada archivo en
-versions/ representa una modificación al esquema, permitiendo actualizar o revertir
-la base de datos de manera controlada. Esta carpeta debe estar bajo control de
-versiones.
+## 4. Estrategia Multi-Condominio (Multi-Tenancy)
+La implementación actual utiliza una estrategia de **multi-tenancy de esquema compartido** (`shared-schema multi-tenancy`).
 
-## 2. Estructura Multi-Condominio
-### 2.1 Estado Actual
-- Producción: Punta Blanca (puntablancaecuador.com)
-- Desarrollo: Condominio de prueba (testcondominio.com)
+- **Base de Datos Única:** Todos los datos (usuarios, condominios, unidades) residen en una única base de datos.
+- **Separación Lógica:** La separación de datos entre condominios se logra mediante un campo `tenant` (o `condominium_id` para usuarios/unidades) en los modelos de la base de datos.
+- **Determinación del Tenant:** La lógica en `app/tenant.py` determina el inquilino (tenant) basándose en el subdominio de la solicitud HTTP. Por defecto, si no se encuentra un subdominio válido, se utiliza 'puntablanca'.
 
-### 2.2 Estructura de Datos
-Cada condominio mantiene:
-- Base de datos independiente
-- Archivos separados
-- Configuraciones propias
+## 5. Modelos Principales (definidos en `app/models.py`)
 
-## 3. Modelos Principales
+### 5.1 User
+- Atributos clave: `id`, `email`, `name`, `password_hash`, `tenant`, `role`, `status`, `condominium_id` (para ADMINs).
+- Roles base: `MASTER`, `ADMIN`, `USER`.
+- Relaciones: Puede estar asignado a una `Unit` (`unit_id`).
 
-### 3.1 Tablas de Configuración
-- `unit_types`: Tipos de unidad configurables por condominio
-  - id (BIGINT, PK)
-  - name (VARCHAR(50))
-  - code (VARCHAR(20))
-  - condominium_id (BIGINT, FK)
-  - active (BOOLEAN)
+### 5.2 Condominium
+- Atributos clave: `id`, `name`, `address`, `city`, `country`, `status`, `tenant`.
+- Relaciones: Contiene múltiples `Unit`s y `User`s (ADMINs asignados).
 
-- `unit_states`: Estados posibles de unidades
-  - id (BIGINT, PK)
-  - name (VARCHAR(50))
-  - code (VARCHAR(20))
-  - condominium_id (BIGINT, FK)
-  - active (BOOLEAN)
+### 5.3 Unit
+- Atributos clave: `id`, `property_number`, `name`, `property_type`, `area_m2`, `bedrooms`, `bathrooms`, `condominium_id`.
+- Relaciones: Pertenece a un `Condominium`, puede tener `User`s de unidad asignados.
 
-### 3.2 Unidad (Unit)
-- Configuración dinámica por condominio:
-  - Tipos de unidad: Definidos en tabla `unit_types`
-  - Estados: Definidos en tabla `unit_states`
+### 5.4 CondominioConfig (en `app/models.py`)
+- Atributos clave: `tenant`, `primary_color`, `nombre_comercial`.
+- Propósito: Configuración específica de cada inquilino/condominio.
 
-- Atributos obligatorios:
-  - código_predial_nuevo (VARCHAR(20), único)
-  - código_predial_anterior (VARCHAR(20))
-  - lote (VARCHAR(4))
-  - manzana (VARCHAR(4))
-  - nomenclatura (VARCHAR(5))
-  - numero_casa (VARCHAR(4))
-  - calle_principal (VARCHAR(80))
-  - calle_secundaria (VARCHAR(80))
-  - area_terreno (FLOAT)
-  - area_construccion (FLOAT)
-  - avaluo_comercial (FLOAT)
-  - avaluo_municipal (FLOAT)
-  - latitud (DECIMAL(10,8))
-  - longitud (DECIMAL(11,8))
-  - type_id (FK a unit_types)
-  - state_id (FK a unit_states)
-  - condominium_id (FK a condominiums)
+## 6. Seguridad
+- **Autenticación:** JWT con cookies HTTP-Only (gestionado por Flask-JWT-Extended).
+- **Autorización:** Verificación de roles y permisos en cada ruta protegida.
+- **Hashing de Contraseñas:** SHA256.
+- HTTPS obligatorio en producción.
 
-### 3.3 Usuario (User)
-- Roles: Administrador, Usuario de Unidad
-- Atributos: nombre, contacto, credenciales
-- Relaciones: Unidades, Notificaciones
+## 7. Próximas Funcionalidades (Visión del Borrador Original y Necesidades Actuales)
+Esta sección documenta funcionalidades y componentes que están en borradores (`docs/08_ROLES_Y_PERMISOS.md`, etc.) o que son necesidades identificadas, pero que no están completamente implementadas en la arquitectura actual.
 
-### 3.4 Pago
-- Tipos: PayPhone, Transferencia
-- Estados: Pendiente, Completado, Rechazado
-- Relaciones: Unidad, Usuario
+### 7.1 Roles Especiales y su Gestión
+- **Roles:** PRESIDENTE, SECRETARIO, TESORERO, CONTADOR, VOCAL.
+- **Gestión:** Asignación y revocación por el ADMINISTRADOR de un condominio, con período de vigencia.
+- **Estructura DB:** Requiere una tabla `user_special_roles`.
 
-## 4. Seguridad
-- Autenticación JWT
-- HTTPS obligatorio
-- Rate limiting
-- Validación de entrada
-- Sanitización de datos
+### 7.2 Gestión Detallada de Condominios por ADMIN
+- Un ADMIN debe poder:
+    - Ver y editar datos completos del condominio al que está asignado.
+    - Registrar la directiva (usando roles especiales).
+    - Crear y gestionar unidades individualmente.
+    - Importar unidades masivamente por CSV.
+    - Crear y gestionar usuarios de unidades individualmente.
+    - Importar usuarios de unidades masivamente por CSV (relacionados con unidades).
+    - Generar y gestionar pagos.
+    - Hacer cobranzas.
+    - Generar reportes específicos del condominio.
 
-## 5. Optimizaciones y Límites
+### 7.3 Componentes de Escalabilidad/Rendimiento (del borrador original)
+- Celery para tareas asíncronas.
+- Redis para caché y sesiones.
+- Nginx como servidor web.
+- DataTables y Chart.js para frontend.
+- Estrategias avanzadas de caché, monitoreo y balanceo de carga.
 
-### 5.1 Búsqueda en Tiempo Real
-- Implementación de debouncing (500ms)
-- Límite mínimo: 3 caracteres
-- Límite de resultados: 20 por consulta
-- Caché Redis: TTL 5 minutos
-
-### 5.2 Consideraciones de Rendimiento
-- Monitoreo activo de consultas
-- Índices optimizados para campos de búsqueda
-- Balanceo de carga para consultas concurrentes
-- Sistema de caché en múltiples niveles
-
-## 6. Escalabilidad
-### 6.1 Fase 1 (MVP)
-- Hostinger compartido
-- Caché básico
-- Optimización de consultas
-
-### 6.2 Futuro
-- VPS dedicado
-- Balanceo de carga
-- CDN para estáticos
-
-## 7. Monitoreo
-- Logs estructurados
-- Métricas básicas
-- Alertas por email
-
-## 8. Respaldos
-- Base de datos: diario
-- Archivos: semanal
-- Retención: 30 días
-
-## Optimizaciones Adicionales
-
-### Caché Avanzado
-- Estrategias de invalidación
-- Políticas de expiración
-- Gestión de memoria
-
-### Monitoreo Extendido
-- Métricas de rendimiento detalladas
-- Logs estructurados
-- Sistema de alertas
+## 8. Consideraciones para Futuras Mejoras
+- **Modularización:** La arquitectura borrador original (con `app/api/v1/auth/`, `app/core/`, etc.) representa un objetivo a largo plazo para una mayor escalabilidad y separación de responsabilidades, que podría ser abordada cuando las necesidades del proyecto lo requieran o superen la capacidad de la estructura actual.
