@@ -7,6 +7,7 @@ class AuthManager {
     }
 
     init() {
+        console.log('FLOW: AuthManager.init() iniciado');
         // Interceptar enlaces para verificar autenticación
         this.setupAuthInterception();
         // Verificar estado de autenticación en carga de página
@@ -35,6 +36,7 @@ class AuthManager {
 
     // 🚪 CERRAR SESIÓN
     logout() {
+        console.log('FLOW: logout() - Función llamada.');
         localStorage.removeItem(this.tokenKey);
         localStorage.removeItem(this.userKey);
         this.updateUI(null);
@@ -137,24 +139,31 @@ class AuthManager {
 
     // 🔍 VERIFICAR ESTADO DE AUTENTICACIÓN
     async checkAuthStatus() {
+        console.log('FLOW: checkAuthStatus() - Función llamada.');
         const token = this.getToken();
+        console.log('FLOW: checkAuthStatus() - Token obtenido:', token ? 'existe' : 'null');
         
         if (!token) {
+            console.log('FLOW: checkAuthStatus() - No hay token, actualizando UI a no logueado.');
             this.updateUI(null);
             return;
         }
 
         try {
             // Verificar si el token es válido
+            console.log('FLOW: checkAuthStatus() - Llamando a /api/auth/me');
             const response = await this.authFetch('/api/auth/me');
+            console.log('FLOW: checkAuthStatus() - Respuesta /api/auth/me (status, ok):', response.status, response.ok);
             if (response.ok) {
                 const data = await response.json();
+                console.log('FLOW: checkAuthStatus() - /api/auth/me exitoso, datos:', data);
                 this.updateUI(data.user);
             } else {
+                console.log('FLOW: checkAuthStatus() - /api/auth/me no OK, status:', response.status, ', llamando a logout().');
                 this.logout();
             }
         } catch (error) {
-            console.error('Error verificando autenticación en /api/auth/me:', error);
+            console.error('ERROR: checkAuthStatus() - Error verificando autenticación en /api/auth/me:', error);
             this.logout();
         }
     }
@@ -245,7 +254,7 @@ class AuthForms {
 
     // 🔐 MANEJAR LOGIN JWT
     async handleLogin(e) {
-        console.log('DEBUG: handleLogin() - Función llamada.');
+        console.log('FLOW: handleLogin() - Función llamada.');
         e.preventDefault();
         
         const formData = new FormData(e.target);
@@ -255,24 +264,29 @@ class AuthForms {
         };
 
         try {
+            console.log('FLOW: handleLogin() - Enviando solicitud a /api/auth/login');
             const response = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
 
+            console.log('FLOW: handleLogin() - Respuesta de /api/auth/login (status, ok, redirected):', response.status, response.ok, response.redirected);
+
             if (!response.ok) {
                 const errorResult = await response.json();
+                console.log('FLOW: handleLogin() - Login fallido, error:', errorResult);
                 alert(`❌ Error: ${errorResult.error || 'Error desconocido del servidor'}`);
             } else if (response.redirected) {
+                console.log('FLOW: handleLogin() - Redirección del backend detectada a:', response.url);
                 // El navegador ya seguirá la redirección, no hacemos nada aquí.
             } else {
-                console.warn('Respuesta inesperada del servidor: no redirigida y no OK.', response);
+                console.warn('ADVERTENCIA: Respuesta inesperada del servidor: no redirigida y no OK.', response);
                 alert('Error inesperado durante el login.');
             }
 
         } catch (error) {
-            console.error('❌ Error de conexión (catch):', error);
+            console.error('ERROR: handleLogin() - Error de conexión (catch):', error);
             alert('❌ Error de conexión (frontend)');
         }
     }
@@ -280,6 +294,7 @@ class AuthForms {
 
 // 🚀 INICIALIZAR CUANDO EL DOM ESTÉ LISTO
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('FLOW: DOMContentLoaded en auth.js iniciado. URL actual:', window.location.href);
     window.authManager = new AuthManager();
     window.authForms = new AuthForms(window.authManager);
     
