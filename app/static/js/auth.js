@@ -256,8 +256,8 @@ class AuthForms {
 
             if (response.ok) {
                 this.auth.setAuth(result.access_token, result.user);
-                alert('✅ Login exitoso!');
-                window.location.href = '/dashboard';
+                // alert('✅ Login exitoso!'); // Comentar o eliminar para depuración
+                // window.location.href = '/dashboard'; // El backend ya redirige
             } else {
                 alert(`❌ Error: ${result.error}`);
             }
