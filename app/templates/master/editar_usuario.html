@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Editar Usuario - {{ user_to_edit.name }}{% endblock %}
+{% block title %}Editar Usuario - {{ user.name }}{% endblock %}
 
 {% block content %}
 <div class="container py-5">
@@ -10,7 +10,7 @@
                 <div class="card-body p-5">
                     <div class="text-center mb-4">
                         <h2 class="text-primary mb-3"><i class="fas fa-user-edit me-2"></i>Editar Usuario</h2>
-                        <p class="lead text-muted">Gestiona los detalles de contacto y rol de {{ user_to_edit.name }}.</p>
+                        <p class="lead text-muted">Gestiona los detalles de contacto y rol de {{ user.name }}.</p>
                     </div>
 
                     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -24,44 +24,44 @@
                         {% endif %}
                     {% endwith %}
 
-                    <form action="{{ url_for('main.master_usuarios_editar', user_id=user_to_edit.id) }}" method="POST">
+                    <form action="{{ url_for('main.master_usuarios_editar', user_id=user.id) }}" method="POST">
                         <div class="mb-3">
                             <label for="name" class="form-label">Nombre</label>
-                            <input type="text" class="form-control" id="name" name="name" value="{{ user_to_edit.name }}" required>
+                            <input type="text" class="form-control" id="name" name="name" value="{{ user.name }}" required>
                         </div>
                         <div class="mb-3">
                             <label for="email" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="email" name="email" value="{{ user_to_edit.email }}" required>
+                            <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" required>
                         </div>
                         <div class="mb-3">
                             <label for="phone" class="form-label">Teléfono</label>
-                            <input type="text" class="form-control" id="phone" name="phone" value="{{ user_to_edit.phone or '' }}">
+                            <input type="text" class="form-control" id="phone" name="phone" value="{{ user.phone or '' }}">
                         </div>
                         <div class="mb-3">
                             <label for="city" class="form-label">Ciudad</label>
-                            <input type="text" class="form-control" id="city" name="city" value="{{ user_to_edit.city or '' }}">
+                            <input type="text" class="form-control" id="city" name="city" value="{{ user.city or '' }}">
                         </div>
                         <div class="mb-3">
                             <label for="country" class="form-label">País</label>
-                            <input type="text" class="form-control" id="country" name="country" value="{{ user_to_edit.country or '' }}">
+                            <input type="text" class="form-control" id="country" name="country" value="{{ user.country or '' }}">
                         </div>
                         <div class="mb-3">
                             <label for="role" class="form-label">Rol</label>
-                            <select class="form-select" id="role" name="role" {% if user_to_edit.role == 'MASTER' %}disabled{% endif %}>
-                                <option value="USER" {% if user_to_edit.role == 'USER' %}selected{% endif %}>Usuario</option>
-                                <option value="ADMIN" {% if user_to_edit.role == 'ADMIN' %}selected{% endif %}>Administrador</option>
-                                <option value="MASTER" {% if user_to_edit.role == 'MASTER' %}selected{% endif %}>Maestro</option>
+                            <select class="form-select" id="role" name="role" {% if user.role == 'MASTER' %}disabled{% endif %}>
+                                <option value="USER" {% if user.role == 'USER' %}selected{% endif %}>Usuario</option>
+                                <option value="ADMIN" {% if user.role == 'ADMIN' %}selected{% endif %}>Administrador</option>
+                                <option value="MASTER" {% if user.role == 'MASTER' %}selected{% endif %}>Maestro</option>
                             </select>
-                            {% if user_to_edit.role == 'MASTER' %}
+                            {% if user.role == 'MASTER' %}
                                 <small class="form-text text-muted">No puedes cambiar el rol de un usuario MASTER desde aquí.</small>
                             {% endif %}
                         </div>
                         <div class="mb-4">
                             <label for="status" class="form-label">Estado</label>
                             <select class="form-select" id="status" name="status">
-                                <option value="pending" {% if user_to_edit.status == 'pending' %}selected{% endif %}>Pendiente</option>
-                                <option value="active" {% if user_to_edit.status == 'active' %}selected{% endif %}>Activo</option>
-                                <option value="rejected" {% if user_to_edit.status == 'rejected' %}selected{% endif %}>Rechazado</option>
+                                <option value="pending" {% if user.status == 'pending' %}selected{% endif %}>Pendiente</option>
+                                <option value="active" {% if user.status == 'active' %}selected{% endif %}>Activo</option>
+                                <option value="rejected" {% if user.status == 'rejected' %}selected{% endif %}>Rechazado</option>
                             </select>
                         </div>
 
