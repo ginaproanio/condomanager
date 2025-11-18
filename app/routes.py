@@ -100,8 +100,8 @@ def api_login():
 
     access_token = create_access_token(identity=user.id, expires_delta=timedelta(hours=12))
     
-    # Establecer la cookie JWT directamente desde el backend
-    response = make_response(jsonify({"msg": "Login exitoso", "user": {"id": user.id, "email": user.email, "name": user.name, "role": user.role, "status": user.status}}))
+    # Establecer la cookie JWT directamente desde el backend y luego redirigir
+    response = make_response(redirect(url_for('main.dashboard')))
     set_access_cookies(response, access_token)
     return response
 
