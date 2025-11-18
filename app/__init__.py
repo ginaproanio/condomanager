@@ -82,8 +82,8 @@ def create_app():
     #         print(f"Error en inicialización: {e}")
 
     @jwt.user_identity_loader
-    def user_identity_lookup(user):
-        return user.id
+    def user_identity_lookup(user_id):
+        return user_id  # Ya es el ID del usuario
 
     @jwt.user_lookup_loader
     def user_lookup_callback(_jwt_header, jwt_data):
