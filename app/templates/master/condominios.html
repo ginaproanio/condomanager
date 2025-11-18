@@ -4,14 +4,183 @@
 
 {% block content %}
 <div class="container py-5">
-    <div class="row">
-        <div class="col">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body text-center py-5">
-                    <h2 class="text-primary mb-3"><i class="fas fa-building me-2"></i>Gestión de Condominios</h2>
-                    <p class="lead">Bienvenido al panel de gestión de condominios, {{ user.name }}.</p>
-                    <p>{{ mensaje }}</p>
-                    <a href="/master" class="btn btn-secondary mt-3">Volver al Panel Maestro</a>
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card border-0 shadow-lg">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <h2 class="text-primary mb-3"><i class="fas fa-building me-2"></i>Gestión de Condominios</h2>
+                        <p class="lead text-muted">Panel de control para crear y administrar condominios.</p>
+                    </div>
+
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    <i class="fas fa-info-circle me-2"></i>{{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    {% if user and user.role == 'MASTER' %}
+                        <p>Bienvenido, <strong>{{ user.name }}</strong>. Desde aquí puedes crear nuevos condominios e importarlos.</p>
+
+                        <!-- Navegación por Pestañas -->
+                        <ul class="nav nav-tabs mb-4" id="condominiumTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="list-condos-tab" data-bs-toggle="tab" data-bs-target="#list-condos" type="button" role="tab" aria-controls="list-condos" aria-selected="true">
+                                    <i class="fas fa-list me-2"></i>Listar Condominios
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="create-single-tab" data-bs-toggle="tab" data-bs-target="#create-single" type="button" role="tab" aria-controls="create-single" aria-selected="false">
+                                    <i class="fas fa-plus-circle me-2"></i>Crear Individual
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="import-csv-tab" data-bs-toggle="tab" data-bs-target="#import-csv" type="button" role="tab" aria-controls="import-csv" aria-selected="false">
+                                    <i class="fas fa-file-csv me-2"></i>Importar CSV
+                                </button>
+                            </li>
+                        </ul>
+
+                        <!-- Contenido de las Pestañas -->
+                        <div class="tab-content" id="condominiumTabsContent">
+                            <!-- Pestaña: Listar Condominios -->
+                            <div class="tab-pane fade show active" id="list-condos" role="tabpanel" aria-labelledby="list-condos-tab">
+                                <div class="card border-0 shadow-sm mb-4">
+                                    <div class="card-header bg-primary text-white">
+                                        <h5 class="mb-0"><i class="fas fa-list-alt me-2"></i>Condominios Registrados</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        {% if all_condominiums %}
+                                            <div class="table-responsive">
+                                                <table class="table table-hover">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Nombre</th>
+                                                            <th>Dirección</th>
+                                                            <th>Ciudad</th>
+                                                            <th>País</th>
+                                                            <th>Estado</th>
+                                                            <th>Fecha Creación</th>
+                                                            <th>Acciones</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for condo in all_condominiums %}
+                                                        <tr>
+                                                            <td>{{ condo.name }}</td>
+                                                            <td>{{ condo.address }}</td>
+                                                            <td>{{ condo.city }}</td>
+                                                            <td>{{ condo.country }}</td>
+                                                            <td><span class="badge bg-secondary">{{ condo.status }}</span></td>
+                                                            <td>{{ condo.created_at.strftime('%d/%m/%Y %H:%M') if condo.created_at else 'N/A' }}</td>
+                                                            <td>
+                                                                <div class="btn-group btn-group-sm">
+                                                                    <a href="/master/condominio/editar/{{ condo.id }}" class="btn btn-info">
+                                                                        <i class="fas fa-edit"></i>
+                                                                    </a>
+                                                                    <a href="/master/condominio/eliminar/{{ condo.id }}" class="btn btn-danger">
+                                                                        <i class="fas fa-trash"></i>
+                                                                    </a>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        {% else %}
+                                            <div class="text-center py-4">
+                                                <i class="fas fa-info-circle fa-3x text-info mb-3"></i>
+                                                <h5 class="text-muted">No hay condominios registrados aún.</h5>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Pestaña: Crear Condominio Individual -->
+                            <div class="tab-pane fade" id="create-single" role="tabpanel" aria-labelledby="create-single-tab">
+                                <div class="card border-0 shadow-sm mb-4">
+                                    <div class="card-header bg-success text-white">
+                                        <h5 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Crear Nuevo Condominio</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <form action="{{ url_for('main.master_condominios') }}" method="POST">
+                                            <input type="hidden" name="action" value="create_single">
+                                            <div class="mb-3">
+                                                <label for="name" class="form-label">Nombre del Condominio</label>
+                                                <input type="text" class="form-control" id="name" name="name" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="address" class="form-label">Dirección</label>
+                                                <input type="text" class="form-control" id="address" name="address" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="city" class="form-label">Ciudad</label>
+                                                <input type="text" class="form-control" id="city" name="city" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="country" class="form-label">País</label>
+                                                <input type="text" class="form-control" id="country" name="country" value="Ecuador" required>
+                                            </div>
+                                            <div class="mb-4">
+                                                <label for="status" class="form-label">Estado</label>
+                                                <select class="form-select" id="status" name="status" required>
+                                                    <option value="PENDIENTE_APROBACION">PENDIENTE_APROBACION</option>
+                                                    <option value="ACTIVO">ACTIVO</option>
+                                                    <option value="INACTIVO">INACTIVO</option>
+                                                </select>
+                                            </div>
+                                            <button type="submit" class="btn btn-success">
+                                                <i class="fas fa-save me-2"></i>Crear Condominio
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Pestaña: Importar CSV -->
+                            <div class="tab-pane fade" id="import-csv" role="tabpanel" aria-labelledby="import-csv-tab">
+                                <div class="card border-0 shadow-sm mb-4">
+                                    <div class="card-header bg-info text-white">
+                                        <h5 class="mb-0"><i class="fas fa-file-csv me-2"></i>Importar Condominios (CSV)</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="text-muted">Sube un archivo CSV con la siguiente estructura:</p>
+                                        <p><code>name,address,city,country,status</code></p>
+                                        <p class="text-muted">Ejemplo: <code>"Condominio Sol", "Calle 10 y Av. Central", "Guayaquil", "Ecuador", "ACTIVO"</code></p>
+                                        <form action="{{ url_for('main.master_condominios') }}" method="POST" enctype="multipart/form-data">
+                                            <input type="hidden" name="action" value="import_csv">
+                                            <div class="mb-3">
+                                                <label for="csv_file" class="form-label">Seleccionar archivo CSV</label>
+                                                <input type="file" class="form-control" id="csv_file" name="csv_file" accept=".csv" required>
+                                            </div>
+                                            <button type="submit" class="btn btn-info">
+                                                <i class="fas fa-upload me-2"></i>Importar CSV
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-center mt-5">
+                            <a href="/master" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Volver al Panel Maestro
+                            </a>
+                        </div>
+
+                    {% else %}
+                        <div class="alert alert-warning text-center" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            No tienes acceso a la Gestión de Condominios. Por favor, <a href="/login" class="alert-link">inicia sesión</a> con una cuenta MASTER.
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>

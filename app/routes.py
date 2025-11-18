@@ -330,7 +330,7 @@ def reportes():
     return render_template('services/reportes.html', mensaje="Reportes", config=config)
 
 # Nuevas rutas para el panel maestro
-@main.route('/master/condominios')
+@main.route('/master/condominios', methods=['GET', 'POST'])
 @jwt_required()
 def master_condominios():
     user = get_current_user()
@@ -340,7 +340,113 @@ def master_condominios():
     from app.tenant import get_tenant
     tenant = get_tenant()
     config = current_app.get_tenant_config(tenant)
-    return render_template('master/condominios.html', user=user, config=config, mensaje="Página de gestión de condominios (Maestro)")
+
+    if request.method == 'GET':
+        # Obtener todos los condominios existentes
+        all_condominiums = Condominium.query.all()
+        return render_template('master/condominios.html', user=user, config=config, mensaje="Página de gestión de condominios (Maestro)", all_condominiums=all_condominiums)
+
+    if request.method == 'POST':
+        action = request.form.get('action')
+        if action == 'create_single':
+            name = request.form.get('name', '').strip()
+            address = request.form.get('address', '').strip()
+            city = request.form.get('city', '').strip()
+            country = request.form.get('country', 'Ecuador').strip()
+            status = request.form.get('status', 'PENDIENTE_APROBACION').upper()
+
+            if not name:
+                flash("El nombre del condominio es obligatorio", "error")
+                return render_template('master/condominios.html', user=user, config=config, mensaje="Página de gestión de condominios (Maestro)", all_condominiums=Condominium.query.all())
+            if not address:
+                flash("La dirección del condominio es obligatoria", "error")
+                return render_template('master/condominios.html', user=user, config=config, mensaje="Página de gestión de condominios (Maestro)", all_condominiums=Condominium.query.all())
+            if not city:
+                flash("La ciudad del condominio es obligatoria", "error")
+                return render_template('master/condominios.html', user=user, config=config, mensaje="Página de gestión de condominios (Maestro)", all_condominiums=Condominium.query.all())
+            if not country:
+                flash("El país del condominio es obligatorio", "error")
+                return render_template('master/condominios.html', user=user, config=config, mensaje="Página de gestión de condominios (Maestro)", all_condominiums=Condominium.query.all())
+            if not status:
+                flash("El estado del condominio es obligatorio", "error")
+                return render_template('master/condominios.html', user=user, config=config, mensaje="Página de gestión de condominios (Maestro)", all_condominiums=Condominium.query.all())
+
+            try:
+                new_condominium = Condominium(
+                    name=name,
+                    address=address,
+                    city=city,
+                    country=country,
+                    status=status,
+                    tenant=tenant
+                )
+                db.session.add(new_condominium)
+                db.session.commit()
+                flash(f"Condominio '{name}' creado exitosamente.", "success")
+            except Exception as e:
+                current_app.logger.error(f"Error al crear condominio '{name}': {e}")
+                flash(f"Error al crear condominio '{name}': {e}", "error")
+        elif action == 'import_csv':
+            uploaded_file = request.files.get('csv_file')
+            if not uploaded_file or uploaded_file.filename == '':
+                flash("No se seleccionó ningún archivo CSV para importar.", "error")
+                return render_template('master/condominios.html', user=user, config=config, mensaje="Página de gestión de condominios (Maestro)", all_condominiums=Condominium.query.all())
+
+            if uploaded_file and uploaded_file.filename.endswith('.csv'):
+                try:
+                    content = uploaded_file.read().decode('utf-8')
+                    csv_reader = csv.DictReader(io.StringIO(content))
+                    
+                    created_count = 0
+                    failed_count = 0
+                    for row in csv_reader:
+                        name = row.get('name', '').strip()
+                        address = row.get('address', '').strip()
+                        city = row.get('city', '').strip()
+                        country = row.get('country', 'Ecuador').strip()
+                        status = row.get('status', 'PENDIENTE_APROBACION').upper()
+
+                        if not name:
+                            failed_count += 1
+                            continue
+                        if not address:
+                            failed_count += 1
+                            continue
+                        if not city:
+                            failed_count += 1
+                            continue
+                        if not country:
+                            failed_count += 1
+                            continue
+                        if not status:
+                            failed_count += 1
+                            continue
+
+                        try:
+                            new_condominium = Condominium(
+                                name=name,
+                                address=address,
+                                city=city,
+                                country=country,
+                                status=status,
+                                tenant=tenant
+                            )
+                            db.session.add(new_condominium)
+                            created_count += 1
+                        except Exception as e:
+                            current_app.logger.error(f"Error al importar condominio '{name}' (fila {csv_reader.line_num}): {e}")
+                            failed_count += 1
+
+                    db.session.commit()
+                    flash(f"Archivo CSV importado con éxito. {created_count} condominios creados, {failed_count} fallidos.", "success")
+                except Exception as e:
+                    current_app.logger.error(f"Error al leer o procesar el archivo CSV: {e}")
+                    flash(f"Error al leer o procesar el archivo CSV: {e}", "error")
+            else:
+                flash("El archivo seleccionado no es un archivo CSV válido.", "error")
+                return render_template('master/condominios.html', user=user, config=config, mensaje="Página de gestión de condominios (Maestro)", all_condominiums=Condominium.query.all())
+
+        return render_template('master/condominios.html', user=user, config=config, mensaje="Página de gestión de condominios (Maestro)", all_condominiums=Condominium.query.all())
 
 @main.route('/master/usuarios') # Para gestión global de usuarios, diferente a /admin
 @jwt_required()
