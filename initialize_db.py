@@ -50,6 +50,8 @@ def initialize_database():
 
         except Exception as e:
             print(f"Error en inicialización de la base de datos: {e}")
+        finally:
+            db.session.remove() # Asegurarse de cerrar la sesión después de la inicialización
 
 if __name__ == '__main__':
     initialize_database()
