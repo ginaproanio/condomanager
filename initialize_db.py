@@ -35,18 +35,18 @@ def initialize_database():
                 print("Usuario maestro ya existe")
 
             # Crear configuración inicial de 'condomanager' si no existe
-            tenant_condomanager = 'condomanager'
-            if not models.CondominioConfig.query.get(tenant_condomanager):
-                config = models.CondominioConfig(
-                    tenant=tenant_condomanager,
+            config_tenant_name = 'puntablanca' # Tenant principal para el arranque
+            if not models.CondominiumConfig.query.get(config_tenant_name):
+                config = models.CondominiumConfig(
+                    tenant=config_tenant_name,
                     primary_color='#2c5aa0',
-                    nombre_comercial=tenant_condomanager.replace('_', ' ').title()
+                    commercial_name=config_tenant_name.replace('_', ' ').title()
                 )
                 db.session.add(config)
                 db.session.commit()
-                print(f"Configuración automática creada para: {tenant_condomanager}")
+                print(f"Configuración de tenant por defecto creada para: {config_tenant_name}")
             else:
-                print(f"Configuración para '{tenant_condomanager}' ya existe")
+                print(f"Configuración para '{config_tenant_name}' ya existe")
 
         except Exception as e:
             print(f"Error en inicialización de la base de datos: {e}")

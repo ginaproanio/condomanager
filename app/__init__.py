@@ -37,7 +37,7 @@ def create_app():
         database_url = database_url.replace('postgresql://', 'postgresql+pg8000://', 1)
         app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 
-    print(f"URL de base de datos: {app.config['SQLALCHEMY_DATABASE_URI']}")
+    print(f"Database URL: {app.config['SQLALCHEMY_DATABASE_URI']}")
 
     db.init_app(app) # Inicializar db con la app
     jwt.init_app(app)
@@ -46,40 +46,6 @@ def create_app():
     # Importar app.models aquí para registrar los modelos con SQLAlchemy
     # Esto debe hacerse DESPUÉS de db.init_app(app) y ANTES de que las rutas lo necesiten
     from app import models
-
-    # El bloque de creación de tablas y usuario maestro se ha movido a initialize_db.py
-    # con app.app_context():
-    #     try:
-    #         print("Creando tablas...")
-    #         db.create_all()
-    #         print("Tablas creadas exitosamente")
-    #
-    #         import hashlib
-    #
-    #         master_email = os.environ.get('MASTER_EMAIL', 'maestro@condomanager.com')
-    #         if not models.User.query.filter_by(email=master_email).first():
-    #             master_password = os.environ.get('MASTER_PASSWORD', 'Master2025!')
-    #             pwd_hash = hashlib.sha256(master_password.encode()).hexdigest()
-    #
-    #             master = models.User(
-    #                 email=master_email,
-    #                 name='Administrador Maestro',
-    #                 phone='+593999999999',
-    #                 city='Guayaquil',
-    #                 country='Ecuador',
-    #                 password_hash=pwd_hash,
-    #                 tenant='master',
-    #                 role='MASTER',
-    #                 status='active'
-    #             )
-    #             db.session.add(master)
-    #             db.session.commit()
-    #             print(f"USUARIO MAESTRO CREADO: {master_email}")
-    #         else:
-    #             print("Usuario maestro ya existe")
-    #
-    #     except Exception as e:
-    #         print(f"Error en inicialización: {e}")
 
     @jwt.user_identity_loader
     def user_identity_lookup(user_id):
@@ -90,20 +56,20 @@ def create_app():
         identity = jwt_data["sub"]
         return models.User.query.get(identity)
 
-    from app.routes import main
-    app.register_blueprint(main)
+    from app import routes
+    routes.init_app(app)
 
     def get_tenant_config(tenant):
-        config = models.CondominioConfig.query.get(tenant)
+        config = models.CondominiumConfig.query.get(tenant)
         if not config:
-            config = models.CondominioConfig(
+            config = models.CondominiumConfig(
                 tenant=tenant,
                 primary_color='#2c5aa0',
-                nombre_comercial=tenant.replace('_', ' ').title()
+                commercial_name=tenant.replace('_', ' ').title()
             )
             db.session.add(config)
             db.session.commit()
-            print(f"Configuración automática creada para: {tenant}")
+            print(f"Automatic config created for tenant: {tenant}")
         return config
 
     app.get_tenant_config = get_tenant_config

@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Crear Nuevo Condominio - Master{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="card-title mb-0">Registrar Nuevo Condominio</h2>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    <form method="POST" action="{{ url_for('master.crear_condominio') }}">
+                        <div class="row">
+                            <!-- Columna Izquierda -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">Nombre del Condominio</label>
+                                    <input type="text" class="form-control" id="name" name="name" required>
+                                    <div class="form-text">El nombre público y completo del condominio.</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="legal_name" class="form-label">Nombre Legal</label>
+                                    <input type="text" class="form-control" id="legal_name" name="legal_name" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="ruc" class="form-label">RUC</label>
+                                    <input type="text" class="form-control" id="ruc" name="ruc" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="subdomain" class="form-label">Subdominio</label>
+                                    <input type="text" class="form-control" id="subdomain" name="subdomain" required pattern="[a-z0-9-]+"
+                                           title="Solo letras minúsculas, números y guiones. Sin espacios.">
+                                    <div class="form-text">Identificador único para el subdominio. Ejemplo: "mi-condominio".</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="admin_user_id" class="form-label">Administrador</label>
+                                    <select class="form-select" id="admin_user_id" name="admin_user_id" required>
+                                        <option value="">Seleccione un administrador...</option>
+                                        {% for admin in administradores %}
+                                            <option value="{{ admin.id }}">{{ admin.name }} ({{ admin.email }})</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <!-- Columna Derecha -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="country" class="form-label">País</label>
+                                    <input type="text" class="form-control" id="country" name="country" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="city" class="form-label">Ciudad</label>
+                                    <input type="text" class="form-control" id="city" name="city" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="main_street" class="form-label">Calle Principal</label>
+                                    <input type="text" class="form-control" id="main_street" name="main_street" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="cross_street" class="form-label">Calle Secundaria</label>
+                                    <input type="text" class="form-control" id="cross_street" name="cross_street">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="house_number" class="form-label">Número</label>
+                                    <input type="text" class="form-control" id="house_number" name="house_number">
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 mt-3">Crear Condominio</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

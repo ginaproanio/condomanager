@@ -80,10 +80,10 @@
                                                             <td>{{ condo.created_at.strftime('%d/%m/%Y %H:%M') if condo.created_at else 'N/A' }}</td>
                                                             <td>
                                                                 <div class="btn-group btn-group-sm">
-                                                                    <a href="/master/condominio/editar/{{ condo.id }}" class="btn btn-info">
+                                                                    <a href="{{ url_for('main.master_condominio_editar', condo_id=condo.id) }}" class="btn btn-info">
                                                                         <i class="fas fa-edit"></i>
                                                                     </a>
-                                                                    <a href="/master/condominio/eliminar/{{ condo.id }}" class="btn btn-danger">
+                                                                    <a href="{{ url_for('main.master_condominio_eliminar', condo_id=condo.id) }}" class="btn btn-danger">
                                                                         <i class="fas fa-trash"></i>
                                                                     </a>
                                                                 </div>

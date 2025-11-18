@@ -1,60 +1,60 @@
-# Documentación API
+# Documentación de Endpoints y API
+Versión: 2.0.0 (Sincronizado con el código base a fecha 2025-11-18)
 
-> **Implementación Inicial**: API implementada y validada con "Punta Blanca",
-> diseñada para soportar múltiples condominios mediante headers específicos.
+> **Nota**: El proyecto actualmente no cuenta con una API RESTful pública y separada. Esta documentación describe los endpoints web principales (rutas servidas con plantillas HTML) y sienta las bases para una futura API REST.
 
-## 1. Autenticación
-Header requerido para identificar el condominio:
-```http
-X-Condominio-ID: {identificador_condominio}
-```
+## 1. Endpoints Web Actuales (Servidos por Flask)
 
-## 2. Endpoints Principales
+Estos endpoints son accedidos a través de un navegador y renderizan plantillas HTML.
 
-### 2.1 Unidades
-```http
-GET /unidades/
-POST /unidades/
-GET /unidades/{id}
-PUT /unidades/{id}
-DELETE /unidades/{id}
-```
+### 1.1 Rutas Públicas (`public_routes.py`)
+- **`GET /`**: Página de inicio o landing page.
+- **`GET /login`**: Muestra el formulario de inicio de sesión.
+- **`POST /login`**: Procesa el inicio de sesión del usuario.
+- **`GET /registro`**: Muestra el formulario de registro de nuevos usuarios.
+- **`POST /registro`**: Procesa el registro de un nuevo usuario, dejándolo en estado `pending`.
+- **`POST /logout`**: Cierra la sesión del usuario.
 
-### 2.2 Usuarios
-```http
-GET /usuarios/
-POST /usuarios/
-GET /usuarios/{id}
-PUT /usuarios/{id}
-DELETE /usuarios/{id}
-```
+### 1.2 Rutas de Usuario (`user_routes.py`)
+- **`GET /dashboard`**: Panel principal para usuarios autenticados. Protegido por `@login_required`.
 
-### 2.3 Pagos
-```http
-GET /pagos/
-POST /pagos/
-GET /pagos/{id}
-```
+### 1.3 Rutas de Administrador (`admin_routes.py`)
+Estas rutas están protegidas por el rol `ADMIN` (o `MASTER`).
+- **`GET /admin/dashboard`**: Panel de administración del condominio.
+- **`GET /admin/users`**: Muestra la lista de usuarios del tenant actual.
+- **`POST /admin/approve/<int:user_id>`**: Aprueba a un usuario pendiente, cambiando su estado a `active`.
+- **`POST /admin/reject/<int:user_id>`**: Rechaza a un usuario pendiente.
 
-## Endpoints de Búsqueda
+### 1.4 Rutas Maestras (`master_routes.py`)
+Estas rutas están protegidas por el rol `MASTER`.
+- **`GET /master/dashboard`**: Panel de control global para el super-administrador.
+- **`GET /master/condominiums`**: Muestra la lista de todos los condominios en el sistema.
+- **`GET /master/download-units-template`**: Permite descargar la plantilla CSV para la carga masiva de unidades.
 
-### GET /api/search
-Búsqueda en tiempo real con las siguientes restricciones:
-- Requiere mínimo 3 caracteres
-- Retorna máximo 20 resultados
-- Implementa debounce de 500ms (frontend)
-- Resultados cacheados por 5 minutos
+---
 
-#### Parámetros
-- q: término de búsqueda (string, min: 3 caracteres)
-- type: tipo de búsqueda (opcional)
+## 2. Propuesta para Futura API RESTful
 
-#### Respuesta
+Cuando se implemente una API REST, deberá seguir las siguientes convenciones:
+
+### 2.1 Versionado y URL Base
+- **URL Base**: `/api/v1/`
+- **Ejemplo**: `https://{subdomain}.dominio.com/api/v1/units`
+
+### 2.2 Autenticación
+- **Método**: Tokens JWT enviados como `Bearer Token` en el header `Authorization`.
+
+### 2.3 Endpoints Propuestos
+- **Condominios**: `GET /api/v1/condominiums`, `GET /api/v1/condominiums/<int:id>`
+- **Unidades**: `GET /api/v1/units`, `POST /api/v1/units`, `GET /api/v1/units/<int:id>`
+- **Usuarios**: `GET /api/v1/users`, `GET /api/v1/users/<int:id>`
+
+### 2.4 Formato de Respuesta Estándar
 ```json
 {
-    "results": [...],
-    "count": 20,
-    "cached": true|false
+    "status": "success" | "error",
+    "data": { ... } | null,
+    "message": "Descripción del resultado." | "Mensaje de error."
 }
 ```
 

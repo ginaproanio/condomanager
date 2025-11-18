@@ -23,8 +23,8 @@
             {% if user and user.role in ['ADMIN', 'MASTER'] %}
                 <p>Bienvenido, <strong>{{ user.name }}</strong> ({{ user.role }})</p>
                 <p>Usuarios pendientes de aprobación: {{ pending_users|length }}</p>
-                <p>Usuarios activos: {{ active_count }}</p>
-                <p>Usuarios rechazados: {{ rejected_count }}</p>
+                <p>Usuarios activos: {{ active_users|length }}</p>
+                <p>Usuarios rechazados: {{ rejected_users|length }}</p>
             {% else %}
                 <p>No tienes acceso a este contenido.</p>
             {% endif %}
@@ -49,7 +49,7 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between">
                                 <div>
-                                    <h4>{{ active_count }}</h4>  <!-- ✅ CAMBIADO -->
+                                    <h4>{{ active_users|length }}</h4>
                                     <p class="mb-0">Activos</p>
                                 </div>
                                 <i class="fas fa-check-circle fa-2x opacity-50"></i>
@@ -62,7 +62,7 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between">
                                 <div>
-                                    <h4>{{ rejected_count }}</h4>  <!-- ✅ CAMBIADO -->
+                                    <h4>{{ rejected_users|length }}</h4>
                                     <p class="mb-0">Rechazados</p>
                                 </div>
                                 <i class="fas fa-times-circle fa-2x opacity-50"></i>
@@ -101,10 +101,10 @@
                                         <td>{{ user.created_at.strftime('%d/%m/%Y %H:%M') if user.created_at else 'N/A' }}</td>
                                         <td>
                                             <div class="btn-group btn-group-sm">
-                                                <a href="/aprobar/{{ user.id }}" class="btn btn-success">
+                                                <a href="{{ url_for('main.approve_user', user_id=user.id) }}" class="btn btn-success">
                                                     <i class="fas fa-check"></i> Aprobar
                                                 </a>
-                                                <a href="/rechazar/{{ user.id }}" class="btn btn-danger">
+                                                <a href="{{ url_for('main.reject_user', user_id=user.id) }}" class="btn btn-danger">
                                                     <i class="fas fa-times"></i> Rechazar
                                                 </a>
                                             </div>
@@ -131,13 +131,13 @@
                         <i class="fas fa-bolt me-2"></i>Acciones Rápidas
                     </h5>
                     <div class="d-grid gap-2 d-md-flex">
-                        <a href="/usuarios" class="btn btn-outline-primary">
+                        <a href="{{ url_for('main.admin_usuarios') }}" class="btn btn-outline-primary">
                             <i class="fas fa-list me-2"></i>Ver Todos los Usuarios
                         </a>
-                        <a href="/unidades" class="btn btn-outline-primary">
+                        <a href="{{ url_for('main.unidades') }}" class="btn btn-outline-primary">
                             <i class="fas fa-building me-2"></i>Gestionar Unidades
                         </a>
-                        <a href="/reportes" class="btn btn-outline-primary">
+                        <a href="#" class="btn btn-outline-primary disabled">
                             <i class="fas fa-chart-bar me-2"></i>Ver Reportes
                         </a>
                     </div>

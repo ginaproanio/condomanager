@@ -1,212 +1,102 @@
 # Reglas de Negocio
-Versión: 1.0.0 (Actualizado: 2025-11-18)
-*(Nota: Este documento es un borrador. El estado de implementación se indica con ✅ Implementado, 🚧 En Proceso/Pendiente, ❌ Faltante. Las variables y la estructura del código existente tienen prioridad.)*
+Versión: 2.0.0 (Sincronizado con el código base actual: 2025-11-18)
+*(Nota: Este documento refleja el estado actual del proyecto. El estado de implementación se indica con ✅ Implementado, 🚧 En Proceso/Parcial, ❌ Faltante/Visión a Futuro.)*
 
 ## 1. Roles del Sistema
 
-### 1.1 Perfil Maestro (SUPER_ADMIN)
-Rol encargado de la gestión global de condominios.
-- ✅ Crear nuevos condominios (Individual y CSV)
-- ✅ Asignar administradores a condominios (al crear/editar usuarios)
-- 🚧 Gestionar configuraciones globales del sistema (Ruta placeholder existente)
-- ✅ NO gestiona unidades dentro de los condominios (Coherente con la implementación)
+### 1.1 Perfil Maestro (MASTER)
+Rol con el más alto nivel de acceso, encargado de la gestión global de la plataforma.
+- ❌ **Crear nuevos condominios:** Funcionalidad crítica no implementada en la interfaz de usuario. El modelo `Condominium` existe, pero no hay cómo crearlos desde la aplicación.
+- ❌ **Asignar administradores a condominios:** No implementado, depende de la creación de condominios.
+- 🚧 **Gestionar configuraciones globales:** No implementado. Existe una ruta (`/master`) pero es un placeholder.
+- ✅ **Acceso a funciones de Administrador:** Un `MASTER` puede acceder a las vistas y acciones de un `ADMIN` (comprobado en `admin_routes`).
 
 ### 1.2 Perfil Administrador (ADMIN)
-Rol asignado por el Perfil Maestro para gestionar un condominio específico.
-- ✅ Crear unidades en su condominio asignado (Vía importación CSV. Falta individual)
-- 🚧 Aprobar registros de usuarios (Actualmente gestionado por MASTER. Pendiente que ADMIN gestione *sus* usuarios)
-- ✅ Asignar unidades a usuarios (Vía importación CSV. Falta individual)
-- 🚧 Gestionar configuraciones de su condominio (Falta interfaz de gestión)
-- ✅ NO puede crear condominios (Coherente con la implementación)
-- ✅ NO puede asignar administradores (Coherente con la implementación)
-- ✅ NO puede gestionar otros condominios (Asegurado por decorador)
+Rol para gestionar un condominio específico. Asignado por el Perfil Maestro.
+- 🚧 **Crear unidades en su condominio:** Parcialmente implementado. Existe una ruta para **descargar** una plantilla CSV (`/master/descargar-plantilla-unidades`), pero **no existe la lógica para cargar o procesar el archivo CSV**. La creación individual tampoco está implementada.
+- ✅ **Aprobar/Rechazar registros de usuarios:** Implementado en `admin_routes`. Un `ADMIN` puede aprobar o rechazar usuarios de su propio `tenant`.
+- ❌ **Asignar unidades a usuarios:** No implementado. Depende de la creación de unidades.
+- ❌ **Gestionar configuraciones de su condominio:** No implementado.
+- ✅ **Restricción de acceso:** No puede crear condominios ni gestionar otros condominios. El acceso a las rutas de admin está protegido.
 
-### 1.3 Perfil Usuario (UNIT_USER)
-Usuario final que gestiona sus unidades asignadas.
-- ✅ Ver información de sus unidades asignadas
-- 🚧 Actualizar su información personal (Falta interfaz de perfil)
-- ✅ NO puede asignar unidades (Coherente con la implementación)
-- ✅ NO puede aprobar usuarios (Coherente con la implementación)
-- ✅ NO puede crear unidades (Coherente con la implementación)
+### 1.3 Perfil Usuario (USER)
+Usuario final del sistema.
+- ✅ **Ver su panel principal (`/dashboard`):** Implementado.
+- ❌ **Actualizar su información personal:** No implementado. No existe una interfaz de perfil de usuario.
+- ✅ **Acceso restringido:** No puede realizar acciones administrativas (asegurado por `jwt_required` y lógica de roles).
 
-### 1.4 Roles Especiales de Condominio
-*(**❌ Faltante:** No hay modelos ni lógica implementados para roles especiales.)*
+### 1.4 Roles Especiales de Condominio (Visión a Futuro)
+Roles con permisos específicos dentro de un condominio (Presidente, Tesorero, etc.).
+- 🚧 **Estructura de datos:** El modelo `UserSpecialRole` **existe** en `app/models.py`, sentando las bases para esta funcionalidad.
+- ❌ **Lógica de negocio:** No hay ninguna lógica implementada para asignar, gestionar, o validar estos roles.
 
-#### 1.4.1 Presidente
-Rol encargado de la representación legal del condominio.
-- ❌ Acceder a reportes de gestión
-- ❌ Visualizar indicadores administrativos
-- ❌ Supervisar decisiones administrativas
-- ❌ NO puede modificar configuraciones del sistema
-- ❌ NO puede realizar operaciones contables
-
-#### 1.4.2 Secretario
-Rol responsable de la documentación oficial.
-- ❌ Generar y gestionar actas
-- ❌ Manejar documentos oficiales
-- ❌ Gestionar sesiones de asamblea
-- ❌ NO puede modificar información financiera
-- ❌ NO puede aprobar gastos
-
-#### 1.4.3 Tesorero
-Rol encargado de la supervisión financiera.
-- ❌ Acceder al módulo de recaudación
-- ❌ Supervisar ingresos y gastos
-- ❌ Ver reportes financieros
-- ❌ NO puede modificar registros contables
-- ❌ NO puede aprobar usuarios
-
-#### 1.4.4 Contador
-Rol responsable de la gestión contable.
-- ❌ Acceso completo al módulo contable
-- ❌ Gestionar asientos contables
-- ❌ Generar reportes financieros
-- ❌ NO puede aprobar gastos
-- ❌ NO puede modificar configuraciones
-
-#### 1.4.5 Vocal
-Rol con funciones específicas asignadas.
-- ❌ Acceder a información general
-- ❌ Participar en decisiones asignadas
-- ❌ NO puede modificar configuraciones
-- ❌ NO puede aprobar gastos
+---
 
 ## 2. Jerarquía y Alcance
 
 ### 2.1 Perfil Maestro
-- ✅ Nivel más alto de administración
-- ✅ Gestiona la creación de condominios
-- ✅ Asigna administradores a cada condominio
-- ✅ No interviene en la gestión interna de los condominios
+- ✅ **Nivel más alto:** Confirmado por la lógica de roles en las rutas.
+- ❌ **Gestión de condominios:** No implementada.
 
 ### 2.2 Perfil Administrador
-- ✅ Gestiona un condominio específico (Asegurado por decorador)
-- ✅ Asignado por el Perfil Maestro (A través de `condominium_id`)
-- ✅ Gestiona unidades y usuarios dentro de su condominio (Vía CSV. Falta gestión individual)
-- ✅ No tiene acceso a otros condominios (Asegurado por decorador)
+- ✅ **Gestión de un condominio específico:** El `ADMIN` está asociado a un `tenant`. Las rutas de aprobación/rechazo de usuarios validan que el `ADMIN` solo pueda gestionar usuarios de su propio `tenant`.
 
 ### 2.3 Perfil Usuario
-- ✅ Acceso limitado a sus unidades asignadas
-- ✅ Asignado por el Administrador de su condominio (Vía `unit_id`)
-- ✅ Solo puede ver y gestionar sus propias unidades (Gestión pendiente)
+- ✅ **Acceso limitado:** Confirmado. El usuario solo ve su panel y páginas de servicios básicos.
 
 ### 2.4 Roles Especiales
-*(**❌ Faltante:** No hay modelos ni lógica implementados.)*
-- ❌ Asignados únicamente por el Administrador
-- ❌ Vigencia definida por período
-- ❌ Pueden coexistir con rol de Usuario
-- ❌ Limitados a un condominio específico
-- ❌ Permisos no transferibles entre condominios
+- 🚧 **Modelo de datos existente:** El modelo `UserSpecialRole` está definido.
+- ❌ **Lógica de asignación y permisos:** Totalmente ausente.
+
+---
 
 ## 3. Flujos de Trabajo
 
 ### 3.1 Creación de Condominio
-1. ✅ Perfil Maestro crea nuevo condominio
-2. ✅ Perfil Maestro asigna administrador(es)
-3. 🚧 Administrador configura el condominio (Falta interfaz)
+- ❌ **Flujo no implementado.**
 
 ### 3.2 Gestión de Unidades
-1. ✅ Administrador crea unidades en su condominio (Vía CSV. Falta individual)
-2. 🚧 Administrador aprueba registros de usuarios (Pendiente ajuste de alcance)
-3. ✅ Administrador asigna unidades a usuarios (Vía CSV. Falta individual)
+- 🚧 **Paso 1: Crear unidades:** Solo descarga de plantilla CSV. Carga y procesamiento no implementados.
+- ❌ **Paso 2: Asignar unidades a usuarios:** No implementado.
 
 ### 3.3 Acceso de Usuarios
-1. ✅ Usuario se registra en el sistema
-2. ✅ Estado PENDIENTE
-3. 🚧 Administrador revisa (Actualmente lo hace MASTER. Pendiente que ADMIN gestione *sus* usuarios)
-4. 🚧 Aprueba y asigna unidad(es) (Asignación vía CSV. Aprobación por MASTER. Pendiente ajuste para ADMIN)
-5. ✅ Usuario ACTIVO
+1. ✅ **Registro:** Usuario se registra (`/registro`) y queda en estado `pending`.
+2. ✅ **Aprobación:** Un `ADMIN` o `MASTER` puede aprobar al usuario (`/aprobar/:id`), cambiando su estado a `active`.
+3. ✅ **Login:** El usuario `active` puede iniciar sesión (`/login`).
 
-### 3.4 Asignación de Roles Especiales
-*(**❌ Faltante:** Flujo no implementado.)*
-1. ❌ Administrador identifica necesidad de rol especial
-2. ❌ Selecciona usuario calificado
-3. ❌ Define período de vigencia
-4. ❌ Asigna permisos específicos
-5. ❌ Registra en sistema
+### 3.4 Asignación de Roles Especiales (Visión a Futuro)
+- ❌ **Flujo no implementado.**
 
-### 3.5 Gestión de Directiva
-*(**❌ Faltante:** Flujo no implementado.)*
-1. ❌ Administrador registra fin de período actual
-2. ❌ Desactiva roles especiales anteriores
-3. ❌ Registra nueva directiva
-4. ❌ Asigna nuevos roles especiales
-5. ❌ Actualiza permisos y accesos
+---
 
 ## 4. Restricciones y Validaciones
 
 ### 4.1 Nivel Maestro
-- 🚧 Solo puede existir un perfil maestro por instalación (Actualmente validación solo al crear en `initialize_db.py`)
-- ✅ Gestiona exclusivamente la creación de condominios y asignación de administradores
+- ✅ **Rol único:** La lógica en las rutas asegura que solo este rol accede a sus funciones.
 
 ### 4.2 Nivel Administrador
-- ✅ Solo puede gestionar el condominio asignado (Asegurado por decorador)
-- ✅ No puede acceder a la gestión de otros condominios (Asegurado por decorador)
-- ✅ Responsable de toda la gestión interna de su condominio (Funcionalidades en proceso)
+- ✅ **Aislamiento de Condominio (Tenant):** Las rutas de gestión de usuarios en `admin_routes` verifican que el `ADMIN` pertenezca al mismo `tenant` que el usuario que está gestionando.
 
 ### 4.3 Nivel Usuario
-- ✅ Solo puede acceder a las unidades asignadas
-- ✅ No tiene permisos de gestión administrativa
-- ✅ Limitado a su propio condominio
+- ✅ **Acceso Básico:** Correctamente limitado a vistas no administrativas.
 
 ### 4.4 Roles Especiales
-*(**❌ Faltante:** No hay modelos ni lógica implementados.)*
-- ❌ Un usuario puede tener múltiples roles especiales
-- ❌ Roles especiales requieren período de vigencia
-- ❌ No puede haber duplicidad de roles activos
-- ❌ Debe mantenerse registro histórico
+- ❌ **Toda la lógica de validación está ausente.**
 
-## 5. Auditoría y Trazabilidad
-*(**❌ Faltante:** No hay un módulo de auditoría estructurado.)*
+---
 
-### 5.1 Registro de Acciones por Nivel
-- ❌ Perfil Maestro: Creación de condominios y asignación de administradores
-- ❌ Perfil Administrador: Gestión de unidades y usuarios
-- ❌ Perfil Usuario: Accesos y actualizaciones de información personal
+## 5. Auditoría y Trazabilidad (Visión a Futuro)
+- ❌ **Módulo no implementado.** No existe ninguna tabla o lógica para registrar las acciones de los usuarios.
 
-### 5.2 Datos a Registrar
-- ❌ Usuario que realiza la acción
-- ❌ Nivel de acceso utilizado
-- ❌ Fecha y hora
-- ❌ Tipo de acción
-- ❌ Detalles del cambio
-
-### 5.3 Auditoría de Roles Especiales
-- ❌ Registro de asignación y revocación
-- ❌ Historial de cambios en permisos
-- ❌ Seguimiento de acciones por rol
-- ❌ Documentación de períodos de vigencia
+---
 
 ## 6. Restricciones Técnicas
 
 ### 6.1 Validaciones de Seguridad
-- ✅ Verificar pertenencia al mismo condominio (En decoradores y lógica de rutas)
-- ✅ Validar permisos según rol (En decoradores)
-- ✅ Verificar estados activos (En login y decoradores)
+- ✅ **Validación de Rol:** Implementada a través de la lógica en cada ruta protegida.
+- ✅ **Validación de Estado:** El login (`/login`) verifica que el usuario esté `active`.
+- ✅ **Pertenencia a Condominio (Tenant):** Implementada en las rutas de `admin_routes` para la gestión de usuarios.
 
 ### 6.2 Integridad de Datos
-- 🚧 No permitir duplicados en asignaciones activas (Parcialmente: Email de usuario, etc.)
-- ❌ Mantener histórico de cambios
-- 🚧 Validar fechas coherentes (No aplicable directamente aún a flujos implementados)
-
-### 6.3 Gestión de Roles
-- ❌ Validación de períodos de vigencia
-- ❌ Control de duplicidad de roles
-- ❌ Verificación de permisos heredados
-- ❌ Registro de cambios en asignaciones
-
-## 7. Flujos de Trabajo (Detalle)
-
-### 7.1 Registro de Usuario
-1. ✅ Usuario se registra
-2. ✅ Estado PENDIENTE
-3. 🚧 Administrador revisa (Actualmente MASTER)
-4. 🚧 Aprueba y asigna unidad(es) (Aprobación por MASTER, asignación por ADMIN vía CSV)
-5. ✅ Usuario ACTIVO
-
-### 7.2 Asignación de Unidad
-1. 🚧 Administrador selecciona usuario (Vía CSV. Falta interfaz individual)
-2. 🚧 Verifica disponibilidad de unidad (Lógica pendiente en interfaz)
-3. ❌ Establece tipo de asignación
-4. ❌ Define fechas
-5. 🚧 Confirma asignación (Vía CSV. Falta interfaz individual)
+- ✅ **Email de usuario único:** Validado en la ruta de registro (`/registro`).
+- ❌ **Histórico de cambios:** No implementado.

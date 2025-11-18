@@ -17,24 +17,24 @@ class User(db.Model):
     city = db.Column(db.String(50))
     country = db.Column(db.String(50))
     password_hash = db.Column(db.String(255))
-    tenant = db.Column(db.String(50), default=get_tenant_default)
+    tenant = db.Column(db.String(50)) # El tenant debe ser asignado explícitamente por la lógica de negocio
     role = db.Column(db.String(20), default='user')
     status = db.Column(db.String(20), default='pending')
     created_at = db.Column(db.DateTime, default=datetime.now)
 
 # 2. CONFIGURACIÓN CONDOMINIO
-class CondominioConfig(db.Model):
-    __tablename__ = 'condominio_config'
+class CondominiumConfig(db.Model):
+    __tablename__ = 'condominium_configs'
     __table_args__ = {'extend_existing': True}
 
     tenant = db.Column(db.String(50), primary_key=True)
     primary_color = db.Column(db.String(7), default='#2c5aa0')
     logo_url = db.Column(db.String(255))
-    nombre_comercial = db.Column(db.String(100))
+    commercial_name = db.Column(db.String(100))
     created_at = db.Column(db.DateTime, default=datetime.now)
 
     def __repr__(self):
-        return f'<CondominioConfig {self.tenant}>'
+        return f'<CondominiumConfig {self.tenant}>'
 
 # 3. CONDOMINIUM (UNA SOLA CLASE, COMPLETA)
 class Condominium(db.Model):
@@ -99,10 +99,10 @@ class UserSpecialRole(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     condominium_id = db.Column(db.Integer, db.ForeignKey('condominiums.id'), nullable=False)
     role = db.Column(db.String(20), nullable=False)
-    asignado_por = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    fecha_inicio = db.Column(Date, nullable=False)
-    fecha_fin = db.Column(Date)
-    activo = db.Column(Boolean, default=True)
+    assigned_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    start_date = db.Column(Date, nullable=False)
+    end_date = db.Column(Date)
+    is_active = db.Column(Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.now)
 
 # 5. INVOICE

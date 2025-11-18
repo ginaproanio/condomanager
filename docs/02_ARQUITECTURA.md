@@ -19,32 +19,36 @@ Sistema multi-condominio implementado inicialmente para "Punta Blanca", diseñad
 - PostgreSQL (en producción)
 - SQLite (en desarrollo)
 
-## 3. Estructura del Proyecto Actual
+## 3. Estructura del Proyecto
 
 ```
 /condomanager-saas/
 ├── app/
-│   ├── __init__.py     # Inicialización de la aplicación Flask, JWT, CORS
-│   ├── extensions.py   # Instancia de SQLAlchemy (db) para evitar dependencias circulares
-│   ├── models.py       # Definición de todos los modelos de base de datos (User, Condominium, Unit, etc.)
-│   ├── routes.py       # Definición CENTRALIZADA de TODAS las rutas (públicas, protegidas, API, maestro, admin)
-│   ├── tenant.py       # Lógica para determinar el tenant de la solicitud
-│   ├── static/         # Archivos estáticos (CSS, JS, imágenes)
+│   ├── __init__.py     # Inicialización de la aplicación Flask y registro de componentes.
+│   ├── auth.py         # Funciones auxiliares de autenticación (ej. obtener usuario actual).
+│   ├── extensions.py   # Instancia de SQLAlchemy (db) para evitar dependencias circulares.
+│   ├── models.py       # Definición de todos los modelos de la base de datos.
+│   ├── tenant.py       # Lógica para determinar el tenant (inquilino) de la solicitud.
+│   ├── routes/         # Módulo que contiene todas las rutas (endpoints) de la aplicación.
+│   │   ├── __init__.py # Inicializa y registra los blueprints de rutas.
+│   │   ├── public_routes.py # Rutas públicas (home, registro, login).
+│   │   ├── user_routes.py   # Rutas para usuarios autenticados (dashboard).
+│   │   ├── admin_routes.py  # Rutas para administradores de condominio.
+│   │   ├── master_routes.py # Rutas para el super-administrador (rol MASTER).
+│   │   └── api_routes.py    # Endpoints de la API REST.
+│   ├── static/         # Archivos estáticos (CSS, JS, imágenes).
 │   │   ├── css/
 │   │   ├── js/
 │   │   └── img/
-│   └── templates/      # Plantillas HTML
-│       ├── admin/      # Templates para el panel de administradores (admin/panel.html, admin/condominio_panel.html)
-│       ├── auth/       # Templates de autenticación (login.html, registro.html)
-│       ├── master/     # Templates para el panel maestro (master/panel.html, master/condominios.html, master/usuarios.html, master/configuracion.html, master/editar_usuario.html)
-│       ├── services/   # Templates para servicios (unidades.html, pagos.html, reportes.html)
-│       ├── user/       # Templates para usuarios regulares (dashboard.html)
-│       └── base.html   # Plantilla base compartida
-├── config.py           # Configuración principal de Flask y JWT (cargando de variables de entorno)
-├── initialize_db.py    # Script para inicializar la base de datos (crear tablas, usuario maestro)
-├── Procfile            # Configuración de despliegue en Railway (ejecuta initialize_db.py y gunicorn)
-├── requirements.txt    # Dependencias de Python
-└── docs/               # Documentación del proyecto (este archivo y otros borradores)
+│   └── templates/      # Plantillas HTML (vistas).
+│       ├── admin/
+│       ├── auth/
+│       ├── master/
+│       ├── services/
+│       └── user/
+├── Procfile            # Configuración de despliegue en Railway.
+├── requirements.txt    # Dependencias de Python.
+└── docs/               # Documentación del proyecto.
 ```
 
 ## 4. Estrategia Multi-Condominio (Multi-Tenancy)
@@ -57,12 +61,12 @@ La implementación actual utiliza una estrategia de **multi-tenancy de esquema c
 ## 5. Modelos Principales (definidos en `app/models.py`)
 
 ### 5.1 User
-- Atributos clave: `id`, `email`, `name`, `password_hash`, `tenant`, `role`, `status`, `condominium_id` (para ADMINs).
+- Atributos clave: `id`, `email`, `name`, `password_hash`, `tenant`, `role`, `status`.
 - Roles base: `MASTER`, `ADMIN`, `USER`.
-- Relaciones: Puede estar asignado a una `Unit` (`unit_id`).
+- Relaciones: Un usuario puede ser administrador de `Condominium` o creador de `Unit`.
 
 ### 5.2 Condominium
-- Atributos clave: `id`, `name`, `address`, `city`, `country`, `status`, `tenant`.
+- Atributos clave: `id`, `name`, `main_street`, `city`, `country`, `status`, `subdomain`.
 - Relaciones: Contiene múltiples `Unit`s y `User`s (ADMINs asignados).
 
 ### 5.3 Unit
@@ -70,8 +74,35 @@ La implementación actual utiliza una estrategia de **multi-tenancy de esquema c
 - Relaciones: Pertenece a un `Condominium`, puede tener `User`s de unidad asignados.
 
 ### 5.4 CondominioConfig (en `app/models.py`)
-- Atributos clave: `tenant`, `primary_color`, `nombre_comercial`.
-- Propósito: Configuración específica de cada inquilino/condominio.
+- Atributos clave: `tenant`, `primary_color`, `logo_url`, `commercial_name`.
+- Propósito: Configuración de personalización para cada tenant.
+
+### 5.5 Modelos Propuestos (No Implementados)
+Para dar soporte a las reglas de negocio futuras, se proponen los siguientes modelos:
+
+#### 5.5.1 UserSpecialRole
+- **Estado:** 🚧 Implementado (Modelo de datos). Lógica de negocio pendiente.
+- **Propósito:** Asignar roles temporales y específicos (Presidente, Tesorero, etc.) a usuarios dentro de un condominio.
+- **Atributos Implementados:**
+    - `id`: Clave primaria.
+    - `user_id`: Foreign Key a `User`.
+    - `condominium_id`: Foreign Key a `Condominium`.
+    - `role`: String (ej. "PRESIDENT", "TREASURER").
+    - `assigned_by`: Foreign Key al `User` que asigna el rol.
+    - `start_date`: Fecha de inicio de vigencia del rol.
+    - `end_date`: Fecha de fin de vigencia.
+    - `is_active`: Booleano para indicar si el rol está activo.
+    - `created_at`: Timestamp de creación.
+
+#### 5.5.2 AuditLog
+- **Propósito:** Registrar acciones clave en el sistema para trazabilidad y seguridad.
+- **Atributos Sugeridos:**
+    - `id`: Clave primaria.
+    - `user_id`: Foreign Key al `User` que realiza la acción.
+    - `tenant`: El tenant (`subdomain`) donde ocurrió la acción.
+    - `action`: String describiendo la acción (ej. "USER_LOGIN", "CREATE_CONDOMINIUM").
+    - `details`: Campo de texto (JSON o similar) con detalles relevantes.
+    - `timestamp`: Fecha y hora de la acción.
 
 ## 6. Seguridad
 - **Autenticación:** JWT con cookies HTTP-Only (gestionado por Flask-JWT-Extended).
@@ -79,32 +110,32 @@ La implementación actual utiliza una estrategia de **multi-tenancy de esquema c
 - **Hashing de Contraseñas:** SHA256.
 - HTTPS obligatorio en producción.
 
-## 7. Próximas Funcionalidades (Visión del Borrador Original y Necesidades Actuales)
-Esta sección documenta funcionalidades y componentes que están en borradores (`docs/08_ROLES_Y_PERMISOS.md`, etc.) o que son necesidades identificadas, pero que no están completamente implementadas en la arquitectura actual.
+## 7. Próximas Funcionalidades y Mejoras
+Esta sección documenta funcionalidades identificadas en las reglas de negocio (`07_REGLAS_NEGOCIO.md`) que no están completamente implementadas.
 
-### 7.1 Roles Especiales y su Gestión
-- **Roles:** PRESIDENTE, SECRETARIO, TESORERO, CONTADOR, VOCAL.
-- **Gestión:** Asignación y revocación por el ADMINISTRADOR de un condominio, con período de vigencia.
-- **Estructura DB:** Requiere una tabla `user_special_roles`.
+### 7.1 Implementación de Roles Especiales
+- **Objetivo:** Implementar el modelo `UserSpecialRole` (ver 5.5.1) y la lógica de negocio para que los `ADMIN` puedan asignar y gestionar la directiva del condominio con períodos de vigencia.
+- **Estado:** ❌ Faltante.
 
-### 7.2 Gestión Detallada de Condominios por ADMIN
-- Un ADMIN debe poder:
-    - Ver y editar datos completos del condominio al que está asignado.
-    - Registrar la directiva (usando roles especiales).
-    - Crear y gestionar unidades individualmente.
-    - Importar unidades masivamente por CSV.
-    - Crear y gestionar usuarios de unidades individualmente.
-    - Importar usuarios de unidades masivamente por CSV (relacionados con unidades).
-    - Generar y gestionar pagos.
-    - Hacer cobranzas.
-    - Generar reportes específicos del condominio.
+### 7.2 Completar Gestión del Administrador (`ADMIN`)
+- **Objetivo:** Desarrollar las interfaces y la lógica para que un `ADMIN` pueda gestionar su condominio de forma individual (no solo por CSV).
+- **Tareas Pendientes:**
+    - 🚧 Creación y edición individual de `Unit`.
+    - 🚧 Aprobación y gestión individual de `User` para su condominio.
+    - 🚧 Asignación individual de `Unit` a `User`.
+    - 🚧 Interfaz para gestionar la configuración del condominio (`CondominioConfig`).
 
-### 7.3 Componentes de Escalabilidad/Rendimiento (del borrador original)
-- Celery para tareas asíncronas.
-- Redis para caché y sesiones.
-- Nginx como servidor web.
-- DataTables y Chart.js para frontend.
-- Estrategias avanzadas de caché, monitoreo y balanceo de carga.
+### 7.3 Implementación de Auditoría
+- **Objetivo:** Crear un sistema de trazabilidad de acciones críticas implementando el modelo `AuditLog` (ver 5.5.2).
+- **Estado:** ❌ Faltante.
+
+### 7.4 Componentes de Escalabilidad (Visión a Largo Plazo)
+- **Celery:** Para tareas asíncronas (ej. envío de correos, procesamiento de reportes).
+- **Redis:** Para caché y gestión de sesiones.
+- **Nginx:** Como servidor web/proxy inverso en producción.
+- **Mejoras Frontend:** Uso de DataTables y Chart.js para visualización de datos.
 
 ## 8. Consideraciones para Futuras Mejoras
-- **Modularización:** La arquitectura borrador original (con `app/api/v1/auth/`, `app/core/`, etc.) representa un objetivo a largo plazo para una mayor escalabilidad y separación de responsabilidades, que podría ser abordada cuando las necesidades del proyecto lo requieran o superen la capacidad de la estructura actual.
+- **Modularización:** La estructura actual es adecuada, pero a medida que el proyecto crezca, se puede evaluar una mayor modularización (ej. `app/api/v1/`, `app/core/`) para desacoplar componentes.
+- **Refinamiento de Permisos:** Una vez implementados los roles especiales, se necesitará un sistema de permisos más granular que el basado solo en los roles base (`MASTER`, `ADMIN`, `USER`).
+- **Testing:** Es crucial incrementar la cobertura de tests unitarios y de integración a medida que se añaden nuevas funcionalidades.

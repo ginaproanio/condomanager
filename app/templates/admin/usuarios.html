@@ -98,11 +98,11 @@
                                         <td>
                                             <div class="btn-group btn-group-sm">
                                                 {% if user.status == 'pending' %}
-                                                    <a href="/aprobar/{{ user.id }}" class="btn btn-success" 
+                                                    <a href="{{ url_for('main.approve_user', user_id=user.id) }}" class="btn btn-success" 
                                                        title="Aprobar usuario">
                                                         <i class="fas fa-check"></i>
                                                     </a>
-                                                    <a href="/rechazar/{{ user.id }}" class="btn btn-danger"
+                                                    <a href="{{ url_for('main.reject_user', user_id=user.id) }}" class="btn btn-danger"
                                                        title="Rechazar usuario">
                                                         <i class="fas fa-times"></i>
                                                     </a>
@@ -112,7 +112,7 @@
                                                         <i class="fas fa-user-check"></i>
                                                     </button>
                                                 {% else %}
-                                                    <a href="/aprobar/{{ user.id }}" class="btn btn-outline-success"
+                                                    <a href="{{ url_for('main.approve_user', user_id=user.id) }}" class="btn btn-outline-success"
                                                        title="Re-activar usuario">
                                                         <i class="fas fa-redo"></i>
                                                     </a>

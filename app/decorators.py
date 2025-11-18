@@ -1,10 +1,10 @@
 from functools import wraps
 from flask import flash, redirect, url_for, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from app.models import User # Importar el modelo User
+from app.models import User, Condominium # Importar modelos necesarios
 
 def get_current_user_from_jwt():
-    """Obtiene el usuario actual de forma segura a partir del JWT."""
+    """Safely gets the current user from the JWT."""
     user_id = get_jwt_identity()
     if user_id is None:
         return None
@@ -58,20 +58,31 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-def admin_condominio_required(f):
+def condominium_admin_required(f):
     """
     Decorator para rutas que requieren el rol 'ADMIN' y estar asignado a un condominio específico.
-    Se basa en login_required y pasa el usuario.
+    Se basa en admin_required para asegurar el rol y pasa el usuario.
     La función de la ruta debe aceptar 'condominium_id' como argumento.
     """
     @wraps(f)
-    @login_required
+    @admin_required
     def decorated_function(*args, **kwargs):
         user = kwargs.get('current_user')
-        condominium_id = kwargs.get('condominium_id') # Asume que condominium_id se pasa como argumento de la ruta
+        # Asume que el ID del condominio viene en los argumentos de la ruta (ej. /condo/<int:condo_id>/dashboard)
+        condominium_id = kwargs.get('condo_id') or kwargs.get('condominium_id')
 
-        if user is None or user.role != 'ADMIN' or user.condominium_id != condominium_id:
-            flash("Acceso denegado o condominio no autorizado.", "error")
+        if user.role == 'MASTER':
+            # El rol MASTER tiene acceso a todo, no necesita más validaciones.
+            return f(*args, **kwargs)
+
+        if not condominium_id:
+            current_app.logger.error(f"Ruta protegida por 'condominium_admin_required' no recibió 'condo_id'.")
+            flash("Error de configuración de la ruta.", "error")
+            return redirect(url_for('main.dashboard'))
+
+        condo = Condominium.query.filter_by(id=condominium_id, admin_user_id=user.id).first()
+        if not condo:
+            flash("Acceso denegado. No está autorizado para gestionar este condominio.", "error")
             return redirect(url_for('main.dashboard'))
         return f(*args, **kwargs)
     return decorated_function

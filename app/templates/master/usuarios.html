@@ -88,10 +88,10 @@
                                                             <td>{{ u.created_at.strftime('%d/%m/%Y %H:%M') if u.created_at else 'N/A' }}</td>
                                                             <td>
                                                                 <div class="btn-group btn-group-sm">
-                                                                    <a href="/aprobar/{{ u.id }}" class="btn btn-success">
+                                                                    <a href="{{ url_for('main.approve_user', user_id=u.id) }}" class="btn btn-success">
                                                                         <i class="fas fa-check"></i> Aprobar
                                                                     </a>
-                                                                    <a href="/rechazar/{{ u.id }}" class="btn btn-danger">
+                                                                    <a href="{{ url_for('main.reject_user', user_id=u.id) }}" class="btn btn-danger">
                                                                         <i class="fas fa-times"></i> Rechazar
                                                                     </a>
                                                                     <a href="{{ url_for('main.master_usuarios_editar', user_id=u.id) }}" class="btn btn-info">

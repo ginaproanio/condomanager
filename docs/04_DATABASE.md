@@ -1,35 +1,29 @@
-# Documentación Base de Datos
-Versión: v1.0.0-beta
+# Documentación de la Base de Datos
+Versión: 2.0.0 (Sincronizado con `app/models.py` a fecha 2025-11-18)
 
-## 1. Esquema General
+## 1. Visión General
+La base de datos utiliza una estrategia de **esquema compartido (shared-schema)**. Todos los datos de todos los condominios residen en las mismas tablas, y la separación lógica se logra mediante columnas de identificación como `tenant` o `condominium_id`.
+
+A continuación se describen las tablas principales del sistema, basadas en los modelos de SQLAlchemy definidos en `app/models.py`.
+
+## 2. Tablas Principales
+ 
+### 2.1 Tabla `users`
+Almacena la información de todos los usuarios del sistema, sin importar el condominio al que pertenezcan.
 ```sql
-CREATE DATABASE condominio CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-```
-
-## 2. Tablas de Configuración
-
-### 2.1 Tipos de Unidad
-```sql
-CREATE TABLE unit_types (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    code VARCHAR(20) UNIQUE NOT NULL,
-    name VARCHAR(50) NOT NULL,
-    description TEXT,
-    condominium_id BIGINT NOT NULL,
-    active BOOLEAN DEFAULT true,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (condominium_id) REFERENCES condominiums(id),
-    INDEX idx_code (code),
-    INDEX idx_condominium (condominium_id)
+CREATE TABLE users (
+    id INTEGER PRIMARY KEY AUTO_INCREMENT,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    name VARCHAR(100),
+    phone VARCHAR(20),
+    city VARCHAR(50),
+    country VARCHAR(50),
+    password_hash VARCHAR(255),
+    tenant VARCHAR(50),
+    role VARCHAR(20) DEFAULT 'user', -- Roles base: 'MASTER', 'ADMIN', 'USER'
+    status VARCHAR(20) DEFAULT 'pending', -- Estados: 'pending', 'active', 'rejected'
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
-
--- Datos iniciales para Punta Blanca
-INSERT INTO unit_types (code, name, condominium_id) VALUES
-('LOTE', 'Lote', 1),
-('BODEGA', 'Bodega', 1),
-('CASA', 'Casa', 1),
-('DEPARTAMENTO', 'Departamento', 1);
 ```
 
 ### 2.2 Estados de Unidad
@@ -198,6 +192,3 @@ CREATE TABLE unit_assignments (
 ### 8.3 Manejo de Coordenadas
 - `latitud`: DECIMAL(10,8) para precisión de hasta 1.11 metros
 - `longitud`: DECIMAL(11,8) para precisión de hasta 1.11 metros
-
-### 8.4 Notas de Cambios
-- La tabla `usuarios` fue renombrada a `users` para mantener consistencia con la convención de nombres en inglés usada en el resto del proyecto

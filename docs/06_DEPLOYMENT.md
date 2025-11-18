@@ -1,160 +1,30 @@
 # Guía de Deployment
-Versión: v1.0.0-beta
+Versión: 2.0.0 (Alineado con Arquitectura de Esquema Compartido)
 
-> **Implementación Inicial**: Esta guía usa "Punta Blanca" como ejemplo de implementación,
-> estableciendo el estándar para futuros condominios.
+> Esta guía describe el despliegue de la aplicación en una plataforma como **Railway**, siguiendo una arquitectura de **esquema compartido** y un flujo de trabajo **GitOps**, donde los cambios en el repositorio de GitHub disparan los despliegues.
 
 ## 1. Requisitos Previos
 
-### 1.1 Configuración Multi-Condominio
-#### Estructura de Dominios
-- Sitio principal: `{nombre_condominio}.com`
-- Sistema de gestión: `gestion.{nombre_condominio}.com`
+- **Plataforma**: Una cuenta en Railway.
+- **Repositorio**: El código del proyecto alojado en GitHub y conectado a tu proyecto de Railway.
+- **Dominio**: Un dominio personalizado (ej. `condomanager.com`) configurado en Railway.
 
-#### Ejemplos Implementados
-1. Punta Blanca
-   - Principal: puntablancaecuador.com
-   - Gestión: gestion.puntablancaecuador.com
-   - Tipo: Lotes/Terrenos
+## 2. Configuración en Railway
+ 
+### 2.1 Servicios
+Dentro de tu proyecto de Railway, necesitas dos servicios principales:
+1.  **Aplicación Web (Web App)**: Conectada a tu repositorio de GitHub. Railway detectará el `Procfile` y sabrá cómo ejecutar la aplicación.
+2.  **Base de Datos (PostgreSQL)**: Un servicio de base de datos de PostgreSQL. Railway proporcionará automáticamente la URL de conexión (`DATABASE_URL`).
 
-2. [Futuro Condominio]
-   - Principal: {dominio}.com
-   - Gestión: gestion.{dominio}.com
-   - Tipo: [Departamentos/Casas/etc]
-
-### 1.2 Cuenta y Recursos
-- Cuenta activa en Hostinger
-- Plan Business o superior recomendado
-- Acceso SSH habilitado
-
-### 1.3 Preparación Local
-- Código versionado en Git
-- Pruebas locales completadas
-- Variables de entorno documentadas
-- Base de datos respaldada
-
-## 2. Configuración en Hostinger
-
-### 2.1 Panel de Control
-1. Acceder al panel de Hostinger
-2. Configurar subdominio según plantilla:
-   ```
-   gestion.{nombre_condominio}.com
-   ```
-3. Verificar recursos asignados:
-   - PHP Version: 8.1+
-   - Python: 3.8+
-   - Node.js: 18+
-
-### 2.2 Base de Datos
-```sql
--- Reemplazar {nombre_condominio} con el nombre específico
-CREATE DATABASE {nombre_condominio} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
-CREATE USER '{nombre_condominio}_user'@'localhost' IDENTIFIED BY 'contraseña_segura';
-GRANT ALL PRIVILEGES ON {nombre_condominio}.* TO '{nombre_condominio}_user'@'localhost';
-FLUSH PRIVILEGES;
-
--- Ejemplo Punta Blanca:
-CREATE DATABASE puntablanca CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER 'puntablanca_user'@'localhost' IDENTIFIED BY 'contraseña_segura';
-```
-
-### 2.3 Python y Entorno Virtual
-```bash
-# Crear directorio específico para cada condominio
-mkdir -p /home/usuario/condominios/{nombre_condominio}
-cd /home/usuario/condominios/{nombre_condominio}
-
-# Configurar Python
-python3.8 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-```
-
-### 2.4 Servicios Requeridos
-- Redis (compartido o dedicado según necesidad)
-- Supervisor (configuración por condominio)
-- Nginx (virtual hosts separados)
-
-## 3. Proceso de Deployment
-
-### 3.1 Estructura de Directorios
-```
-/home/usuario/condominios/
-├── puntablanca/
-│   ├── venv/
-│   ├── app/
-│   ├── logs/
-│   └── media/
-├── [futuro_condominio]/
-│   ├── venv/
-│   ├── app/
-│   ├── logs/
-│   └── media/
-```
-
-### 3.2 Configuración de Nginx
-```nginx
-# Template para cada condominio
-server {
-    listen 80;
-    server_name gestion.{nombre_condominio}.com;
-
-    # Logs específicos por condominio
-    access_log /var/log/nginx/{nombre_condominio}_access.log;
-    error_log /var/log/nginx/{nombre_condominio}_error.log;
-
-    location / {
-        proxy_pass http://127.0.0.1:{puerto};
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-
-    location /static {
-        alias /home/usuario/condominios/{nombre_condominio}/app/static;
-    }
-
-    location /media {
-        alias /home/usuario/condominios/{nombre_condominio}/app/media;
-    }
-}
-```
-
-### 3.3 Supervisor
-```ini
-[program:{nombre_condominio}]
-command=/home/usuario/condominios/{nombre_condominio}/venv/bin/gunicorn -w 4 -b 127.0.0.1:{puerto} run:app
-directory=/home/usuario/condominios/{nombre_condominio}/app
-user=usuario
-autostart=true
-autorestart=true
-stderr_logfile=/home/usuario/condominios/{nombre_condominio}/logs/err.log
-stdout_logfile=/home/usuario/condominios/{nombre_condominio}/logs/out.log
-
-[program:{nombre_condominio}_celery]
-command=/home/usuario/condominios/{nombre_condominio}/venv/bin/celery -A app.celery worker --loglevel=info
-directory=/home/usuario/condominios/{nombre_condominio}/app
-user=usuario
-autostart=true
-autorestart=true
-stderr_logfile=/home/usuario/condominios/{nombre_condominio}/logs/celery_err.log
-stdout_logfile=/home/usuario/condominios/{nombre_condominio}/logs/celery_out.log
-```
-
-### 3.4 Variables de Entorno
+### 2.2 Variables de Entorno
+En la configuración de tu servicio de aplicación en Railway, define las siguientes variables:
 ```env
-# Template para cada condominio
 FLASK_ENV=production
-FLASK_APP=run.py
-DB_HOST=localhost
-DB_NAME={nombre_condominio}
-DB_USER={nombre_condominio}_user
-DB_PASS=contraseña_segura
-SECRET_KEY=clave_secreta_produccion
-DOMAIN=gestion.{nombre_condominio}.com
-MAIN_WEBSITE=https://{nombre_condominio}.com
-CONDOMINIO_TIPO=[lotes/departamentos/casas]
+SQLALCHEMY_DATABASE_URI=${{PostgreSQL.DATABASE_URL}} # Railway inyecta esta variable
+SECRET_KEY=clave_secreta_generada_para_produccion # Usar el generador de secretos de Railway
+JWT_SECRET_KEY=clave_jwt_generada_para_produccion # Usar el generador de secretos de Railway
+MASTER_EMAIL=maestro@tudominio.com
+MASTER_PASSWORD=una_contraseña_muy_fuerte_y_segura
 ```
 
 ### 3.5 SSL/HTTPS

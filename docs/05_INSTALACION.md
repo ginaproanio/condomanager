@@ -1,27 +1,20 @@
 # Guía de Instalación
-Versión: v1.0.0-beta
+Versión: 2.0.0 (Alineado con Arquitectura de Esquema Compartido)
+
+> **Objetivo**: Esta guía describe cómo configurar un entorno de desarrollo local para poder modificar el código y subirlo a un repositorio Git. El flujo de trabajo se centra en el despliegue a entornos en la nube (ej. Railway), por lo que no se requiere ejecutar la aplicación o una base de datos localmente.
 
 ## 1. Requisitos del Sistema
 
 ### 1.1 Software Base
 - Python 3.8+
-- MariaDB 10.5+
-- Redis 6.0+
-- Node.js 18+ (para herramientas de desarrollo frontend)
 - Git
-
-### 1.2 Recursos Recomendados
-- RAM: 4GB mínimo
-- CPU: 2 cores mínimo
-- Almacenamiento: 20GB mínimo
-- Ancho de banda: 10Mbps mínimo
 
 ## 2. Configuración Local
 
 ### 2.1 Clonar Repositorio
 ```bash
-git clone https://github.com/tu-organizacion/tu-repo.git
-cd tu-repo
+git clone https://github.com/ginaproanio/condomanager.git
+cd condomanager-saas
 ```
 
 ### 2.2 Entorno Virtual Python
