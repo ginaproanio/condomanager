@@ -382,10 +382,46 @@ def master_usuarios_editar(user_id):
     
     user_to_edit = User.query.get_or_404(user_id)
     
-    # Aquí iría la lógica para un formulario de edición
-    # Por ahora, solo un mensaje y redirección
-    flash(f"Funcionalidad de edición para {user_to_edit.email} en construcción. Redirigiendo...", "info")
-    return redirect(url_for('main.master_usuarios'))
+    if request.method == 'GET':
+        return render_template('master/editar_usuario.html', user=user_to_edit, config=current_app.get_tenant_config(current_user.tenant))
+
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        email = request.form.get('email', '').strip()
+        phone = request.form.get('phone', '').strip()
+        city = request.form.get('city', '').strip()
+        country = request.form.get('country', '').strip()
+        role = request.form.get('role', 'USER').upper()
+        status = request.form.get('status', 'active').upper()
+
+        # Validaciones
+        if not name:
+            flash("El nombre es obligatorio", "error")
+            return render_template('master/editar_usuario.html', user=user_to_edit, config=current_app.get_tenant_config(current_user.tenant))
+        if not email:
+            flash("El email es obligatorio", "error")
+            return render_template('master/editar_usuario.html', user=user_to_edit, config=current_app.get_tenant_config(current_user.tenant))
+        if User.query.filter_by(email=email).first() and email != user_to_edit.email:
+            flash("Este email ya está en uso por otro usuario", "error")
+            return render_template('master/editar_usuario.html', user=user_to_edit, config=current_app.get_tenant_config(current_user.tenant))
+        
+        # No permitir que un MASTER cambie su propio rol o el rol de otro MASTER
+        if current_user.role == 'MASTER' and user_to_edit.role == 'MASTER':
+            if role != 'MASTER':
+                flash("No puedes cambiar el rol de un usuario MASTER a otro rol.", "error")
+                return render_template('master/editar_usuario.html', user=user_to_edit, config=current_app.get_tenant_config(current_user.tenant))
+
+        user_to_edit.name = name
+        user_to_edit.email = email
+        user_to_edit.phone = phone
+        user_to_edit.city = city
+        user_to_edit.country = country
+        user_to_edit.role = role
+        user_to_edit.status = status
+
+        db.session.commit()
+        flash(f"Usuario {user_to_edit.email} actualizado exitosamente.", "success")
+        return redirect(url_for('main.master_usuarios'))
 
 @main.route('/master/usuarios/eliminar/<int:user_id>')
 @jwt_required()
