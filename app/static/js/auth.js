@@ -44,7 +44,10 @@ class AuthManager {
         localStorage.removeItem(this.tokenKey);
         localStorage.removeItem(this.userKey);
         this.updateUI(null);
-        window.location.href = '/login';
+        // Solo redirigir a login si no estamos ya en la página de login o registro
+        if (window.location.pathname !== '/login' && window.location.pathname !== '/registro') {
+            window.location.href = '/login';
+        }
     }
 
     // ✅ VERIFICAR SI ESTÁ AUTENTICADO

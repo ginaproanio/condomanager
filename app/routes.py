@@ -98,10 +98,17 @@ def api_login():
     if user.status != 'active':
         return jsonify({"error": "Tu cuenta está pendiente de aprobación o fue rechazada"}), 403
 
-    access_token = create_access_token(identity=str(user.id), expires_delta=timedelta(hours=12)) # Convertir a string
+    access_token = create_access_token(identity=str(user.id), expires_delta=timedelta(hours=12))
     
-    # Establecer la cookie JWT directamente desde el backend y luego redirigir
-    response = make_response(redirect(url_for('main.dashboard')))
+    # Redirigir según el rol del usuario
+    if user.role == 'MASTER':
+        redirect_url = url_for('main.master_panel')
+    elif user.role == 'ADMIN':
+        redirect_url = url_for('main.admin_panel')
+    else:
+        redirect_url = url_for('main.dashboard')
+
+    response = make_response(redirect(redirect_url))
     set_access_cookies(response, access_token)
     return response
 
