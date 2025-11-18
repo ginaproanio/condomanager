@@ -323,6 +323,45 @@ def reportes():
     config = current_app.get_tenant_config(tenant)
     return render_template('services/reportes.html', mensaje="Reportes", config=config)
 
+# Nuevas rutas para el panel maestro
+@main.route('/master/condominios')
+@jwt_required()
+def master_condominios():
+    user = get_current_user()
+    if not user or user.role != 'MASTER':
+        flash("Acceso denegado – Se requiere rol MASTER", "error")
+        return redirect('/dashboard')
+    from app.tenant import get_tenant
+    tenant = get_tenant()
+    config = current_app.get_tenant_config(tenant)
+    return render_template('master/condominios.html', user=user, config=config, mensaje="Página de gestión de condominios (Maestro)")
+
+@main.route('/master/usuarios') # Para gestión global de usuarios, diferente a /admin
+@jwt_required()
+def master_usuarios():
+    user = get_current_user()
+    if not user or user.role != 'MASTER':
+        flash("Acceso denegado – Se requiere rol MASTER", "error")
+        return redirect('/dashboard')
+    from app.tenant import get_tenant
+    tenant = get_tenant()
+    config = current_app.get_tenant_config(tenant)
+    # Aquí podrías cargar todos los usuarios o usuarios por tenant, dependiendo de la vista
+    all_users = User.query.all() # Ejemplo: cargar todos los usuarios
+    return render_template('master/usuarios.html', user=user, config=config, all_users=all_users, mensaje="Página de gestión de usuarios (Maestro)")
+
+@main.route('/master/configuracion')
+@jwt_required()
+def master_configuracion():
+    user = get_current_user()
+    if not user or user.role != 'MASTER':
+        flash("Acceso denegado – Se requiere rol MASTER", "error")
+        return redirect('/dashboard')
+    from app.tenant import get_tenant
+    tenant = get_tenant()
+    config = current_app.get_tenant_config(tenant)
+    return render_template('master/configuracion.html', user=user, config=config, mensaje="Página de configuración global (Maestro)")
+
 @main.route('/condominiums', methods=['GET'])
 def get_condominiums():
     try:

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Configuración Global (Maestro){% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-5">
+                    <h2 class="text-primary mb-3"><i class="fas fa-cogs me-2"></i>Configuración Global</h2>
+                    <p class="lead">Bienvenido al panel de configuración global, {{ user.name }}.</p>
+                    <p>{{ mensaje }}</p>
+                    <a href="/master" class="btn btn-secondary mt-3">Volver al Panel Maestro</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
