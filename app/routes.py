@@ -99,8 +99,11 @@ def api_login():
         return jsonify({"error": "Tu cuenta está pendiente de aprobación o fue rechazada"}), 403
 
     access_token = create_access_token(identity=user.id, expires_delta=timedelta(hours=12))
-    # set_access_cookies(response, access_token) # No se usa directamente en la respuesta JSON
-    return jsonify({"access_token": access_token, "user": {"id": user.id, "email": user.email, "name": user.name, "role": user.role, "status": user.status}}), 200
+    
+    # Establecer la cookie JWT directamente desde el backend
+    response = make_response(jsonify({"msg": "Login exitoso", "user": {"id": user.id, "email": user.email, "name": user.name, "role": user.role, "status": user.status}}))
+    set_access_cookies(response, access_token)
+    return response
 
 @main.route('/logout')
 def logout():
