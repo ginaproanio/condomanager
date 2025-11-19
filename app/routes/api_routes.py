@@ -1,9 +1,41 @@
-from flask import Blueprint, jsonify
-from flask_jwt_extended import jwt_required
+from flask import Blueprint, jsonify, request, make_response
+from flask_jwt_extended import jwt_required, create_access_token, set_access_cookies
 from app.auth import get_current_user
 from app.models import Condominium, User, Unit
+from app import db
+import hashlib
+from datetime import timedelta
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
+
+@api_bp.route('/auth/login', methods=['POST'])
+def api_login():
+    """
+    Endpoint de la API para el login de usuarios.
+    Recibe un JSON con email y password, y si son válidos,
+    devuelve un token JWT en una cookie HTTP-Only.
+    """
+    data = request.get_json()
+    if not data or not data.get('email') or not data.get('password'):
+        return jsonify({"error": "Email y contraseña requeridos"}), 400
+
+    email = data['email'].strip()
+    password = data['password']
+    pwd_hash = hashlib.sha256(password.encode()).hexdigest()
+
+    user = User.query.filter_by(email=email, password_hash=pwd_hash).first()
+
+    if not user:
+        return jsonify({"error": "Credenciales incorrectas"}), 401
+
+    if user.status != 'active':
+        return jsonify({"error": f"Tu cuenta está en estado '{user.status}'"}), 403
+
+    # Crear token y establecerlo en una cookie
+    access_token = create_access_token(identity=user.id, expires_delta=timedelta(hours=12))
+    response = jsonify({"message": "Login exitoso", "user_role": user.role})
+    set_access_cookies(response, access_token)
+    return response
 
 @api_bp.route('/auth/me')
 @jwt_required()
