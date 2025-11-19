@@ -1,5 +1,5 @@
-from flask import Blueprint, jsonify, request, make_response
-from flask_jwt_extended import jwt_required, create_access_token, set_access_cookies
+from flask import Blueprint, jsonify, request, make_response, url_for # Importar url_for
+from flask_jwt_extended import jwt_required, create_access_token, set_access_cookies, current_user
 from app.auth import get_current_user
 from app.models import Condominium, User, Unit
 from app import db
@@ -32,8 +32,16 @@ def api_login():
         return jsonify({"error": f"Tu cuenta está en estado '{user.status}'"}), 403
 
     # Crear token y establecerlo en una cookie
-    access_token = create_access_token(identity=user.id, expires_delta=timedelta(hours=12))
-    response = jsonify({"message": "Login exitoso", "user_role": user.role})
+    access_token = create_access_token(identity=user.id, expires_delta=timedelta(hours=12)) # 12 horas
+    
+    # Determinar URL de redirección basada en el rol del usuario
+    redirect_url = url_for('user.dashboard') # Por defecto
+    if user.role == 'MASTER':
+        redirect_url = url_for('master.master_panel')
+    elif user.role == 'ADMIN':
+        redirect_url = url_for('admin.admin_panel')
+
+    response = jsonify({"status": "success", "message": "Login exitoso", "user_role": user.role, "redirect_url": redirect_url})
     set_access_cookies(response, access_token)
     return response
 
