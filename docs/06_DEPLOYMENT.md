@@ -7,7 +7,6 @@ Versión: 2.0.0 (Alineado con Arquitectura de Esquema Compartido)
 
 - **Plataforma**: Una cuenta en Railway.
 - **Repositorio**: El código del proyecto alojado en GitHub y conectado a tu proyecto de Railway.
-- **Dominio**: Un dominio personalizado (ej. `condomanager.com`) configurado en Railway.
 
 ## 2. Configuración en Railway
  
@@ -20,11 +19,11 @@ Dentro de tu proyecto de Railway, necesitas dos servicios principales:
 En la configuración de tu servicio de aplicación en Railway, define las siguientes variables:
 ```env
 FLASK_ENV=production
-SQLALCHEMY_DATABASE_URI=${{PostgreSQL.DATABASE_URL}} # Railway inyecta esta variable
-SECRET_KEY=clave_secreta_generada_para_produccion # Usar el generador de secretos de Railway
-JWT_SECRET_KEY=clave_jwt_generada_para_produccion # Usar el generador de secretos de Railway
-MASTER_EMAIL=maestro@tudominio.com
-MASTER_PASSWORD=una_contraseña_muy_fuerte_y_segura
+SQLALCHEMY_DATABASE_URI=${{PostgreSQL.DATABASE_URL}} # Railway inyecta esta variable automáticamente
+SECRET_KEY= # Usar el generador de secretos de Railway
+JWT_SECRET_KEY= # Usar el generador de secretos de Railway
+MASTER_EMAIL=maestro@condomanager.com # O el email que desees para el super-admin
+MASTER_PASSWORD= # Contraseña fuerte para el super-admin
 ```
 
 ### 3.5 SSL/HTTPS

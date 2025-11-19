@@ -61,7 +61,8 @@ def login():
     from app.tenant import get_tenant
     tenant = get_tenant()
     config = current_app.get_tenant_config(tenant)
-    # La lógica de login ahora es manejada exclusivamente por /api/auth/login
+    # La lógica de procesamiento del login ahora es manejada 100% por la API
+    # en /api/auth/login. Esta ruta solo muestra la plantilla.
     return render_template('auth/login.html', config=config)
 
 @public_bp.route('/logout')

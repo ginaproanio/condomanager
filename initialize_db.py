@@ -14,8 +14,12 @@ def initialize_database():
             from app import models
             import os
             import hashlib
-
-            print("AUDIT: Intentando crear todas las tablas...")
+            
+            print("AUDIT: **MODO DEPURACIÓN** Eliminando todas las tablas existentes (db.drop_all())...")
+            db.drop_all()
+            print("✅ AUDIT: Todas las tablas eliminadas.")
+            
+            print("AUDIT: Creando todas las tablas desde cero (db.create_all())...")
             db.create_all()
             print("✅ AUDIT: db.create_all() ejecutado.")
 
