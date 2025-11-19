@@ -31,7 +31,7 @@
                     {% endif %}
 
                     <!-- Formulario JWT -->
-                    <form id="login-form">
+                    <form id="login-form" action="{{ url_for('api.api_login') }}" method="POST">
                         <div class="mb-3">
                             <label for="email" class="form-label">Email</label>
                             <div class="input-group">

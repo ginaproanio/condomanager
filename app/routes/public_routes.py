@@ -61,26 +61,7 @@ def login():
     from app.tenant import get_tenant
     tenant = get_tenant()
     config = current_app.get_tenant_config(tenant)
-
-    if request.method == 'POST':
-        email = request.form['email'].strip()
-        password = request.form['password']
-        pwd_hash = hashlib.sha256(password.encode()).hexdigest()
-
-        user = User.query.filter_by(email=email, password_hash=pwd_hash).first()
-        if not user:
-            flash("Credenciales incorrectas", "error")
-            return render_template('auth/login.html', config=config)
-
-        if user.status != 'active':
-            flash("Tu cuenta está pendiente de aprobación o fue rechazada", "warning")
-            return render_template('auth/login.html', config=config)
-
-        access_token = create_access_token(identity=user.id, expires_delta=timedelta(hours=12))
-        response = make_response(redirect('/dashboard'))
-        set_access_cookies(response, access_token)
-        return response
-
+    # La lógica de login ahora es manejada exclusivamente por /api/auth/login
     return render_template('auth/login.html', config=config)
 
 @public_bp.route('/logout')
