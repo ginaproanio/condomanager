@@ -57,9 +57,9 @@ def create_app():
         return models.User.query.get(identity)
 
     # Importar y registrar blueprints DENTRO de la fábrica para evitar importaciones circulares
-    from app.routes import init_app as init_routes
-    init_routes(app)
-
+    with app.app_context():
+        from . import routes
+        routes.init_app(app)
     def get_tenant_config(tenant):
         config = models.CondominiumConfig.query.get(tenant)
         if not config:
