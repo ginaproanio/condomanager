@@ -101,10 +101,10 @@
                                         <td>{{ user.created_at.strftime('%d/%m/%Y %H:%M') if user.created_at else 'N/A' }}</td>
                                         <td>
                                             <div class="btn-group btn-group-sm">
-                                                <a href="{{ url_for('main.approve_user', user_id=user.id) }}" class="btn btn-success">
+                                                <a href="{{ url_for('admin.approve_user', user_id=user.id) }}" class="btn btn-success">
                                                     <i class="fas fa-check"></i>Aprobar
                                                 </a>
-                                                <a href="{{ url_for('main.reject_user', user_id=user.id) }}" class="btn btn-danger">
+                                                <a href="{{ url_for('admin.reject_user', user_id=user.id) }}" class="btn btn-danger">
                                                     <i class="fas fa-times"></i>Rechazar
                                                 </a>
                                             </div>
@@ -134,10 +134,10 @@
                         <a href="{{ url_for('admin.admin_usuarios') }}" class="btn btn-outline-primary">
                             <i class="fas fa-list me-2"></i>Ver Todos los Usuarios
                         </a>
-                        <a href="{{ url_for('user.unidades') }}" class="btn btn-outline-primary">
+                        <a href="{{ url_for('user.units') }}" class="btn btn-outline-primary">
                             <i class="fas fa-building me-2"></i>Gestionar Unidades
                         </a>
-                        <a href="{{ url_for('user.reportes') }}" class="btn btn-outline-primary disabled">
+                        <a href="{{ url_for('user.reports') }}" class="btn btn-outline-primary disabled">
                             <i class="fas fa-chart-bar me-2"></i>Ver Reportes
                         </a>
                     </div>

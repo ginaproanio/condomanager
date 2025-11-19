@@ -80,10 +80,10 @@
                                                             <td>{{ condo.created_at.strftime('%d/%m/%Y %H:%M') if condo.created_at else 'N/A' }}</td>
                                                             <td>
                                                                 <div class="btn-group btn-group-sm">
-                                                                    <a href="{{ url_for('main.master_condominio_editar', condo_id=condo.id) }}" class="btn btn-info">
+                                                                    <a href="{{ url_for('master.master_condominio_editar', condo_id=condo.id) }}" class="btn btn-info">
                                                                         <i class="fas fa-edit"></i>
                                                                     </a>
-                                                                    <a href="{{ url_for('main.master_condominio_eliminar', condo_id=condo.id) }}" class="btn btn-danger">
+                                                                    <a href="{{ url_for('master.master_condominio_eliminar', condo_id=condo.id) }}" class="btn btn-danger">
                                                                         <i class="fas fa-trash"></i>
                                                                     </a>
                                                                 </div>
@@ -110,7 +110,7 @@
                                         <h5 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Crear Nuevo Condominio</h5>
                                     </div>
                                     <div class="card-body">
-                                        <form action="{{ url_for('main.master_condominios') }}" method="POST">
+                                        <form action="{{ url_for('master.master_condominios') }}" method="POST">
                                             <input type="hidden" name="action" value="create_single">
                                             <div class="mb-3">
                                                 <label for="name" class="form-label">Nombre del Condominio</label>
@@ -153,8 +153,8 @@
                                     <div class="card-body">
                                         <p class="text-muted">Sube un archivo CSV con la siguiente estructura:</p>
                                         <p><code>name,address,city,country,status</code></p>
-                                        <p class="text-muted">Ejemplo: <code>"Condominio Sol", "Calle 10 y Av. Central", "Guayaquil", "Ecuador", "ACTIVO"</code></p>
-                                        <form action="{{ url_for('main.master_condominios') }}" method="POST" enctype="multipart/form-data">
+                                        <p class="text-muted">Ejemplo: <code>"Condominio Sol", "Calle 10 y Av. Central", "Guayaquil", "Ecuador", "ACTIVO"</code></p> 
+                                        <form action="{{ url_for('master.master_condominios') }}" method="POST" enctype="multipart/form-data">
                                             <input type="hidden" name="action" value="import_csv">
                                             <div class="mb-3">
                                                 <label for="csv_file" class="form-label">Seleccionar archivo CSV</label>
