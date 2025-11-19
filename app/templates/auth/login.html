@@ -57,12 +57,12 @@
 
                     <div class="text-center">
                         <p class="mb-2">
-                            <a href="{{ url_for('public.registro') }}" class="text-decoration-none">
+                            <a href="{{ url_for('public.register') }}" class="text-decoration-none">
                                 <i class="fas fa-user-plus me-1"></i>¿No tienes cuenta? Regístrate
                             </a>
                         </p>
                         <p class="mb-0">
-                            <a href="/" class="text-decoration-none">
+                            <a href="{{ url_for('public.home') }}" class="text-decoration-none">
                                 <i class="fas fa-arrow-left me-1"></i>Volver al inicio
                             </a>
                         </p>
@@ -73,21 +73,4 @@
     </div>
 </div>
 
-<script>
-function toggleLoginForm() {
-    const jwtForm = document.getElementById('login-form');
-    const legacyForm = document.getElementById('legacy-login-form');
-    
-    if (jwtForm.style.display === 'none') {
-        jwtForm.style.display = 'block';
-        legacyForm.style.display = 'none';
-    } else {
-        jwtForm.style.display = 'none';
-        legacyForm.style.display = 'block';
-        // Copiar valores entre formularios
-        document.getElementById('legacy-email').value = document.getElementById('email').value;
-        document.getElementById('legacy-password').value = document.getElementById('password').value;
-    }
-}
-</script>
 {% endblock %}

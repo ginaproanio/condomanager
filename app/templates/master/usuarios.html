@@ -347,7 +347,7 @@
                         </div>
 
                         <div class="text-center mt-5">
-                            <a href="/master" class="btn btn-secondary">
+                            <a href="{{ url_for('master.master_panel') }}" class="btn btn-secondary">
                                 <i class="fas fa-arrow-left me-2"></i>Volver al Panel Maestro
                             </a>
                         </div>
@@ -355,7 +355,7 @@
                     {% else %}
                         <div class="alert alert-warning text-center" role="alert">
                             <i class="fas fa-exclamation-triangle me-2"></i>
-                            No tienes acceso a la Gestión de Usuarios. Por favor, <a href="/login" class="alert-link">inicia sesión</a> con una cuenta MASTER.
+                            No tienes acceso a la Gestión de Usuarios. Por favor, <a href="{{ url_for('public.login') }}" class="alert-link">inicia sesión</a> con una cuenta MASTER.
                         </div>
                     {% endif %}
                 </div>

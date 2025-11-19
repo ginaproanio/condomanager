@@ -20,7 +20,7 @@ def home():
     return render_template('home.html', config=config)
 
 @public_bp.route('/registro', methods=['GET', 'POST'])
-def registro():
+def register(): # El nombre ya era correcto, se mantiene
     from app.tenant import get_tenant
     tenant = get_tenant()
     config = current_app.get_tenant_config(tenant)
