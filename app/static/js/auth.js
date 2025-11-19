@@ -274,14 +274,42 @@ class AuthForms {
             console.log('FLOW: handleLogin() - Respuesta de /api/auth/login (status, ok, redirected):', response.status, response.ok, response.redirected);
 
             if (!response.ok) {
+                // Si la respuesta no es 2xx (ej. 401, 403), procesar el error del backend
                 const errorResult = await response.json();
                 console.log('FLOW: handleLogin() - Login fallido, error:', errorResult);
                 alert(`❌ Error: ${errorResult.error || 'Error desconocido del servidor'}`);
             } else if (response.redirected) {
+                // Si el backend envió una redirección HTTP (ej. 302), seguirla
                 console.log('FLOW: handleLogin() - Redirección del backend detectada a:', response.url);
-                // FORZAR LA NAVEGACIÓN DEL NAVEGADOR A LA URL DE REDIRECCIÓN
                 window.location.href = response.url;
             } else {
+                // Si la respuesta es 200 OK y no es una redirección, procesar el JSON
+                const data = await response.json();
+                console.log('FLOW: handleLogin() - Login exitoso, datos:', data);
+                if (data.status === "success" && data.redirect_url) {
+                    // El backend ya estableció la cookie JWT, ahora redirigir al usuario
+                    window.location.href = data.redirect_url;
+                } else {
+                    // Esto no debería ocurrir si el backend envía "success" y "redirect_url"
+                    console.warn('ADVERTENCIA: Respuesta exitosa pero inesperada del servidor (no status: success o redirect_url):', data);
+                    alert('Error inesperado durante el login (respuesta JSON no conforme).');
+                }
+            }
+
+        } catch (error) {
+            console.error('ERROR: handleLogin() - Error de conexión (catch):', error);
+            alert('❌ Error de conexión (frontend)');
+        }
+    }
+}
+
+// 🚀 INICIALIZAR CUANDO EL DOM ESTÉ LISTO
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('FLOW: DOMContentLoaded en auth.js iniciado. URL actual:', window.location.href);
+    window.authManager = new AuthManager();
+    window.authForms = new AuthForms(window.authManager);
+    
+});
                 console.warn('ADVERTENCIA: Respuesta inesperada del servidor: no redirigida y no OK.', response);
                 alert('Error inesperado durante el login.');
             }

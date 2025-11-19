@@ -39,8 +39,8 @@ def initialize_database():
                 print("✅ AUDIT: Usuario maestro ya existe.")
 
             # Crear configuración de tenant por defecto
-            default_tenant = 'puntablanca'
-            if not models.CondominiumConfig.query.get(default_tenant):
+            default_tenant = 'puntablanca' # Asegúrate de que este sea el tenant que esperas
+            if not db.session.get(models.CondominiumConfig, default_tenant): # Usar db.session.get()
                 print(f"AUDIT: Creando configuración para el tenant por defecto '{default_tenant}'...")
                 config = models.CondominiumConfig(tenant=default_tenant, commercial_name='Punta Blanca')
                 db.session.add(config)
