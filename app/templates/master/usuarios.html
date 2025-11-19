@@ -88,13 +88,13 @@
                                                             <td>{{ u.created_at.strftime('%d/%m/%Y %H:%M') if u.created_at else 'N/A' }}</td>
                                                             <td>
                                                                 <div class="btn-group btn-group-sm">
-                                                                    <a href="{{ url_for('main.approve_user', user_id=u.id) }}" class="btn btn-success">
+                                                                    <a href="{{ url_for('admin.approve_user', user_id=u.id) }}" class="btn btn-success">
                                                                         <i class="fas fa-check"></i> Aprobar
                                                                     </a>
-                                                                    <a href="{{ url_for('main.reject_user', user_id=u.id) }}" class="btn btn-danger">
+                                                                    <a href="{{ url_for('admin.reject_user', user_id=u.id) }}" class="btn btn-danger">
                                                                         <i class="fas fa-times"></i> Rechazar
                                                                     </a>
-                                                                    <a href="{{ url_for('main.master_usuarios_editar', user_id=u.id) }}" class="btn btn-info">
+                                                                    <a href="{{ url_for('master.master_usuarios_editar', user_id=u.id) }}" class="btn btn-info">
                                                                         <i class="fas fa-edit"></i>
                                                                     </a>
                                                                 </div>
@@ -144,10 +144,10 @@
                                                             <td>{{ u.created_at.strftime('%d/%m/%Y %H:%M') if u.created_at else 'N/A' }}</td>
                                                             <td>
                                                                 <div class="btn-group btn-group-sm">
-                                                                    <a href="{{ url_for('main.master_usuarios_editar', user_id=u.id) }}" class="btn btn-info">
+                                                                    <a href="{{ url_for('master.master_usuarios_editar', user_id=u.id) }}" class="btn btn-info">
                                                                         <i class="fas fa-edit"></i> Editar
                                                                     </a>
-                                                                    <a href="{{ url_for('main.master_usuarios_eliminar', user_id=u.id) }}" class="btn btn-danger">
+                                                                    <a href="{{ url_for('master.master_usuarios_eliminar', user_id=u.id) }}" class="btn btn-danger">
                                                                         <i class="fas fa-trash"></i> Eliminar
                                                                     </a>
                                                                 </div>
@@ -197,13 +197,13 @@
                                                             <td>{{ u.created_at.strftime('%d/%m/%Y %H:%M') if u.created_at else 'N/A' }}</td>
                                                             <td>
                                                                 <div class="btn-group btn-group-sm">
-                                                                    <a href="{{ url_for('main.master_usuarios_reaprobar', user_id=u.id) }}" class="btn btn-success">
+                                                                    <a href="{{ url_for('master.master_usuarios_reaprobar', user_id=u.id) }}" class="btn btn-success">
                                                                         <i class="fas fa-redo"></i> Reaprobar
                                                                     </a>
-                                                                    <a href="{{ url_for('main.master_usuarios_eliminar', user_id=u.id) }}" class="btn btn-danger">
+                                                                    <a href="{{ url_for('master.master_usuarios_eliminar', user_id=u.id) }}" class="btn btn-danger">
                                                                         <i class="fas fa-trash"></i> Eliminar
                                                                     </a>
-                                                                    <a href="{{ url_for('main.master_usuarios_editar', user_id=u.id) }}" class="btn btn-info">
+                                                                    <a href="{{ url_for('master.master_usuarios_editar', user_id=u.id) }}" class="btn btn-info">
                                                                         <i class="fas fa-edit"></i>
                                                                     </a>
                                                                 </div>
@@ -263,10 +263,10 @@
                                                             <td>{{ u.created_at.strftime('%d/%m/%Y %H:%M') if u.created_at else 'N/A' }}</td>
                                                             <td>
                                                                 <div class="btn-group btn-group-sm">
-                                                                    <a href="{{ url_for('main.master_usuarios_editar', user_id=u.id) }}" class="btn btn-info">
+                                                                    <a href="{{ url_for('master.master_usuarios_editar', user_id=u.id) }}" class="btn btn-info">
                                                                         <i class="fas fa-edit"></i> Editar
                                                                     </a>
-                                                                    <a href="{{ url_for('main.master_usuarios_eliminar', user_id=u.id) }}" class="btn btn-danger">
+                                                                    <a href="{{ url_for('master.master_usuarios_eliminar', user_id=u.id) }}" class="btn btn-danger">
                                                                         <i class="fas fa-trash"></i> Eliminar
                                                                     </a>
                                                                 </div>
@@ -293,7 +293,7 @@
                                         <h5 class="mb-0"><i class="fas fa-user-plus me-2"></i>Crear Nuevo Usuario</h5>
                                     </div>
                                     <div class="card-body">
-                                        <form action="{{ url_for('main.master_usuarios') }}" method="POST">
+                                        <form action="{{ url_for('master.master_usuarios') }}" method="POST">
                                             <input type="hidden" name="action" value="create_user">
                                             <div class="mb-3">
                                                 <label for="new_user_name" class="form-label">Nombre</label>

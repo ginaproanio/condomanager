@@ -72,8 +72,8 @@
                                                     <tbody>
                                                         {% for condo in all_condominiums %}
                                                         <tr>
-                                                            <td>{{ condo.name }}</td>
-                                                            <td>{{ condo.address }}</td>
+                                                            <td><a href="{{ url_for('master.admin_condominio_panel', condominium_id=condo.id) }}">{{ condo.name }}</a></td>
+                                                            <td>{{ condo.get_full_address() }}</td>
                                                             <td>{{ condo.city }}</td>
                                                             <td>{{ condo.country }}</td>
                                                             <td><span class="badge bg-secondary">{{ condo.status }}</span></td>
