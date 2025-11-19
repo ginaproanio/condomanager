@@ -102,10 +102,10 @@
                                         <td>
                                             <div class="btn-group btn-group-sm">
                                                 <a href="{{ url_for('main.approve_user', user_id=user.id) }}" class="btn btn-success">
-                                                    <i class="fas fa-check"></i> Aprobar
+                                                    <i class="fas fa-check"></i>Aprobar
                                                 </a>
                                                 <a href="{{ url_for('main.reject_user', user_id=user.id) }}" class="btn btn-danger">
-                                                    <i class="fas fa-times"></i> Rechazar
+                                                    <i class="fas fa-times"></i>Rechazar
                                                 </a>
                                             </div>
                                         </td>
@@ -131,13 +131,13 @@
                         <i class="fas fa-bolt me-2"></i>Acciones Rápidas
                     </h5>
                     <div class="d-grid gap-2 d-md-flex">
-                        <a href="{{ url_for('main.admin_usuarios') }}" class="btn btn-outline-primary">
+                        <a href="{{ url_for('admin.admin_usuarios') }}" class="btn btn-outline-primary">
                             <i class="fas fa-list me-2"></i>Ver Todos los Usuarios
                         </a>
-                        <a href="{{ url_for('main.unidades') }}" class="btn btn-outline-primary">
+                        <a href="{{ url_for('user.unidades') }}" class="btn btn-outline-primary">
                             <i class="fas fa-building me-2"></i>Gestionar Unidades
                         </a>
-                        <a href="#" class="btn btn-outline-primary disabled">
+                        <a href="{{ url_for('user.reportes') }}" class="btn btn-outline-primary disabled">
                             <i class="fas fa-chart-bar me-2"></i>Ver Reportes
                         </a>
                     </div>

@@ -61,11 +61,11 @@
                             <span class="navbar-text me-3">Bienvenido, <strong>{{ user.name }}</strong> ({{ user.role }})</span>
                         </li>
                         <li class="nav-item">
-                            <a class="btn btn-outline-danger btn-sm" href="{{ url_for('main.logout') }}">Cerrar sesión</a>
+                            <a class="btn btn-outline-danger btn-sm" href="{{ url_for('public.logout') }}">Cerrar sesión</a>
                         </li>
                     {% else %}
                         <li class="nav-item">
-                            <a class="btn btn-primary" href="{{ url_for('main.login') }}">Iniciar sesión</a>
+                            <a class="btn btn-primary" href="{{ url_for('public.login') }}">Iniciar sesión</a>
                         </li>
                     {% endif %}
                 </ul>
