@@ -22,7 +22,7 @@ def login_required(f):
         user = get_current_user_from_jwt()
         if user is None:
             flash("Sesión inválida o expirada. Por favor, inicia sesión de nuevo.", "error")
-            return redirect(url_for('public.login')) # Ya estaba correcto, se mantiene
+            return redirect(url_for('login')) # CORREGIDO: Sin blueprint 'public'
         kwargs['current_user'] = user # Pasar el usuario al wrapped function
         return f(*args, **kwargs)
     return decorated_function
@@ -36,9 +36,9 @@ def master_required(f):
     @login_required
     def decorated_function(*args, **kwargs):
         user = kwargs.get('current_user') # Obtener el usuario del decorador login_required
-        if user is None or user.role != 'MASTER':
+        if user is None or user.role.upper() != 'MASTER': # Usar upper() para consistencia
             flash("Acceso denegado. Se requiere rol MASTER.", "error")
-            return redirect(url_for('user.dashboard')) # CORREGIDO: de 'main' a 'user'
+            return redirect(url_for('dashboard')) # CORREGIDO: Sin blueprint 'user'
         return f(*args, **kwargs)
     return decorated_function
 
@@ -52,9 +52,9 @@ def admin_required(f):
     def decorated_function(*args, **kwargs):
         user = kwargs.get('current_user')
         # Un MASTER puede acceder a las funcionalidades de ADMIN
-        if user is None or user.role not in ['ADMIN', 'MASTER']:
+        if user is None or user.role.upper() not in ['ADMIN', 'MASTER']: # Usar upper() para consistencia
             flash("Acceso denegado. Se requiere rol ADMIN o MASTER.", "error")
-            return redirect(url_for('user.dashboard')) # CORREGIDO: de 'main' a 'user'
+            return redirect(url_for('dashboard')) # CORREGIDO: Sin blueprint 'user'
         return f(*args, **kwargs)
     return decorated_function
 
@@ -71,18 +71,18 @@ def condominium_admin_required(f):
         # Asume que el ID del condominio viene en los argumentos de la ruta (ej. /condo/<int:condo_id>/dashboard)
         condominium_id = kwargs.get('condo_id') or kwargs.get('condominium_id')
 
-        if user.role == 'MASTER':
+        if user.role.upper() == 'MASTER': # Usar upper() para consistencia
             # El rol MASTER tiene acceso a todo, no necesita más validaciones.
             return f(*args, **kwargs)
 
         if not condominium_id:
             current_app.logger.error(f"Ruta protegida por 'condominium_admin_required' no recibió 'condo_id'.")
             flash("Error de configuración de la ruta.", "error")
-            return redirect(url_for('user.dashboard')) # CORREGIDO: de 'main' a 'user'
+            return redirect(url_for('dashboard')) # CORREGIDO: Sin blueprint 'user'
 
         condo = Condominium.query.filter_by(id=condominium_id, admin_user_id=user.id).first()
         if not condo:
             flash("Acceso denegado. No está autorizado para gestionar este condominio.", "error")
-            return redirect(url_for('user.dashboard')) # CORREGIDO: de 'main' a 'user'
+            return redirect(url_for('dashboard')) # CORREGIDO: Sin blueprint 'user'
         return f(*args, **kwargs)
     return decorated_function

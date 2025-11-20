@@ -1,3 +1,8 @@
+> ⚠️ **DOCUMENTO DESACTUALIZADO** ⚠️
+> ---
+> El contenido de este archivo no refleja el estado actual del proyecto (el uso de Flask-Migrate y el script `seed_initial_data.py`).
+> **Por favor, no lo utilices como referencia.** Consulta `docs/02_ARQUITECTURA.md` para obtener la información más reciente.
+
 # Guía de Instalación
 Versión: 2.0.0 (Alineado con Arquitectura de Esquema Compartido)
 

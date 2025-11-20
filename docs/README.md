@@ -5,34 +5,18 @@
 *   **Repositorio Principal:** [https://github.com/ginaproanio/condomanager](https://github.com/ginaproanio/condomanager)
 *   **Ambiente de Producción:** [https://condomanager.puntablancaecuador.com/](https://condomanager.puntablancaecuador.com/)
 
-## Inicio Rápido
+## Flujo de Trabajo y Desarrollo
 
-### 1. Configuración del Entorno
-1.  **Clonar el repositorio.**
-2.  **Crear y activar un entorno virtual:**
-    ```bash
-    python -m venv venv
-    # Windows
-    venv\Scripts\activate
-    # Linux/Mac
-    source venv/bin/activate
-    ```
-3.  **Instalar dependencias:**
-    ```bash
-    pip install -r requirements.txt
-    ```
-4.  **Configurar variables de entorno:**
-    Crea un archivo `.env` en la raíz del proyecto basándote en `.env.example` (si existe) y define las variables necesarias como `SECRET_KEY`, `JWT_SECRET_KEY` y `SQLALCHEMY_DATABASE_URI`.
+El desarrollo de este proyecto sigue un flujo de trabajo basado en GitOps, donde el repositorio de GitHub es la única fuente de verdad y los despliegues son automáticos.
 
-### 2. Ejecutar la Aplicación
-```bash
-flask run
-```
+1.  **Desarrollo Local:** Todo el código se edita localmente usando un editor como **Visual Studio Code**. No es necesario ejecutar la aplicación ni una base de datos localmente.
+2.  **Control de Versiones:** Los cambios se confirman y se suben a un branch en el repositorio de **GitHub**.
+3.  **Despliegue:** Al hacer merge a la rama principal, **Railway** detecta los cambios y despliega automáticamente la nueva versión.
 
-> ⚠️ **Credenciales Iniciales**:
-> El usuario `MASTER` se crea a través del script `initialize_db.py` o al iniciar la aplicación por primera vez, utilizando las variables de entorno `MASTER_EMAIL` y `MASTER_PASSWORD`.
-> 
-> **¡Cambiar en producción!**
+> ⚠️ **Proceso de Despliegue en Railway**:
+> El archivo `Procfile` le indica a Railway que ejecute dos comandos en la fase `release`:
+> 1.  `flask db upgrade`: Aplica cualquier nueva migración de la base de datos usando **Flask-Migrate**.
+> 2.  `python seed_initial_data.py`: Ejecuta un script que siembra los datos iniciales (como el usuario MASTER) solo si la base de datos es nueva.
 
 ## 1. Convenciones del Proyecto
 Este proyecto sigue convenciones de código y documentación para asegurar claridad y mantenibilidad. Ver [docs/00_CONVENCIONES.md](./docs/00_CONVENCIONES.md) para más detalles.
@@ -51,23 +35,22 @@ Este proyecto sigue convenciones de código y documentación para asegurar clari
 
 ## 2. Estructura del Proyecto (INMUTABLE)
 
-```bash
+```
 /condomanager-saas/
 ├── app/
-│   ├── __init__.py         # Inicialización de la aplicación Flask y registro de componentes.
-│   ├── auth.py             # Funciones auxiliares de autenticación.
-│   ├── decorators.py       # Decoradores personalizados para control de acceso (roles).
-│   ├── extensions.py       # Instancia de SQLAlchemy (db).
-│   ├── models.py           # Definición de todos los modelos de la base de datos.
-│   ├── tenant.py           # Lógica para determinar el tenant de la solicitud.
-│   ├── routes/             # Módulo que contiene todas las rutas (endpoints).
-│   ├── static/             # Archivos estáticos (CSS, JS, imágenes).
-│   └── templates/          # Plantillas HTML (vistas).
+│   ├── __init__.py         # Fábrica de la aplicación (create_app).
+│   ├── routes/             # Módulo que agrupa todos los Blueprints de rutas.
+│   ├── models.py           # Modelos de la base de datos (SQLAlchemy).
+│   ├── static/             # Archivos estáticos (CSS, JS).
+│   └── templates/          # Plantillas HTML.
+├── migrations/             # Directorio de Flask-Migrate para las versiones de la DB.
 ├── docs/                   # Documentación del proyecto.
 ├── .env                    # Variables de entorno (no versionado).
+├── Procfile                # Comandos de ejecución para Railway.
+├── seed_initial_data.py    # Script para sembrar datos iniciales.
 ├── config.py               # Clases de configuración para la aplicación.
 ├── requirements.txt        # Dependencias de Python.
-└── wsgi.py                 # Punto de entrada para servidores WSGI como Gunicorn.
+└── run.py                  # Punto de entrada para Gunicorn.
 ```
 
 ## 3. Documentación Técnica

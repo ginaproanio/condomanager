@@ -1,15 +1,16 @@
 from flask import Flask
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
+from flask_migrate import Migrate # 1. Importar la herramienta
 from datetime import timedelta
 import os
 
 from config import Config
 from app.extensions import db
-# from app.models import User, Condominium, Unit, CondominioConfig  # Ya no se importan aquí directamente
 
 jwt = JWTManager()
 cors = CORS()
+migrate = Migrate() # 2. Crear la instancia
 
 
 def create_app():
@@ -41,6 +42,7 @@ def create_app():
 
     db.init_app(app) # Inicializar db con la app
     jwt.init_app(app)
+    migrate.init_app(app, db) # 3. Conectar la herramienta a la app y la db
     cors.init_app(app, supports_credentials=True)
 
     # Importar app.models aquí para registrar los modelos con SQLAlchemy

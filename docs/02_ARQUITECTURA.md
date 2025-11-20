@@ -8,12 +8,13 @@ Sistema multi-condominio implementado inicialmente para "Punta Blanca", diseñad
 - Python con Flask Framework
 - SQLAlchemy ORM
 - Flask-JWT-Extended para autenticación (con cookies HTTP-Only)
+- Flask-Migrate para la gestión y evolución del esquema de la base de datos.
 - Gunicorn para servir la aplicación en producción
 - `hashlib` para hashing de contraseñas
 
 ### 2.2 Frontend
 - Bootstrap 5 (CSS y JS)
-- JavaScript vanilla (para lógica de autenticación y UI dinámica)
+- JavaScript vanilla (para lógica de autenticación, peticiones a la API y UI dinámica)
 
 ### 2.3 Base de Datos
 - PostgreSQL (en producción)
@@ -35,7 +36,8 @@ Sistema multi-condominio implementado inicialmente para "Punta Blanca", diseñad
 │   │   ├── user_routes.py   # Rutas para usuarios autenticados (dashboard).
 │   │   ├── admin_routes.py  # Rutas para administradores de condominio.
 │   │   ├── master_routes.py # Rutas para el super-administrador (rol MASTER).
-│   │   └── api_routes.py    # Endpoints de la API REST.
+│   │   ├── api_routes.py    # Endpoints de la API REST.
+│   │   └── dev_routes.py    # Rutas para desarrollo y depuración.
 │   ├── static/         # Archivos estáticos (CSS, JS, imágenes).
 │   │   ├── css/
 │   │   ├── js/

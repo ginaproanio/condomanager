@@ -22,6 +22,12 @@ class User(db.Model):
     status = db.Column(db.String(20), default='pending')
     created_at = db.Column(db.DateTime, default=datetime.now)
 
+    # --- SOLUCIÓN AL PROBLEMA PRINCIPAL ---
+    # Añadir la columna para relacionar al usuario con una unidad.
+    # Es 'nullable' porque un usuario puede no estar asignado a una unidad al registrarse.
+    unit_id = db.Column(db.Integer, db.ForeignKey('units.id'), nullable=True)
+    unit = db.relationship('Unit', backref='residents', lazy=True, foreign_keys=[unit_id])
+
 # 2. CONFIGURACIÓN CONDOMINIO
 class CondominiumConfig(db.Model):
     __tablename__ = 'condominium_configs'
