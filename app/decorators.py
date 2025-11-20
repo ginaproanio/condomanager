@@ -22,7 +22,7 @@ def login_required(f):
         user = get_current_user_from_jwt()
         if user is None:
             flash("Sesión inválida o expirada. Por favor, inicia sesión de nuevo.", "error")
-            return redirect(url_for('login')) # CORREGIDO: Sin blueprint 'public'
+            return redirect(url_for('public.login'))
         kwargs['current_user'] = user # Pasar el usuario al wrapped function
         return f(*args, **kwargs)
     return decorated_function
@@ -38,7 +38,7 @@ def master_required(f):
         user = kwargs.get('current_user') # Obtener el usuario del decorador login_required
         if user is None or user.role.upper() != 'MASTER': # Usar upper() para consistencia
             flash("Acceso denegado. Se requiere rol MASTER.", "error")
-            return redirect(url_for('dashboard')) # CORREGIDO: Sin blueprint 'user'
+            return redirect(url_for('user.dashboard'))
         return f(*args, **kwargs)
     return decorated_function
 
@@ -54,7 +54,7 @@ def admin_required(f):
         # Un MASTER puede acceder a las funcionalidades de ADMIN
         if user is None or user.role.upper() not in ['ADMIN', 'MASTER']: # Usar upper() para consistencia
             flash("Acceso denegado. Se requiere rol ADMIN o MASTER.", "error")
-            return redirect(url_for('dashboard')) # CORREGIDO: Sin blueprint 'user'
+            return redirect(url_for('user.dashboard'))
         return f(*args, **kwargs)
     return decorated_function
 
@@ -78,11 +78,11 @@ def condominium_admin_required(f):
         if not condominium_id:
             current_app.logger.error(f"Ruta protegida por 'condominium_admin_required' no recibió 'condo_id'.")
             flash("Error de configuración de la ruta.", "error")
-            return redirect(url_for('dashboard')) # CORREGIDO: Sin blueprint 'user'
+            return redirect(url_for('user.dashboard'))
 
         condo = Condominium.query.filter_by(id=condominium_id, admin_user_id=user.id).first()
         if not condo:
             flash("Acceso denegado. No está autorizado para gestionar este condominio.", "error")
-            return redirect(url_for('dashboard')) # CORREGIDO: Sin blueprint 'user'
+            return redirect(url_for('user.dashboard'))
         return f(*args, **kwargs)
     return decorated_function

@@ -127,7 +127,7 @@
                                         <p class="text-muted">Sube un archivo CSV con la siguiente estructura para unidades:</p>
                                         <p><code>property_number,name,property_type,area_m2,bedrooms,bathrooms</code></p>
                                         <p class="text-muted">Ejemplo: <code>"A-101", "Apartamento 101", "apartamento", "85.5", "2", "2"</code></p>
-                                        <form action="{{ url_for('main.admin_condominio_panel', condominium_id=condominium.id) }}" method="POST" enctype="multipart/form-data">
+                                        <form action="{{ url_for('admin.admin_condominio_panel', condominium_id=condominium.id) }}" method="POST" enctype="multipart/form-data">
                                             <input type="hidden" name="action" value="import_units_csv">
                                             <div class="mb-3">
                                                 <label for="units_csv_file" class="form-label">Seleccionar archivo CSV de Unidades</label>
@@ -205,7 +205,7 @@
                                         <p><code>email,name,password,phone,unit_property_number</code></p>
                                         <p class="text-muted">Ejemplo: <code>"juan@ejemplo.com", "Juan Pérez", "password123", "+593987654321", "A-101"</code></p>
                                         <p class="text-danger">**Importante:** La `unit_property_number` debe existir previamente en este condominio.</p>
-                                        <form action="{{ url_for('main.admin_condominio_panel', condominium_id=condominium.id) }}" method="POST" enctype="multipart/form-data">
+                                        <form action="{{ url_for('admin.admin_condominio_panel', condominium_id=condominium.id) }}" method="POST" enctype="multipart/form-data">
                                             <input type="hidden" name="action" value="import_users_csv">
                                             <div class="mb-3">
                                                 <label for="users_csv_file" class="form-label">Seleccionar archivo CSV de Usuarios</label>
@@ -247,10 +247,10 @@
                                                             <td>{{ u.created_at.strftime('%d/%m/%Y %H:%M') if u.created_at else 'N/A' }}</td>
                                                             <td>
                                                                 <div class="btn-group btn-group-sm">
-                                                                    <a href="{{ url_for('main.aprobar_usuario', user_id=u.id) }}" class="btn btn-success">
+                                                                    <a href="{{ url_for('admin.approve_user', user_id=u.id) }}" class="btn btn-success">
                                                                         <i class="fas fa-check"></i> Aprobar
                                                                     </a>
-                                                                    <a href="{{ url_for('main.rechazar_usuario', user_id=u.id) }}" class="btn btn-danger">
+                                                                    <a href="{{ url_for('admin.reject_user', user_id=u.id) }}" class="btn btn-danger">
                                                                         <i class="fas fa-times"></i> Rechazar
                                                                     </a>
                                                                     <!-- Opcional: un botón para ver detalles/editar si es necesario para el ADMIN -->
