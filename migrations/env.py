@@ -14,8 +14,10 @@ from app.extensions import db
 
 config = context.config
 
-if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+# La siguiente línea intenta configurar los logs de Python usando alembic.ini.
+# Como nuestro alembic.ini es minimalista y no tiene configuración de logs,
+# esta línea causa un error. La comentamos para desactivar esta función que no necesitamos.
+# fileConfig(config.config_file_name)
 
 target_metadata = db.metadata
 
