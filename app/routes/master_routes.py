@@ -1,10 +1,11 @@
 from flask import (
     Blueprint, render_template, redirect,
-    current_app, flash, Response, jsonify, request
+    current_app, flash, Response, jsonify, request, url_for
 )
 from flask_jwt_extended import jwt_required
 from app.auth import get_current_user
-from app.models import Condominium, User, db
+from app.models import Condominium, User
+from app import db
 import io
 import csv
 
@@ -34,6 +35,73 @@ def master_condominios():
 
     all_condominiums = Condominium.query.order_by(Condominium.created_at.desc()).all()
     return render_template('master/condominios.html', user=user, all_condominiums=all_condominiums)
+
+@master_bp.route('/master/usuarios', methods=['GET', 'POST'])
+@jwt_required()
+def master_usuarios():
+    user = get_current_user()
+    if not user or user.role != 'MASTER':
+        flash("Acceso denegado – Se requiere rol MASTER", "error")
+        return redirect('/dashboard')
+    
+    if request.method == 'POST' and request.form.get('action') == 'create_user':
+        # Lógica para crear un nuevo usuario desde el panel maestro
+        try:
+            from app.routes.public_routes import register_user # Reutilizar lógica de registro
+            register_user(is_master_creation=True)
+            flash('Usuario creado exitosamente.', 'success')
+        except Exception as e:
+            flash(f'Error al crear el usuario: {e}', 'error')
+        return redirect(url_for('master.master_usuarios'))
+
+    # Lógica para GET
+    pending_users = User.query.filter_by(status='pending').order_by(User.created_at.desc()).all()
+    active_users = User.query.filter_by(status='active').order_by(User.created_at.desc()).all()
+    rejected_users = User.query.filter_by(status='rejected').order_by(User.created_at.desc()).all()
+    all_users = User.query.order_by(User.created_at.desc()).all()
+    all_condominiums = Condominium.query.order_by(Condominium.name).all()
+
+    return render_template(
+        'master/usuarios.html',
+        user=user,
+        pending_users=pending_users,
+        active_users=active_users,
+        rejected_users=rejected_users,
+        all_users=all_users,
+        all_condominiums=all_condominiums
+    )
+
+@master_bp.route('/master/usuarios/editar/<int:user_id>', methods=['GET', 'POST'])
+@jwt_required()
+def master_usuarios_editar(user_id):
+    # Placeholder para la lógica de edición
+    flash(f"Funcionalidad para editar usuario {user_id} no implementada.", "info")
+    return redirect(url_for('master.master_usuarios'))
+
+@master_bp.route('/master/usuarios/eliminar/<int:user_id>', methods=['POST'])
+@jwt_required()
+def master_usuarios_eliminar(user_id):
+    # Placeholder para la lógica de eliminación
+    flash(f"Funcionalidad para eliminar usuario {user_id} no implementada.", "info")
+    return redirect(url_for('master.master_usuarios'))
+
+@master_bp.route('/master/configuracion', methods=['GET'])
+@jwt_required()
+def master_configuracion():
+    user = get_current_user()
+    if not user or user.role != 'MASTER':
+        flash("Acceso denegado – Se requiere rol MASTER", "error")
+        return redirect('/dashboard')
+
+    # Aquí puedes agregar la lógica para cargar la configuración global
+    return render_template('master/configuracion.html', user=user)
+
+@master_bp.route('/master/usuarios/reaprobar/<int:user_id>', methods=['POST'])
+@jwt_required()
+def master_usuarios_reaprobar(user_id):
+    # Placeholder para la lógica de reaprobación
+    flash(f"Funcionalidad para reaprobar usuario {user_id} no implementada.", "info")
+    return redirect(url_for('master.master_usuarios'))
 
 
 @master_bp.route('/master/crear_condominio', methods=['GET', 'POST'])
