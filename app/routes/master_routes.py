@@ -319,7 +319,8 @@ def crear_condominio():
                 # CORRECCIÓN: En lugar de redirigir, volvemos a renderizar la plantilla con un error.
                 flash('Debe seleccionar un administrador.', 'error')
                 administradores = User.query.filter(User.role.in_(['ADMIN', 'MASTER'])).all()
-                return render_template('master/crear_condominio.html', user=user, administradores=administradores)
+                # Pasamos request.form para que los datos se mantengan en el formulario
+                return render_template('master/crear_condominio.html', user=user, administradores=administradores, request_form=request.form)
 
             new_condo = Condominium(
                 name=request.form.get('name'),
@@ -340,6 +341,12 @@ def crear_condominio():
             )
             db.session.add(new_condo)
             db.session.commit()
+            # Si se asignó un representante legal, actualizarlo después de crear el condominio
+            legal_representative_id = request.form.get('legal_representative_id')
+            if legal_representative_id:
+                new_condo.legal_representative_id = int(legal_representative_id)
+                db.session.commit()
+
             flash('Condominio creado exitosamente.', 'success')
             return redirect('/master/condominios')
         except Exception as e:
@@ -347,12 +354,15 @@ def crear_condominio():
             current_app.logger.error(f"Error al crear el condominio: {e}")
             flash(f'Error al crear el condominio: {e}', 'error')
             # Volver a cargar los administradores para renderizar el formulario de nuevo
-            administradores = User.query.filter(User.role.in_(['ADMIN', 'MASTER'])).all()
-            return render_template('master/crear_condominio.html', user=user, administradores=administradores)
+            administradores = User.query.filter(User.role.in_(['ADMIN', 'MASTER'])).order_by(User.first_name).all()
+            # Pasamos request.form para que los datos se mantengan en el formulario
+            return render_template('master/crear_condominio.html', user=user, administradores=administradores, request_form=request.form)
 
     # GET request
-    administradores = User.query.filter(User.role.in_(['ADMIN', 'MASTER'])).all()
-    return render_template('master/crear_condominio.html', user=user, administradores=administradores)
+    administradores = User.query.filter(User.role.in_(['ADMIN', 'MASTER'])).order_by(User.first_name).all()
+    # También necesitamos los posibles representantes legales (que son usuarios)
+    legal_representatives = User.query.order_by(User.first_name).all()
+    return render_template('master/crear_condominio.html', user=user, administradores=administradores, legal_representatives=legal_representatives)
 
 @master_bp.route('/master/condominios/editar/<int:condo_id>', methods=['GET', 'POST'])
 @jwt_required()
@@ -363,6 +373,7 @@ def editar_condominio(condo_id):
         return redirect(url_for('public.login'))
 
     condo_to_edit = Condominium.query.get_or_404(condo_id)
+    # Asegurarse de que los administradores y representantes legales estén ordenados
     administradores = User.query.filter(User.role.in_(['ADMIN', 'MASTER'])).all()
 
     if request.method == 'POST':
@@ -380,6 +391,7 @@ def editar_condominio(condo_id):
             condo_to_edit.longitude = float(request.form.get('longitude')) if request.form.get('longitude') else None
             condo_to_edit.subdomain = request.form.get('subdomain')
             condo_to_edit.status = request.form.get('status')
+            condo_to_edit.legal_representative_id = int(request.form.get('legal_representative_id')) if request.form.get('legal_representative_id') else None
             condo_to_edit.admin_user_id = int(request.form.get('admin_user_id')) if request.form.get('admin_user_id') else None
             
             db.session.commit()
@@ -390,7 +402,8 @@ def editar_condominio(condo_id):
             current_app.logger.error(f"Error al editar el condominio: {e}")
             flash(f'Error al editar el condominio: {e}', 'error')
 
-    return render_template('master/editar_condominio.html', user=user, condo=condo_to_edit, administradores=administradores)
+    legal_representatives = User.query.order_by(User.first_name).all()
+    return render_template('master/editar_condominio.html', user=user, condo=condo_to_edit, administradores=administradores, legal_representatives=legal_representatives)
 
 
 @master_bp.route('/master/descargar-plantilla-unidades')

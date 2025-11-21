@@ -68,7 +68,7 @@ La implementación actual utiliza una estrategia de **multi-tenancy de esquema c
 - Relaciones: Un usuario puede ser administrador de `Condominium` o creador de `Unit`.
 
 ### 5.2 Condominium
-- Atributos clave: `id`, `name`, `main_street`, `city`, `country`, `status`, `subdomain`.
+- Atributos clave: `id`, `name`, `email`, `ruc`, `main_street`, `city`, `country`, `latitude`, `longitude`, `status`, `subdomain`, `admin_user_id`, `legal_representative_id`.
 - Relaciones: Contiene múltiples `Unit`s y `User`s (ADMINs asignados).
 
 ### 5.3 Unit
