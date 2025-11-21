@@ -63,20 +63,20 @@ La implementación actual utiliza una estrategia de **multi-tenancy de esquema c
 ## 5. Modelos Principales (definidos en `app/models.py`)
 
 ### 5.1 User
-- Atributos clave: `id`, `cedula`, `email`, `first_name`, `last_name`, `password_hash`, `tenant`, `role`, `status`.
+- **Atributos:** `id`, `cedula`, `email`, `first_name`, `last_name`, `birth_date`, `cellphone`, `city`, `country`, `password_hash`, `tenant`, `role`, `status`, `created_at`, `unit_id`.
 - Roles base: `MASTER`, `ADMIN`, `USER`.
 - Relaciones: Un usuario puede ser administrador de `Condominium` o creador de `Unit`.
 
 ### 5.2 Condominium
-- Atributos clave: `id`, `name`, `email`, `ruc`, `main_street`, `city`, `country`, `latitude`, `longitude`, `status`, `subdomain`, `admin_user_id`, `legal_representative_id`.
+- **Atributos:** `id`, `name`, `legal_name`, `email`, `ruc`, `main_street`, `cross_street`, `house_number`, `city`, `country`, `latitude`, `longitude`, `subdomain`, `status`, `billing_day`, `grace_days`, `trial_start_date`, `trial_end_date`, `notes`, `admin_user_id`, `legal_representative_id`, `created_by`, `created_at`, `updated_at`.
 - Relaciones: Contiene múltiples `Unit`s y `User`s (ADMINs asignados).
 
 ### 5.3 Unit
-- Atributos clave: `id`, `property_number`, `name`, `property_type`, `area_m2`, `bedrooms`, `bathrooms`, `condominium_id`.
+- **Atributos:** `id`, `property_tax_code`, `property_number`, `name`, `property_type`, `main_street`, `cross_street`, `house_number`, `address_reference`, `latitude`, `longitude`, `building`, `floor`, `sector`, `area_m2`, `area_construction_m2`, `bedrooms`, `bathrooms`, `parking_spaces`, `front_meters`, `depth_meters`, `topography`, `land_use`, `notes`, `condominium_id`, `created_by`, `status`, `created_at`, `updated_at`.
 - Relaciones: Pertenece a un `Condominium`, puede tener `User`s de unidad asignados.
 
 ### 5.4 CondominioConfig (en `app/models.py`)
-- Atributos clave: `tenant`, `primary_color`, `logo_url`, `commercial_name`.
+- **Atributos:** `tenant`, `primary_color`, `logo_url`, `commercial_name`, `created_at`.
 - Propósito: Configuración de personalización para cada tenant.
 
 ### 5.5 Modelos Propuestos (No Implementados)
