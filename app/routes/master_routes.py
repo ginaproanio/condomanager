@@ -45,15 +45,16 @@ def master_usuarios():
         flash("Acceso denegado – Se requiere rol MASTER", "error")
         return redirect('/dashboard')
     
-    if request.method == 'POST' and request.form.get('action') == 'create_user':
-        # Lógica para crear un nuevo usuario desde el panel maestro
-        try:
-            from app.routes.public_routes import register_user # Reutilizar lógica de registro
-            register_user(is_master_creation=True)
-            flash('Usuario creado exitosamente.', 'success')
-        except Exception as e:
-            flash(f'Error al crear el usuario: {e}', 'error')
-        return redirect(url_for('master.master_usuarios'))
+    if request.method == 'POST':
+        action = request.form.get('action')
+        if action == 'create_user':
+            try:
+                from app.routes.public_routes import register_user # Reutilizar lógica de registro
+                register_user(is_master_creation=True)
+                flash('Usuario creado exitosamente.', 'success')
+            except Exception as e:
+                flash(f'Error al crear el usuario: {e}', 'error')
+            return redirect(url_for('master.master_usuarios'))
 
     # Lógica para GET
     pending_users = User.query.filter_by(status='pending').order_by(User.created_at.desc()).all()
@@ -136,9 +137,29 @@ def master_manage_user():
 @master_bp.route('/master/usuarios/editar/<int:user_id>', methods=['GET', 'POST'])
 @jwt_required()
 def master_usuarios_editar(user_id):
-    # Placeholder para la lógica de edición
-    flash(f"Funcionalidad para editar usuario {user_id} no implementada.", "info")
-    return redirect(url_for('master.master_usuarios'))
+    current_user = get_current_user()
+    if not current_user or current_user.role != 'MASTER':
+        flash("Acceso denegado.", "error")
+        return redirect(url_for('public.login'))
+
+    user_to_edit = User.query.get_or_404(user_id)
+    all_condominiums = Condominium.query.order_by(Condominium.name).all()
+
+    if request.method == 'POST':
+        user_to_edit.name = request.form.get('name')
+        user_to_edit.email = request.form.get('email')
+        user_to_edit.role = request.form.get('role')
+        user_to_edit.status = request.form.get('status')
+        condominium_id = request.form.get('condominium_id')
+        
+        user_to_edit.condominium_id = int(condominium_id) if condominium_id else None
+        user_to_edit.tenant = Condominium.query.get(condominium_id).subdomain if condominium_id else None
+
+        db.session.commit()
+        flash(f'Usuario {user_to_edit.name} actualizado correctamente.', 'success')
+        return redirect(url_for('master.master_usuarios'))
+
+    return render_template('master/editar_usuario.html', user=current_user, user_to_edit=user_to_edit, all_condominiums=all_condominiums)
 
 @master_bp.route('/master/usuarios/eliminar/<int:user_id>', methods=['POST'])
 @jwt_required()
@@ -161,8 +182,45 @@ def master_configuracion():
 @master_bp.route('/master/usuarios/reaprobar/<int:user_id>', methods=['POST'])
 @jwt_required()
 def master_usuarios_reaprobar(user_id):
-    # Placeholder para la lógica de reaprobación
-    flash(f"Funcionalidad para reaprobar usuario {user_id} no implementada.", "info")
+    user = get_current_user()
+    if not user or user.role != 'MASTER':
+        flash("Acceso denegado.", "error")
+        return redirect(url_for('public.login'))
+
+    user_to_reapprove = User.query.get_or_404(user_id)
+    if user_to_reapprove:
+        user_to_reapprove.status = 'pending' # Lo devolvemos a pendiente para que el MASTER decida qué hacer
+        db.session.commit()
+        flash(f"El usuario {user_to_reapprove.email} ha sido movido a 'Pendientes' para su reevaluación.", "success")
+    else:
+        flash("Usuario no encontrado.", "error")
+
+    return redirect(url_for('master.master_usuarios'))
+
+@master_bp.route('/master/usuarios/importar_admins', methods=['POST'])
+@jwt_required()
+def master_importar_admins_csv():
+    user = get_current_user()
+    if not user or user.role != 'MASTER':
+        flash("Acceso denegado.", "error")
+        return redirect(url_for('master.master_usuarios'))
+
+    if 'csv_file' not in request.files:
+        flash('No se encontró el archivo en la solicitud.', 'error')
+        return redirect(url_for('master.master_usuarios'))
+
+    file = request.files['csv_file']
+    if file.filename == '':
+        flash('No se seleccionó ningún archivo.', 'error')
+        return redirect(url_for('master.master_usuarios'))
+
+    if file and file.filename.endswith('.csv'):
+        # Aquí iría la lógica para procesar el CSV
+        # Por ahora, es un placeholder
+        flash('Archivo CSV recibido. La lógica de procesamiento aún no está implementada.', 'info')
+        return redirect(url_for('master.master_usuarios'))
+
+    flash('Formato de archivo inválido. Por favor, sube un archivo .csv', 'error')
     return redirect(url_for('master.master_usuarios'))
 
 
