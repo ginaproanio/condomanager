@@ -78,7 +78,7 @@
                                                             <th>Nombre</th>
                                                             <th>Email</th>
                                                             <th>Rol</th>
-                                                            <th>Tenant</th>
+                                                            <th>Condominio</th>
                                                             <th>Fecha Registro</th>
                                                             <th>Acciones</th>
                                                         </tr>
@@ -89,7 +89,7 @@
                                                             <td>{{ u.name }}</td>
                                                             <td>{{ u.email }}</td>
                                                             <td>{{ u.role }}</td>
-                                                            <td><span class="badge bg-primary">{{ u.tenant }}</span></td>
+                                                            <td><span class="badge bg-info text-dark">{{ u.tenant or 'N/A' }}</span></td>
                                                             <td>{{ u.created_at.strftime('%d/%m/%Y %H:%M') if u.created_at else 'N/A' }}</td>
                                                             <td>
                                                                 <div class="btn-group btn-group-sm">
@@ -131,7 +131,7 @@
                                                             <th>Nombre</th>
                                                             <th>Email</th>
                                                             <th>Rol</th>
-                                                            <th>Tenant</th>
+                                                            <th>Condominio</th>
                                                             <th>Fecha Registro</th>
                                                             <th>Acciones</th> <!-- Para ver detalles o editar si es necesario -->
                                                         </tr>
@@ -142,7 +142,7 @@
                                                             <td>{{ u.name }}</td>
                                                             <td>{{ u.email }}</td>
                                                             <td>{{ u.role }}</td>
-                                                            <td><span class="badge bg-primary">{{ u.tenant }}</span></td>
+                                                            <td><span class="badge bg-info text-dark">{{ u.tenant or 'N/A' }}</span></td>
                                                             <td>{{ u.created_at.strftime('%d/%m/%Y %H:%M') if u.created_at else 'N/A' }}</td>
                                                             <td>
                                                                 <div class="btn-group btn-group-sm">
@@ -184,7 +184,7 @@
                                                             <th>Nombre</th>
                                                             <th>Email</th>
                                                             <th>Rol</th>
-                                                            <th>Tenant</th>
+                                                            <th>Condominio</th>
                                                             <th>Fecha Registro</th>
                                                             <th>Acciones</th>
                                                         </tr>
@@ -195,7 +195,7 @@
                                                             <td>{{ u.name }}</td>
                                                             <td>{{ u.email }}</td>
                                                             <td>{{ u.role }}</td>
-                                                            <td><span class="badge bg-primary">{{ u.tenant }}</span></td>
+                                                            <td><span class="badge bg-info text-dark">{{ u.tenant or 'N/A' }}</span></td>
                                                             <td>{{ u.created_at.strftime('%d/%m/%Y %H:%M') if u.created_at else 'N/A' }}</td>
                                                             <td>
                                                                 <div class="btn-group btn-group-sm">
@@ -240,7 +240,7 @@
                                                             <th>Nombre</th>
                                                             <th>Email</th>
                                                             <th>Rol</th>
-                                                            <th>Tenant</th>
+                                                            <th>Condominio</th>
                                                             <th>Estado</th>
                                                             <th>Fecha Registro</th>
                                                             <th>Acciones</th>
@@ -252,7 +252,7 @@
                                                             <td>{{ u.name }}</td>
                                                             <td>{{ u.email }}</td>
                                                             <td>{{ u.role }}</td>
-                                                            <td><span class="badge bg-primary">{{ u.tenant }}</span></td>
+                                                            <td><span class="badge bg-info text-dark">{{ u.tenant or 'N/A' }}</span></td>
                                                             <td>
                                                                 {% if u.status == 'active' %}
                                                                     <span class="badge bg-success">Activo</span>

@@ -5,7 +5,7 @@ from flask import (
 from flask_jwt_extended import jwt_required
 from app.auth import get_current_user
 from app.models import Condominium, User, CondominiumConfig
-from app import db
+from app import db, models
 from datetime import datetime, timedelta
 import io
 import csv
@@ -48,13 +48,37 @@ def master_usuarios():
     if request.method == 'POST':
         action = request.form.get('action')
         if action == 'create_user':
-            try:
-                from app.routes.public_routes import register_user # Reutilizar lógica de registro
-                register_user(is_master_creation=True)
-                flash('Usuario creado exitosamente.', 'success')
-            except Exception as e:
-                flash(f'Error al crear el usuario: {e}', 'error')
-            return redirect(url_for('master.master_usuarios'))
+            email = request.form.get('email', '').strip()
+            if models.User.query.filter_by(email=email).first():
+                flash(f"El email '{email}' ya está registrado.", "error")
+                return redirect(url_for('master.master_usuarios'))
+
+            import hashlib
+            password = request.form.get('password')
+            pwd_hash = hashlib.sha256(password.encode()).hexdigest() if password else None
+
+            new_user = models.User(
+                name=request.form.get('name'),
+                email=email,
+                password_hash=pwd_hash,
+                phone=request.form.get('phone'),
+                city=request.form.get('city'),
+                country=request.form.get('country', 'Ecuador'),
+                role=request.form.get('role'),
+                status='active' # Creado por MASTER, se activa directamente
+            )
+
+            if new_user.role == 'ADMIN':
+                condominium_id = request.form.get('condominium_id')
+                if condominium_id:
+                    condo = models.Condominium.query.get(condominium_id)
+                    new_user.condominium_id = condo.id
+                    new_user.tenant = condo.subdomain
+
+            db.session.add(new_user)
+            db.session.commit()
+            flash(f'Usuario {new_user.name} creado exitosamente.', 'success')
+            return redirect(url_for('master.master_usuarios')) # Redirigir después de la acción
 
     # Lógica para GET
     pending_users = User.query.filter_by(status='pending').order_by(User.created_at.desc()).all()
