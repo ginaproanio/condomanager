@@ -19,8 +19,12 @@ def seed_initial_data():
             print(f"AUDIT: Creando usuario maestro para {master_email}...")
             master_password = os.environ.get('MASTER_PASSWORD', 'Master2025!')
             pwd_hash = hashlib.sha256(master_password.encode()).hexdigest()
+            # --- CORRECCIÓN CRÍTICA ---
+            # Usar los nuevos campos y añadir una cédula por defecto.
             master = models.User(
-                email=master_email, name='Administrador Maestro', password_hash=pwd_hash,
+                cedula='0000000000', # Cédula por defecto para el usuario maestro
+                email=master_email, first_name='Administrador', last_name='Maestro', 
+                password_hash=pwd_hash,
                 tenant=None, role='MASTER', status='active'
             )
             db.session.add(master)
