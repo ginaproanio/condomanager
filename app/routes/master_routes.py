@@ -46,14 +46,9 @@ def master_usuarios():
         return redirect('/dashboard')
     
     if request.method == 'POST':
-        action = request.form.get('action')
-        # La lógica de creación de usuario individual se ha movido a master_usuarios_crear
-        if action == 'import_admins':
-            # Lógica de importación de admins (se mantiene aquí)
-            pass # El resto de la lógica de importación ya está en este archivo
-        else:
-            flash("Acción no reconocida.", "error")
-            return redirect(url_for('master.master_usuarios'))
+        # La lógica POST para la creación de usuarios se ha movido a su propia ruta.
+        # Esta ruta ahora solo maneja la visualización (GET).
+        pass
 
     # Lógica para GET (mostrar las listas de usuarios)
     pending_users = User.query.filter_by(status='pending').order_by(User.created_at.desc()).all()
@@ -267,6 +262,60 @@ def master_importar_admins_csv():
     flash('Formato de archivo inválido. Por favor, sube un archivo .csv', 'error')
     return redirect(url_for('master.master_usuarios'))
 
+@master_bp.route('/master/usuarios/crear', methods=['GET', 'POST'])
+@jwt_required()
+def master_usuarios_crear():
+    user = get_current_user()
+    if not user or user.role != 'MASTER':
+        flash("Acceso denegado – Se requiere rol MASTER", "error")
+        return redirect('/dashboard')
+
+    all_condominiums = Condominium.query.order_by(Condominium.name).all()
+
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+        cedula = request.form.get('cedula', '').strip()
+
+        if User.query.filter_by(email=email).first():
+            flash(f"El email '{email}' ya está registrado.", "error")
+            return render_template('master/crear_usuario.html', user=user, all_condominiums=all_condominiums, request_form=request.form)
+        if User.query.filter_by(cedula=cedula).first():
+            flash(f"La cédula '{cedula}' ya está registrada.", "error")
+            return render_template('master/crear_usuario.html', user=user, all_condominiums=all_condominiums, request_form=request.form)
+
+        import hashlib
+        password = request.form.get('password')
+        pwd_hash = hashlib.sha256(password.encode()).hexdigest() if password else None
+
+        birth_date_str = request.form.get('birth_date')
+        birth_date = datetime.strptime(birth_date_str, '%Y-%m-%d').date() if birth_date_str else None
+
+        new_user = User(
+            first_name=request.form.get('first_name'),
+            last_name=request.form.get('last_name'),
+            cedula=cedula,
+            email=email,
+            password_hash=pwd_hash,
+            cellphone=request.form.get('cellphone'),
+            birth_date=birth_date,
+            city=request.form.get('city'),
+            country=request.form.get('country', 'Ecuador'),
+            role=request.form.get('role'),
+            status='active' # Creado por MASTER, se activa directamente
+        )
+
+        condominium_id = request.form.get('condominium_id')
+        if condominium_id:
+            condo = Condominium.query.get(condominium_id)
+            new_user.condominium_id = condo.id
+            new_user.tenant = condo.subdomain
+
+        db.session.add(new_user)
+        db.session.commit()
+        flash(f'Usuario {new_user.name} creado exitosamente.', 'success')
+        return redirect(url_for('master.master_usuarios'))
+
+    return render_template('master/crear_usuario.html', user=user, all_condominiums=all_condominiums)
 
 @master_bp.route('/master/crear_condominio', methods=['GET', 'POST'])
 @jwt_required()
