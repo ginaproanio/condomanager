@@ -47,55 +47,20 @@ def master_usuarios():
     
     if request.method == 'POST':
         action = request.form.get('action')
-        if action == 'create_user':
-            email = request.form.get('email', '').strip()
-            cedula = request.form.get('cedula', '').strip()
+        # La lógica de creación de usuario individual se ha movido a master_usuarios_crear
+        if action == 'import_admins':
+            # Lógica de importación de admins (se mantiene aquí)
+            pass # El resto de la lógica de importación ya está en este archivo
+        else:
+            flash("Acción no reconocida.", "error")
+            return redirect(url_for('master.master_usuarios'))
 
-            if User.query.filter_by(email=email).first():
-                flash(f"El email '{email}' ya está registrado.", "error")
-                return redirect(url_for('master.master_usuarios'))
-            if User.query.filter_by(cedula=cedula).first():
-                flash(f"La cédula '{cedula}' ya está registrada.", "error")
-                return redirect(url_for('master.master_usuarios'))
-
-            import hashlib
-            password = request.form.get('password')
-            pwd_hash = hashlib.sha256(password.encode()).hexdigest() if password else None
-
-            birth_date_str = request.form.get('birth_date')
-            birth_date = datetime.strptime(birth_date_str, '%Y-%m-%d').date() if birth_date_str else None
-
-            new_user = User(
-                first_name=request.form.get('first_name'),
-                last_name=request.form.get('last_name'),
-                cedula=cedula,
-                email=email,
-                password_hash=pwd_hash,
-                cellphone=request.form.get('cellphone'),
-                birth_date=birth_date,
-                city=request.form.get('city'),
-                country=request.form.get('country', 'Ecuador'),
-                role=request.form.get('role'),
-                status='active' # Creado por MASTER, se activa directamente
-            )
-
-            condominium_id = request.form.get('condominium_id')
-            if condominium_id:
-                condo = Condominium.query.get(condominium_id)
-                new_user.condominium_id = condo.id
-                new_user.tenant = condo.subdomain
-
-            db.session.add(new_user)
-            db.session.commit()
-            flash(f'Usuario {new_user.name} creado exitosamente.', 'success')
-            return redirect(url_for('master.master_usuarios')) # Redirigir después de la acción
-
-    # Lógica para GET
+    # Lógica para GET (mostrar las listas de usuarios)
     pending_users = User.query.filter_by(status='pending').order_by(User.created_at.desc()).all()
     active_users = User.query.filter_by(status='active').order_by(User.created_at.desc()).all()
     rejected_users = User.query.filter_by(status='rejected').order_by(User.created_at.desc()).all()
     all_users = User.query.order_by(User.created_at.desc()).all()
-    all_condominiums = Condominium.query.order_by(Condominium.name).all()
+    all_condominiums = Condominium.query.order_by(Condominium.name).all() # Necesario para el modal de gestión
 
     return render_template(
         'master/usuarios.html',
@@ -104,7 +69,7 @@ def master_usuarios():
         active_users=active_users,
         rejected_users=rejected_users,
         all_users=all_users,
-        all_condominiums=all_condominiums
+        all_condominiums=all_condominiums # Se pasa para el modal de gestión de usuarios
     )
 
 @master_bp.route('/master/usuarios/manage', methods=['POST'])

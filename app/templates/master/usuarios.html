@@ -49,9 +49,9 @@
                                     Todos <span class="badge bg-secondary ms-2">{{ all_users|length }}</span>
                                 </button>
                             </li>
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="create-user-tab" data-bs-toggle="tab" data-bs-target="#create-user" type="button" role="tab" aria-controls="create-user" aria-selected="false">
-                                    <i class="fas fa-user-plus me-2"></i>Crear Usuario
+                            <li class="nav-item ms-auto"> {# Alinea el botón a la derecha #}
+                                <a href="{{ url_for('master.master_usuarios_crear') }}" class="btn btn-primary">
+                                    <i class="fas fa-user-plus me-2"></i>Crear Nuevo Usuario
                                 </button>
                             </li>
                             <li class="nav-item" role="presentation">
@@ -286,85 +286,6 @@
                                                 <h5 class="text-muted">No hay usuarios registrados en el sistema.</h5>
                                             </div>
                                         {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Pestaña: Crear Usuario -->
-                            <div class="tab-pane fade" id="create-user" role="tabpanel" aria-labelledby="create-user-tab">
-                                <div class="card border-0 shadow-sm mb-4">
-                                    <div class="card-header bg-primary text-white">
-                                        <h5 class="mb-0"><i class="fas fa-user-plus me-2"></i>Crear Nuevo Usuario</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <form action="{{ url_for('master.master_usuarios') }}" method="POST">
-                                            <input type="hidden" name="action" value="create_user">
-                                            <div class="row">
-                                                <div class="col-md-6 mb-3">
-                                                    <label for="first_name" class="form-label">Nombres</label>
-                                                    <input type="text" class="form-control" id="first_name" name="first_name" required>
-                                                </div>
-                                                <div class="col-md-6 mb-3">
-                                                    <label for="last_name" class="form-label">Apellidos</label>
-                                                    <input type="text" class="form-control" id="last_name" name="last_name" required>
-                                                </div>
-                                            </div>
-                                            <div class="row">
-                                                <div class="col-md-6 mb-3">
-                                                    <label for="cedula" class="form-label">Cédula</label>
-                                                    <input type="text" class="form-control" id="cedula" name="cedula" required>
-                                                </div>
-                                                <div class="col-md-6 mb-3">
-                                                    <label for="email" class="form-label">Email</label>
-                                                    <input type="email" class="form-control" id="email" name="email" required>
-                                                </div>
-                                            </div>
-                                            <div class="row">
-                                                <div class="col-md-6 mb-3">
-                                                    <label for="cellphone" class="form-label">Celular</label>
-                                                    <input type="tel" class="form-control" id="cellphone" name="cellphone">
-                                                </div>
-                                                <div class="col-md-6 mb-3">
-                                                    <label for="birth_date" class="form-label">Fecha de Nacimiento</label>
-                                                    <input type="date" class="form-control" id="birth_date" name="birth_date">
-                                                </div>
-                                            </div>
-                                            <div class="row">
-                                                <div class="col-md-6 mb-3">
-                                                    <label for="city" class="form-label">Ciudad</label>
-                                                    <input type="text" class="form-control" id="city" name="city">
-                                                </div>
-                                                <div class="col-md-6 mb-3">
-                                                    <label for="country" class="form-label">País</label>
-                                                    <input type="text" class="form-control" id="country" name="country" value="Ecuador">
-                                                </div>
-                                            </div>
-                                            <div class="mb-3">
-                                                <label for="password" class="form-label">Contraseña</label>
-                                                <input type="password" class="form-control" id="password" name="password">
-                                                <small class="form-text text-muted">Opcional. Si se deja en blanco, el usuario deberá usar "Recuperar Contraseña".</small>
-                                            </div>
-                                            <div class="mb-3">
-                                                <label for="new_user_role" class="form-label">Rol</label>
-                                                <select class="form-select" id="new_user_role" name="role" required>
-                                                    <option value="USER">Usuario</option>
-                                                    <option value="ADMIN">Administrador</option>
-                                                </select>
-                                            </div>
-                                            <div class="mb-3" id="condominium_select_container">
-                                                <label for="new_user_condominium" class="form-label">Asignar a Condominio (Opcional)</label>
-                                                <select class="form-select" id="new_user_condominium" name="condominium_id">
-                                                    <option value="">Seleccionar Condominio</option>
-                                                    {% for condo in all_condominiums %}
-                                                        <option value="{{ condo.id }}">{{ condo.name }}</option>
-                                                    {% endfor %}
-                                                </select>
-                                                <small class="form-text text-muted">Asigna este usuario a un condominio específico. Crucial para roles de ADMIN y USER.</small>
-                                            </div>
-                                            <button type="submit" class="btn btn-primary">
-                                                <i class="fas fa-save me-2"></i>Guardar Nuevo Usuario
-                                            </button>
-                                        </form>
                                     </div>
                                 </div>
                             </div>
