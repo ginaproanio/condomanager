@@ -4,8 +4,9 @@ from flask import (
 )
 from flask_jwt_extended import jwt_required
 from app.auth import get_current_user
-from app.models import Condominium, User
+from app.models import Condominium, User, CondominiumConfig
 from app import db
+from datetime import datetime, timedelta
 import io
 import csv
 
@@ -70,6 +71,67 @@ def master_usuarios():
         all_users=all_users,
         all_condominiums=all_condominiums
     )
+
+@master_bp.route('/master/usuarios/manage', methods=['POST'])
+@jwt_required()
+def master_manage_user():
+    user = get_current_user()
+    if not user or user.role != 'MASTER':
+        flash("Acceso denegado.", "error")
+        return redirect(url_for('public.login'))
+
+    action = request.form.get('action')
+    user_id = request.form.get('user_id')
+    user_to_manage = User.query.get_or_404(user_id)
+
+    if action == 'assign_and_approve':
+        condominium_id = request.form.get('condominium_id')
+        if not condominium_id:
+            flash('Debe seleccionar un condominio para asignar y aprobar.', 'error')
+            return redirect(url_for('master.master_usuarios'))
+        
+        condo = Condominium.query.get(condominium_id)
+        user_to_manage.tenant = condo.subdomain
+        user_to_manage.condominium_id = condo.id
+        user_to_manage.status = 'active'
+        db.session.commit()
+        flash(f'Usuario {user_to_manage.email} asignado a {condo.name} y aprobado.', 'success')
+
+    elif action == 'simple_approve':
+        user_to_manage.status = 'active'
+        db.session.commit()
+        flash(f'Usuario {user_to_manage.email} aprobado exitosamente.', 'success')
+
+    elif action == 'activate_demo':
+        # Crear un condominio de demostración para el usuario
+        demo_subdomain = f"demo-{user_to_manage.id}-{datetime.utcnow().strftime('%Y%m%d')}"
+        demo_condo = Condominium(
+            name=f"Demo para {user_to_manage.name}",
+            subdomain=demo_subdomain,
+            status='DEMO',
+            admin_user_id=user_to_manage.id,
+            created_by=user.id,
+            # Podríamos añadir una fecha de expiración
+            # expiration_date=datetime.utcnow() + timedelta(days=15) 
+        )
+        db.session.add(demo_condo)
+        db.session.flush() # Para obtener el ID del nuevo condo
+
+        user_to_manage.tenant = demo_subdomain
+        user_to_manage.condominium_id = demo_condo.id
+        user_to_manage.status = 'active'
+        user_to_manage.role = 'ADMIN' # Un usuario de demo debe ser admin de su demo
+        
+        db.session.commit()
+        flash(f'Demo de 15 días activada para {user_to_manage.email}. Condominio de demo: {demo_condo.name}', 'success')
+
+    elif action == 'reject':
+        user_to_manage.status = 'rejected'
+        db.session.commit()
+        flash(f'Usuario {user_to_manage.email} ha sido rechazado.', 'info')
+
+    return redirect(url_for('master.master_usuarios'))
+
 
 @master_bp.route('/master/usuarios/editar/<int:user_id>', methods=['GET', 'POST'])
 @jwt_required()

@@ -88,15 +88,12 @@
                                                             <td>{{ u.created_at.strftime('%d/%m/%Y %H:%M') if u.created_at else 'N/A' }}</td>
                                                             <td>
                                                                 <div class="btn-group btn-group-sm">
-                                                                    <a href="{{ url_for('admin.aprobar_usuario', user_id=u.id) }}" class="btn btn-success">
-                                                                        <i class="fas fa-check"></i> Aprobar
-                                                                    </a>
-                                                                    <a href="{{ url_for('admin.rechazar_usuario', user_id=u.id) }}" class="btn btn-danger">
-                                                                        <i class="fas fa-times"></i> Rechazar
-                                                                    </a>
-                                                                    <a href="{{ url_for('master.master_usuarios_editar', user_id=u.id) }}" class="btn btn-info">
-                                                                        <i class="fas fa-edit"></i>
-                                                                    </a>
+                                                                    <!-- Botón para abrir el modal de gestión -->
+                                                                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#manageUserModal" 
+                                                                            data-user-id="{{ u.id }}" data-user-name="{{ u.name }}" data-user-email="{{ u.email }}" 
+                                                                            data-user-tenant="{{ u.tenant or '' }}" data-user-role="{{ u.role }}">
+                                                                        <i class="fas fa-tasks me-2"></i>Gestionar
+                                                                    </button>
                                                                 </div>
                                                             </td>
                                                         </tr>
@@ -364,6 +361,57 @@
     </div>
 </div>
 
+<!-- Modal para Gestionar Usuario Pendiente -->
+<div class="modal fade" id="manageUserModal" tabindex="-1" aria-labelledby="manageUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="manageUserModalLabel">Gestionar Usuario: <span id="modalUserName"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="manageUserForm" method="POST">
+                <div class="modal-body">
+                    <input type="hidden" name="user_id" id="modalUserId">
+                    <p><strong>Email:</strong> <span id="modalUserEmail"></span></p>
+                    <p><strong>Rol Solicitado:</strong> <span id="modalUserRole"></span></p>
+
+                    <!-- Opciones para usuarios SIN condominio asignado -->
+                    <div id="noTenantOptions">
+                        <p class="text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Este usuario no tiene un condominio asignado.</p>
+                        <div class="mb-3">
+                            <label for="assignCondominiumSelect" class="form-label">Asignar a un Condominio:</label>
+                            <select class="form-select" name="condominium_id" id="assignCondominiumSelect">
+                                <option value="" selected>-- Seleccionar un Condominio --</option>
+                                {% for condo in all_condominiums %}
+                                    <option value="{{ condo.id }}">{{ condo.name }} ({{ condo.subdomain }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" name="action" value="assign_and_approve" class="btn btn-success"><i class="fas fa-check-circle me-2"></i>Asignar y Aprobar</button>
+                            <button type="submit" name="action" value="activate_demo" class="btn btn-info"><i class="fas fa-rocket me-2"></i>Activar Demo (15 días)</button>
+                        </div>
+                    </div>
+
+                    <!-- Opciones para usuarios CON condominio asignado -->
+                    <div id="hasTenantOptions" style="display: none;">
+                        <p><strong>Condominio:</strong> <span id="modalUserTenant" class="badge bg-primary"></span></p>
+                        <div class="d-grid gap-2">
+                           <button type="submit" name="action" value="simple_approve" class="btn btn-success"><i class="fas fa-check me-2"></i>Aprobar Usuario</button>
+                        </div>
+                    </div>
+
+                    <hr>
+                    <!-- Acción de Rechazar (común para ambos casos) -->
+                    <div class="d-grid">
+                        <button type="submit" name="action" value="reject" class="btn btn-danger"><i class="fas fa-times-circle me-2"></i>Rechazar Usuario</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
     // JavaScript para mostrar/ocultar el selector de condominio basado en el rol
     document.addEventListener('DOMContentLoaded', function() {
@@ -380,6 +428,40 @@
 
         roleSelect.addEventListener('change', toggleCondominiumSelect);
         toggleCondominiumSelect(); // Llamar al cargar para establecer el estado inicial
+    });
+
+    // JavaScript para el modal de gestión de usuarios
+    const manageUserModal = document.getElementById('manageUserModal');
+    manageUserModal.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        const userId = button.getAttribute('data-user-id');
+        const userName = button.getAttribute('data-user-name');
+        const userEmail = button.getAttribute('data-user-email');
+        const userTenant = button.getAttribute('data-user-tenant');
+        const userRole = button.getAttribute('data-user-role');
+
+        // Poblar el modal con los datos del usuario
+        const modalTitle = manageUserModal.querySelector('.modal-title #modalUserName');
+        const modalBodyUserId = manageUserModal.querySelector('.modal-body #modalUserId');
+        const modalBodyEmail = manageUserModal.querySelector('.modal-body #modalUserEmail');
+        const modalBodyRole = manageUserModal.querySelector('.modal-body #modalUserRole');
+        const modalBodyTenant = manageUserModal.querySelector('.modal-body #modalUserTenant');
+
+        modalTitle.textContent = userName;
+        modalBodyUserId.value = userId;
+        modalBodyEmail.textContent = userEmail;
+        modalBodyRole.textContent = userRole;
+        
+        // Cambiar la URL del formulario
+        document.getElementById('manageUserForm').action = `/master/usuarios/manage`;
+
+        // Mostrar las opciones correctas basadas en si el usuario tiene un tenant
+        const noTenantDiv = document.getElementById('noTenantOptions');
+        const hasTenantDiv = document.getElementById('hasTenantOptions');
+
+        noTenantDiv.style.display = userTenant ? 'none' : 'block';
+        hasTenantDiv.style.display = userTenant ? 'block' : 'none';
+        if (userTenant) modalBodyTenant.textContent = userTenant;
     });
 </script>
 {% endblock %}
