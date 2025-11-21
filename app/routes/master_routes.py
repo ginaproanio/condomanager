@@ -170,11 +170,23 @@ def master_usuarios_editar(user_id):
     all_condominiums = Condominium.query.order_by(Condominium.name).all()
 
     if request.method == 'POST':
-        user_to_edit.name = request.form.get('name')
-        user_to_edit.email = request.form.get('email')
+        # --- Lógica actualizada para guardar todos los campos ---
+        user_to_edit.first_name = request.form.get('first_name')
+        user_to_edit.last_name = request.form.get('last_name')
+        user_to_edit.cedula = request.form.get('cedula')
+        user_to_edit.email = request.form.get('email').lower()
+        user_to_edit.cellphone = request.form.get('cellphone')
+        
+        birth_date_str = request.form.get('birth_date')
+        if birth_date_str:
+            user_to_edit.birth_date = datetime.strptime(birth_date_str, '%Y-%m-%d').date()
+        else:
+            user_to_edit.birth_date = None
+
         user_to_edit.role = request.form.get('role')
         user_to_edit.status = request.form.get('status')
         condominium_id = request.form.get('condominium_id')
+        # --- Fin de la lógica actualizada ---
         
         user_to_edit.condominium_id = int(condominium_id) if condominium_id else None
         user_to_edit.tenant = Condominium.query.get(condominium_id).subdomain if condominium_id else None

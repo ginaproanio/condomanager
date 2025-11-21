@@ -25,14 +25,56 @@
                     {% endwith %}
 
                     <form method="POST" action="{{ url_for('master.master_usuarios_editar', user_id=user_to_edit.id) }}">
-                        <div class="mb-3">
-                            <label for="name" class="form-label">Nombre</label>
-                            <input type="text" class="form-control" id="name" name="name" value="{{ user_to_edit.name }}" required>
+                        <!-- Fila 1: Nombres y Apellidos -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="first_name" class="form-label">Nombres</label>
+                                    <input type="text" class="form-control" id="first_name" name="first_name" value="{{ user_to_edit.first_name }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="last_name" class="form-label">Apellidos</label>
+                                    <input type="text" class="form-control" id="last_name" name="last_name" value="{{ user_to_edit.last_name }}" required>
+                                </div>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="email" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="email" name="email" value="{{ user_to_edit.email }}" required>
+
+                        <!-- Fila 2: Cédula y Email -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="cedula" class="form-label">Cédula</label>
+                                    <input type="text" class="form-control" id="cedula" name="cedula" value="{{ user_to_edit.cedula }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="email" name="email" value="{{ user_to_edit.email }}" required>
+                                </div>
+                            </div>
                         </div>
+
+                        <!-- Fila 3: Celular y Fecha de Nacimiento -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="cellphone" class="form-label">Celular</label>
+                                    <input type="tel" class="form-control" id="cellphone" name="cellphone" value="{{ user_to_edit.cellphone or '' }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="birth_date" class="form-label">Fecha de Nacimiento</label>
+                                    <input type="date" class="form-control" id="birth_date" name="birth_date" value="{{ user_to_edit.birth_date.strftime('%Y-%m-%d') if user_to_edit.birth_date }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
                         <div class="mb-3">
                             <label for="role" class="form-label">Rol</label>
                             <select class="form-select" id="role" name="role">
