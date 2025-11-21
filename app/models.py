@@ -58,6 +58,7 @@ class Condominium(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
     legal_name = db.Column(db.String(200))
+    email = db.Column(db.String(255)) # Correo oficial del condominio
     ruc = db.Column(db.String(20), unique=True)
     main_street = db.Column(db.String(100), nullable=False)
     cross_street = db.Column(db.String(100), nullable=False)
@@ -76,12 +77,14 @@ class Condominium(db.Model):
 
     # FK corregidas a 'users.id'
     admin_user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    legal_representative_id = db.Column(db.Integer, db.ForeignKey('users.id')) # Representante Legal
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
 
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
     # Relaciones
+    legal_representative = db.relationship('User', foreign_keys=[legal_representative_id], backref='legal_condominiums')
     admin_user = db.relationship('User', foreign_keys=[admin_user_id], backref='admin_condominiums')
     creator = db.relationship('User', foreign_keys=[created_by], backref='created_condominiums')
     units = db.relationship('Unit', backref='condominium', lazy=True, cascade='all, delete-orphan')

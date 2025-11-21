@@ -349,14 +349,15 @@
                                                     <option value="ADMIN">Administrador</option>
                                                 </select>
                                             </div>
-                                            <div class="mb-3" id="condominium_select_container" style="display: none;">
-                                                <label for="new_user_condominium" class="form-label">Asignar a Condominio (solo para Administrador)</label>
+                                            <div class="mb-3" id="condominium_select_container">
+                                                <label for="new_user_condominium" class="form-label">Asignar a Condominio (Opcional)</label>
                                                 <select class="form-select" id="new_user_condominium" name="condominium_id">
                                                     <option value="">Seleccionar Condominio</option>
                                                     {% for condo in all_condominiums %}
                                                         <option value="{{ condo.id }}">{{ condo.name }}</option>
                                                     {% endfor %}
                                                 </select>
+                                                <small class="form-text text-muted">Asigna este usuario a un condominio específico. Crucial para roles de ADMIN y USER.</small>
                                             </div>
                                             <button type="submit" class="btn btn-primary">
                                                 <i class="fas fa-save me-2"></i>Guardar Nuevo Usuario
@@ -462,21 +463,6 @@
 
 <script>
     // JavaScript para mostrar/ocultar el selector de condominio basado en el rol
-    document.addEventListener('DOMContentLoaded', function() {
-        const roleSelect = document.getElementById('new_user_role');
-        const condominiumContainer = document.getElementById('condominium_select_container');
-
-        function toggleCondominiumSelect() {
-            if (roleSelect.value === 'ADMIN') {
-                condominiumContainer.style.display = 'block';
-            } else {
-                condominiumContainer.style.display = 'none';
-            }
-        }
-
-        roleSelect.addEventListener('change', toggleCondominiumSelect);
-        toggleCondominiumSelect(); // Llamar al cargar para establecer el estado inicial
-    });
 
     // JavaScript para el modal de gestión de usuarios
     const manageUserModal = document.getElementById('manageUserModal');

@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Condominio - {{ condo.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card border-0 shadow-lg">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <h2 class="text-primary"><i class="fas fa-building me-2"></i>Editar Condominio</h2>
+                        <p class="lead text-muted">Modificando los detalles de <strong>{{ condo.name }}</strong></p>
+                    </div>
+
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <form method="POST">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="name" class="form-label">Nombre del Condominio</label>
+                                <input type="text" class="form-control" id="name" name="name" value="{{ condo.name }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="legal_name" class="form-label">Nombre Legal</label>
+                                <input type="text" class="form-control" id="legal_name" name="legal_name" value="{{ condo.legal_name or '' }}">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">Email del Condominio</label>
+                                <input type="email" class="form-control" id="email" name="email" value="{{ condo.email or '' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="ruc" class="form-label">RUC</label>
+                                <input type="text" class="form-control" id="ruc" name="ruc" value="{{ condo.ruc or '' }}">
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+                        <h5>Ubicación</h5>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="main_street" class="form-label">Calle Principal</label>
+                                <input type="text" class="form-control" id="main_street" name="main_street" value="{{ condo.main_street }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="cross_street" class="form-label">Calle Transversal</label>
+                                <input type="text" class="form-control" id="cross_street" name="cross_street" value="{{ condo.cross_street }}" required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="latitude" class="form-label">Latitud</label>
+                                <input type="number" step="any" class="form-control" id="latitude" name="latitude" value="{{ condo.latitude or '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="longitude" class="form-label">Longitud</label>
+                                <input type="number" step="any" class="form-control" id="longitude" name="longitude" value="{{ condo.longitude or '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="city" class="form-label">Ciudad</label>
+                                <input type="text" class="form-control" id="city" name="city" value="{{ condo.city }}" required>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+                        <h5>Configuración y Estado</h5>
+
+                        <div class="row">
+                             <div class="col-md-6 mb-3">
+                                <label for="admin_user_id" class="form-label">Administrador Principal</label>
+                                <select class="form-select" id="admin_user_id" name="admin_user_id" required>
+                                    <option value="">-- Seleccionar --</option>
+                                    {% for admin in administradores %}
+                                        <option value="{{ admin.id }}" {% if condo.admin_user_id == admin.id %}selected{% endif %}>{{ admin.name }} ({{ admin.email }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="status" class="form-label">Estado</label>
+                                <select class="form-select" id="status" name="status">
+                                    <option value="ACTIVO" {% if condo.status == 'ACTIVO' %}selected{% endif %}>Activo</option>
+                                    <option value="INACTIVO" {% if condo.status == 'INACTIVO' %}selected{% endif %}>Inactivo</option>
+                                    <option value="DEMO" {% if condo.status == 'DEMO' %}selected{% endif %}>Demo</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{{ url_for('master.master_condominios') }}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Guardar Cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -79,12 +79,11 @@ def master_usuarios():
                 status='active' # Creado por MASTER, se activa directamente
             )
 
-            if new_user.role == 'ADMIN':
-                condominium_id = request.form.get('condominium_id')
-                if condominium_id:
-                    condo = Condominium.query.get(condominium_id)
-                    new_user.condominium_id = condo.id
-                    new_user.tenant = condo.subdomain
+            condominium_id = request.form.get('condominium_id')
+            if condominium_id:
+                condo = Condominium.query.get(condominium_id)
+                new_user.condominium_id = condo.id
+                new_user.tenant = condo.subdomain
 
             db.session.add(new_user)
             db.session.commit()
@@ -317,20 +316,25 @@ def crear_condominio():
             # Asegurarse de que el admin_user_id es un entero
             admin_id = request.form.get('admin_user_id')
             if not admin_id:
+                # CORRECCIÓN: En lugar de redirigir, volvemos a renderizar la plantilla con un error.
                 flash('Debe seleccionar un administrador.', 'error')
-                return redirect('/master/crear_condominio')
+                administradores = User.query.filter(User.role.in_(['ADMIN', 'MASTER'])).all()
+                return render_template('master/crear_condominio.html', user=user, administradores=administradores)
 
             new_condo = Condominium(
                 name=request.form.get('name'),
                 legal_name=request.form.get('legal_name'),
+                email=request.form.get('email'),
                 ruc=request.form.get('ruc'),
                 main_street=request.form.get('main_street'),
                 cross_street=request.form.get('cross_street'),
                 house_number=request.form.get('house_number'),
                 city=request.form.get('city'),
                 country=request.form.get('country'),
+                latitude=float(request.form.get('latitude')) if request.form.get('latitude') else None,
+                longitude=float(request.form.get('longitude')) if request.form.get('longitude') else None,
                 subdomain=request.form.get('subdomain'),
-                status='PENDIENTE_APROBACION',
+                status='ACTIVO', # Corregido: El MASTER crea condominios activos directamente.
                 admin_user_id=int(admin_id),
                 created_by=user.id
             )
@@ -349,6 +353,44 @@ def crear_condominio():
     # GET request
     administradores = User.query.filter(User.role.in_(['ADMIN', 'MASTER'])).all()
     return render_template('master/crear_condominio.html', user=user, administradores=administradores)
+
+@master_bp.route('/master/condominios/editar/<int:condo_id>', methods=['GET', 'POST'])
+@jwt_required()
+def editar_condominio(condo_id):
+    user = get_current_user()
+    if not user or user.role != 'MASTER':
+        flash("Acceso denegado.", "error")
+        return redirect(url_for('public.login'))
+
+    condo_to_edit = Condominium.query.get_or_404(condo_id)
+    administradores = User.query.filter(User.role.in_(['ADMIN', 'MASTER'])).all()
+
+    if request.method == 'POST':
+        try:
+            condo_to_edit.name = request.form.get('name')
+            condo_to_edit.legal_name = request.form.get('legal_name')
+            condo_to_edit.email = request.form.get('email')
+            condo_to_edit.ruc = request.form.get('ruc')
+            condo_to_edit.main_street = request.form.get('main_street')
+            condo_to_edit.cross_street = request.form.get('cross_street')
+            condo_to_edit.house_number = request.form.get('house_number')
+            condo_to_edit.city = request.form.get('city')
+            condo_to_edit.country = request.form.get('country')
+            condo_to_edit.latitude = float(request.form.get('latitude')) if request.form.get('latitude') else None
+            condo_to_edit.longitude = float(request.form.get('longitude')) if request.form.get('longitude') else None
+            condo_to_edit.subdomain = request.form.get('subdomain')
+            condo_to_edit.status = request.form.get('status')
+            condo_to_edit.admin_user_id = int(request.form.get('admin_user_id')) if request.form.get('admin_user_id') else None
+            
+            db.session.commit()
+            flash('Condominio actualizado exitosamente.', 'success')
+            return redirect(url_for('master.master_condominios'))
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error al editar el condominio: {e}")
+            flash(f'Error al editar el condominio: {e}', 'error')
+
+    return render_template('master/editar_condominio.html', user=user, condo=condo_to_edit, administradores=administradores)
 
 
 @master_bp.route('/master/descargar-plantilla-unidades')
