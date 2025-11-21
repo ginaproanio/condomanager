@@ -354,7 +354,7 @@
                                     </div>
                                     <div class="card-body">
                                         <p class="text-muted">Sube un archivo CSV para crear múltiples usuarios con rol de <strong>ADMINISTRADOR</strong> y asignarlos a un condominio.</p>
-                                        <p>Estructura requerida: <code>name,email,password,condominium_subdomain</code></p>
+                                        <p>Estructura requerida: <code>name,email,password,phone,city,country,condominium_subdomain</code></p>
                                         <p class="text-danger"><strong>Importante:</strong> El <code>condominium_subdomain</code> debe existir previamente en el sistema.</p>
                                         <form action="{{ url_for('master.master_importar_admins_csv') }}" method="POST" enctype="multipart/form-data">
                                             <div class="mb-3">

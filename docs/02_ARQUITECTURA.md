@@ -122,9 +122,9 @@ Esta sección documenta funcionalidades identificadas en las reglas de negocio (
 ### 7.2 Completar Gestión del Administrador (`ADMIN`)
 - **Objetivo:** Desarrollar las interfaces y la lógica para que un `ADMIN` pueda gestionar su condominio de forma individual (no solo por CSV).
 - **Tareas Pendientes:**
-    - 🚧 Creación y edición individual de `Unit`.
-    - 🚧 Aprobación y gestión individual de `User` para su condominio.
-    - 🚧 Asignación individual de `Unit` a `User`.
+    - ✅ **Creación y edición individual de `Unit`:** Implementado.
+    - ✅ **Aprobación y gestión individual de `User` para su condominio:** Implementado.
+    - ❌ **Asignación individual de `Unit` a `User`:** Faltante.
     - 🚧 Interfaz para gestionar la configuración del condominio (`CondominioConfig`).
 
 ### 7.3 Implementación de Auditoría

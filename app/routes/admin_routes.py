@@ -1,10 +1,10 @@
 from flask import (
-    Blueprint, render_template, redirect,
-    current_app, flash
+    Blueprint, render_template, redirect, url_for,
+    current_app, flash, request
 )
 from flask_jwt_extended import jwt_required
 from app import db
-from app.models import User
+from app.models import User, Condominium, Unit
 from app.auth import get_current_user
 
 admin_bp = Blueprint('admin', __name__)
@@ -83,3 +83,69 @@ def rechazar_usuario(user_id):
     db.session.commit()
     flash(f"Usuario {user_to_reject.email} rechazado.", "info")
     return redirect('/admin')
+
+@admin_bp.route('/admin/condominio/<int:condominium_id>/unidad/nueva', methods=['GET', 'POST'])
+@jwt_required()
+def crear_unidad(condominium_id):
+    user = get_current_user()
+    condominium = Condominium.query.get_or_404(condominium_id)
+
+    if user.role != 'ADMIN' or user.condominium_id != condominium.id:
+        flash("Acceso no autorizado.", "error")
+        return redirect(url_for('user.dashboard'))
+
+    if request.method == 'POST':
+        new_unit = Unit(
+            condominium_id=condominium.id,
+            property_number=request.form.get('property_number'),
+            name=request.form.get('name'),
+            property_type=request.form.get('property_type'),
+            building=request.form.get('building'),
+            floor=request.form.get('floor'),
+            area_m2=float(request.form.get('area_m2')) if request.form.get('area_m2') else None,
+            sector=request.form.get('sector'),
+            bedrooms=int(request.form.get('bedrooms')) if request.form.get('bedrooms') else None,
+            bathrooms=int(request.form.get('bathrooms')) if request.form.get('bathrooms') else None,
+            created_by=user.id
+        )
+        db.session.add(new_unit)
+        db.session.commit()
+        flash(f'Unidad "{new_unit.name}" creada exitosamente.', 'success')
+        return redirect(url_for('admin.admin_condominio_panel', condominium_id=condominium.id))
+
+    return render_template('admin/crear_editar_unidad.html', user=user, condominium=condominium)
+
+@admin_bp.route('/admin/condominio/unidad/editar/<int:unit_id>', methods=['GET', 'POST'])
+@jwt_required()
+def editar_unidad(unit_id):
+    user = get_current_user()
+    unit_to_edit = Unit.query.get_or_404(unit_id)
+    condominium = unit_to_edit.condominium
+
+    if user.role != 'ADMIN' or user.condominium_id != condominium.id:
+        flash("Acceso no autorizado.", "error")
+        return redirect(url_for('user.dashboard'))
+
+    if request.method == 'POST':
+        unit_to_edit.property_number = request.form.get('property_number')
+        unit_to_edit.name = request.form.get('name')
+        unit_to_edit.property_type = request.form.get('property_type')
+        unit_to_edit.building = request.form.get('building')
+        unit_to_edit.floor = request.form.get('floor')
+        unit_to_edit.area_m2 = float(request.form.get('area_m2')) if request.form.get('area_m2') else None
+        unit_to_edit.sector = request.form.get('sector')
+        unit_to_edit.bedrooms = int(request.form.get('bedrooms')) if request.form.get('bedrooms') else None
+        unit_to_edit.bathrooms = int(request.form.get('bathrooms')) if request.form.get('bathrooms') else None
+        db.session.commit()
+        flash(f'Unidad "{unit_to_edit.name}" actualizada exitosamente.', 'success')
+        return redirect(url_for('admin.admin_condominio_panel', condominium_id=condominium.id))
+
+    return render_template('admin/crear_editar_unidad.html', user=user, condominium=condominium, unit=unit_to_edit)
+
+@admin_bp.route('/admin/condominio/unidad/eliminar/<int:unit_id>', methods=['POST'])
+@jwt_required()
+def eliminar_unidad(unit_id):
+    # Placeholder para la lógica de eliminación
+    flash(f"Funcionalidad para eliminar unidad {unit_id} no implementada.", "info")
+    unit = Unit.query.get_or_404(unit_id)
+    return redirect(url_for('admin.admin_condominio_panel', condominium_id=unit.condominium_id))

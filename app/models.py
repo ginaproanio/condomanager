@@ -11,9 +11,12 @@ class User(db.Model):
     __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.Integer, primary_key=True)
+    cedula = db.Column(db.String(20), unique=True, nullable=False)
     email = db.Column(db.String(255), unique=True, nullable=False)
-    name = db.Column(db.String(100))
-    phone = db.Column(db.String(20))
+    first_name = db.Column(db.String(100), nullable=False)
+    last_name = db.Column(db.String(100), nullable=False)
+    birth_date = db.Column(db.Date)
+    cellphone = db.Column(db.String(20))
     city = db.Column(db.String(50))
     country = db.Column(db.String(50))
     password_hash = db.Column(db.String(255))
@@ -27,6 +30,11 @@ class User(db.Model):
     # Es 'nullable' porque un usuario puede no estar asignado a una unidad al registrarse.
     unit_id = db.Column(db.Integer, db.ForeignKey('units.id'), nullable=True)
     unit = db.relationship('Unit', backref='residents', lazy=True, foreign_keys=[unit_id])
+
+    # Propiedad para obtener el nombre completo fácilmente, sin cambiar la base de datos.
+    @property
+    def name(self):
+        return f"{self.first_name} {self.last_name}"
 
 # 2. CONFIGURACIÓN CONDOMINIO
 class CondominiumConfig(db.Model):
@@ -129,6 +137,7 @@ class Unit(db.Model):
     __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.Integer, primary_key=True)
+    property_tax_code = db.Column(db.String(100), unique=True)
     property_number = db.Column(db.String(50), nullable=False)
     name = db.Column(db.String(100))
     property_type = db.Column(db.String(50))
