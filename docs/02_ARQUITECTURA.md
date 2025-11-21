@@ -63,7 +63,7 @@ La implementación actual utiliza una estrategia de **multi-tenancy de esquema c
 ## 5. Modelos Principales (definidos en `app/models.py`)
 
 ### 5.1 User
-- Atributos clave: `id`, `email`, `name`, `password_hash`, `tenant`, `role`, `status`.
+- Atributos clave: `id`, `cedula`, `email`, `first_name`, `last_name`, `password_hash`, `tenant`, `role`, `status`.
 - Roles base: `MASTER`, `ADMIN`, `USER`.
 - Relaciones: Un usuario puede ser administrador de `Condominium` o creador de `Unit`.
 

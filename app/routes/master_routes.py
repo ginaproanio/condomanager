@@ -49,19 +49,30 @@ def master_usuarios():
         action = request.form.get('action')
         if action == 'create_user':
             email = request.form.get('email', '').strip()
-            if models.User.query.filter_by(email=email).first():
+            cedula = request.form.get('cedula', '').strip()
+
+            if User.query.filter_by(email=email).first():
                 flash(f"El email '{email}' ya está registrado.", "error")
+                return redirect(url_for('master.master_usuarios'))
+            if User.query.filter_by(cedula=cedula).first():
+                flash(f"La cédula '{cedula}' ya está registrada.", "error")
                 return redirect(url_for('master.master_usuarios'))
 
             import hashlib
             password = request.form.get('password')
             pwd_hash = hashlib.sha256(password.encode()).hexdigest() if password else None
 
-            new_user = models.User(
-                name=request.form.get('name'),
+            birth_date_str = request.form.get('birth_date')
+            birth_date = datetime.strptime(birth_date_str, '%Y-%m-%d').date() if birth_date_str else None
+
+            new_user = User(
+                first_name=request.form.get('first_name'),
+                last_name=request.form.get('last_name'),
+                cedula=cedula,
                 email=email,
                 password_hash=pwd_hash,
-                phone=request.form.get('phone'),
+                cellphone=request.form.get('cellphone'),
+                birth_date=birth_date,
                 city=request.form.get('city'),
                 country=request.form.get('country', 'Ecuador'),
                 role=request.form.get('role'),
@@ -71,7 +82,7 @@ def master_usuarios():
             if new_user.role == 'ADMIN':
                 condominium_id = request.form.get('condominium_id')
                 if condominium_id:
-                    condo = models.Condominium.query.get(condominium_id)
+                    condo = Condominium.query.get(condominium_id)
                     new_user.condominium_id = condo.id
                     new_user.tenant = condo.subdomain
 
@@ -251,9 +262,42 @@ def master_importar_admins_csv():
         return redirect(url_for('master.master_usuarios'))
 
     if file and file.filename.endswith('.csv'):
-        # Aquí iría la lógica para procesar el CSV
-        # Por ahora, es un placeholder
-        flash('Archivo CSV recibido. La lógica de procesamiento aún no está implementada.', 'info')
+        try:
+            stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
+            csv_reader = csv.DictReader(stream)
+            created_count = 0
+            errors = []
+            import hashlib
+
+            for row in csv_reader:
+                if User.query.filter_by(email=row['email']).first() or User.query.filter_by(cedula=row['cedula']).first():
+                    errors.append(f"Usuario con email {row['email']} o cédula {row['cedula']} ya existe.")
+                    continue
+
+                password = row.get('password')
+                pwd_hash = hashlib.sha256(password.encode()).hexdigest() if password else None
+
+                new_admin = User(
+                    first_name=row['first_name'],
+                    last_name=row['last_name'],
+                    cedula=row['cedula'],
+                    email=row['email'],
+                    cellphone=row.get('cellphone'),
+                    city=row.get('city'),
+                    country=row.get('country', 'Ecuador'),
+                    password_hash=pwd_hash,
+                    role='ADMIN',
+                    status='active'
+                )
+                db.session.add(new_admin)
+                created_count += 1
+            db.session.commit()
+            flash(f'{created_count} administradores creados exitosamente. Errores: {len(errors)}', 'success')
+            if errors:
+                flash(f"Detalles de errores: {'; '.join(errors)}", 'warning')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error al procesar el archivo CSV: {e}', 'error')
         return redirect(url_for('master.master_usuarios'))
 
     flash('Formato de archivo inválido. Por favor, sube un archivo .csv', 'error')
