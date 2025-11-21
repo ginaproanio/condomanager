@@ -40,6 +40,10 @@
                                 <label for="name" class="form-label">Nombre Descriptivo</label>
                                 <input type="text" class="form-control" id="name" name="name" value="{{ unit.name if unit else '' }}" required>
                             </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="property_tax_code" class="form-label">Código Predial</label>
+                                <input type="text" class="form-control" id="property_tax_code" name="property_tax_code" value="{{ unit.property_tax_code if unit else '' }}">
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label for="property_type" class="form-label">Tipo de Propiedad</label>

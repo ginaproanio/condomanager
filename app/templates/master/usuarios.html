@@ -238,6 +238,7 @@
                                                     <thead>
                                                         <tr>
                                                             <th>Nombre</th>
+                                                            <th>Cédula</th>
                                                             <th>Email</th>
                                                             <th>Rol</th>
                                                             <th>Condominio</th>
@@ -250,6 +251,7 @@
                                                         {% for u in all_users %}
                                                         <tr>
                                                             <td>{{ u.name }}</td>
+                                                            <td>{{ u.cedula }}</td>
                                                             <td>{{ u.email }}</td>
                                                             <td>{{ u.role }}</td>
                                                             <td><span class="badge bg-info text-dark">{{ u.tenant or 'N/A' }}</span></td>
