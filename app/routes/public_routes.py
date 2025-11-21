@@ -1,14 +1,13 @@
 from flask import (
     Blueprint, request, render_template, redirect, url_for,
-    current_app, flash, make_response
+    current_app, flash
 )
 from flask_jwt_extended import (
-    create_access_token, set_access_cookies, unset_jwt_cookies
+    unset_jwt_cookies
 )
-from app import db
-from app.models import User
+from app.models import User, db
 import hashlib
-from datetime import timedelta
+from datetime import datetime
 
 public_bp = Blueprint('public', __name__)
 
@@ -26,33 +25,55 @@ def register(): # El nombre ya era correcto, se mantiene
     config = current_app.get_tenant_config(tenant)
 
     if request.method == 'POST':
-        email = request.form['email'].strip()
-        name = request.form.get('name', '').strip()
-        password = request.form['password']
-        phone = request.form.get('phone', '')
-        city = request.form.get('city', '')
-        country = request.form.get('country', 'Ecuador')
+        # --- 1. Recolectar todos los datos del formulario ---
+        email = request.form.get('email', '').strip().lower()
+        cedula = request.form.get('cedula', '').strip()
+        first_name = request.form.get('first_name', '').strip()
+        last_name = request.form.get('last_name', '').strip()
+        password = request.form.get('password')
+        cellphone = request.form.get('cellphone', '').strip()
+        birth_date_str = request.form.get('birth_date')
+        city = request.form.get('city', '').strip()
+        country = request.form.get('country', '').strip()
 
+        # --- 2. Validar que la cédula y el email no existan ---
         if User.query.filter_by(email=email).first():
-            flash("Este email ya está registrado", "error")
-            return render_template('auth/registro.html', config=config)
+            flash("El correo electrónico ya está registrado.", "danger")
+            return render_template('auth/registro.html', config=config, **request.form)
+        
+        if User.query.filter_by(cedula=cedula).first():
+            flash("La cédula ya está registrada.", "danger")
+            return render_template('auth/registro.html', config=config, **request.form)
 
-        pwd_hash = hashlib.sha256(password.encode()).hexdigest()
-        user = User(
+        # --- 3. Procesar campos especiales (como la fecha) ---
+        birth_date = None
+        if birth_date_str:
+            try:
+                birth_date = datetime.strptime(birth_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                flash("El formato de la fecha de nacimiento es inválido.", "danger")
+                return render_template('auth/registro.html', config=config, **request.form)
+
+        # --- 4. Crear la nueva instancia de Usuario con todos los campos ---
+        new_user = User(
+            cedula=cedula,
             email=email,
-            name=name or email.split('@')[0],
-            phone=phone,
+            first_name=first_name,
+            last_name=last_name,
+            password_hash=hashlib.sha256(password.encode()).hexdigest(),
+            birth_date=birth_date,
+            cellphone=cellphone,
             city=city,
             country=country,
-            password_hash=pwd_hash,
             tenant=tenant,
             role='USER',
-            status='pending'
+            status='PENDING'
         )
-        db.session.add(user)
+
+        db.session.add(new_user)
         db.session.commit()
-        flash("Registro exitoso. Tu cuenta está pendiente de aprobación.", "success")
-        return render_template('auth/registro.html', config=config)
+        flash("¡Registro exitoso! Tu cuenta está pendiente de aprobación por el administrador.", "success")
+        return redirect(url_for('public.login'))
 
     return render_template('auth/registro.html', config=config)
 
@@ -67,7 +88,7 @@ def login():
 
 @public_bp.route('/logout')
 def logout():
-    response = make_response(redirect('/login'))
+    response = redirect(url_for('public.login'))
     unset_jwt_cookies(response)
     flash("Has cerrado sesión correctamente", "info")
     return response
