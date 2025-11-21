@@ -37,18 +37,13 @@ def master_condominios():
     all_condominiums = Condominium.query.order_by(Condominium.created_at.desc()).all()
     return render_template('master/condominios.html', user=user, all_condominiums=all_condominiums)
 
-@master_bp.route('/master/usuarios', methods=['GET', 'POST'])
+@master_bp.route('/master/usuarios', methods=['GET'])
 @jwt_required()
 def master_usuarios():
     user = get_current_user()
     if not user or user.role != 'MASTER':
         flash("Acceso denegado – Se requiere rol MASTER", "error")
         return redirect('/dashboard')
-    
-    if request.method == 'POST':
-        # La lógica POST para la creación de usuarios se ha movido a su propia ruta.
-        # Esta ruta ahora solo maneja la visualización (GET).
-        pass
 
     # Lógica para GET (mostrar las listas de usuarios)
     pending_users = User.query.filter_by(status='pending').order_by(User.created_at.desc()).all()
