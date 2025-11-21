@@ -87,7 +87,7 @@
                                     <tr>
                                         <th>Nombre</th>
                                         <th>Email</th>
-                                        <th>Tenant</th>
+                                        <th>Condominio</th>
                                         <th>Fecha Registro</th>
                                         <th>Acciones</th>
                                     </tr>
@@ -97,7 +97,7 @@
                                     <tr>
                                         <td>{{ user.name }}</td>
                                         <td>{{ user.email }}</td>
-                                        <td><span class="badge bg-primary">{{ user.tenant }}</span></td>
+                                        <td><span class="badge bg-info text-dark">{{ user.tenant or 'N/A' }}</span></td>
                                         <td>{{ user.created_at.strftime('%d/%m/%Y %H:%M') if user.created_at else 'N/A' }}</td>
                                         <td>
                                             <div class="btn-group btn-group-sm">
@@ -131,9 +131,8 @@
                         <i class="fas fa-bolt me-2"></i>Acciones Rápidas
                     </h5>
                     <div class="d-grid gap-2 d-md-flex">
-                        <a href="{{ url_for('admin.admin_panel') }}" class="btn btn-outline-primary">
-
-                            <i class="fas fa-list me-2"></i>Ver Todos los Usuarios
+                        <a href="{{ url_for('admin.condominio_panel', condominium_id=user.condominium_id) }}" class="btn btn-primary">
+                            <i class="fas fa-building me-2"></i>Gestionar Mi Condominio
                         </a>
                         <a href="#" class="btn btn-outline-primary disabled">
                             <i class="fas fa-building me-2"></i>Gestionar Unidades

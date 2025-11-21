@@ -298,7 +298,7 @@
                                         <form action="{{ url_for('master.master_usuarios') }}" method="POST">
                                             <input type="hidden" name="action" value="create_user">
                                             <div class="mb-3">
-                                                <label for="new_user_name" class="form-label">Nombre</label>
+                                                <label for="new_user_name" class="form-label">Nombre Completo</label>
                                                 <input type="text" class="form-control" id="new_user_name" name="name" required>
                                             </div>
                                             <div class="mb-3">
@@ -306,12 +306,12 @@
                                                 <input type="email" class="form-control" id="new_user_email" name="email" required>
                                             </div>
                                             <div class="mb-3">
-                                                <label for="new_user_password" class="form-label">Contraseña (opcional)</label>
+                                                <label for="new_user_password" class="form-label">Contraseña</label>
                                                 <input type="password" class="form-control" id="new_user_password" name="password">
                                                 <small class="form-text text-muted">Si no se proporciona, el usuario deberá usar la función de recuperación de contraseña.</small>
                                             </div>
                                             <div class="mb-3">
-                                                <label for="new_user_phone" class="form-label">Teléfono</label>
+                                                <label for="new_user_phone" class="form-label">Celular</label>
                                                 <input type="text" class="form-control" id="new_user_phone" name="phone">
                                             </div>
                                             <div class="mb-3">
@@ -339,7 +339,7 @@
                                                 </select>
                                             </div>
                                             <button type="submit" class="btn btn-primary">
-                                                <i class="fas fa-user-plus me-2"></i>Crear Usuario
+                                                <i class="fas fa-save me-2"></i>Guardar Nuevo Usuario
                                             </button>
                                         </form>
                                     </div>

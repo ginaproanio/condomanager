@@ -33,17 +33,14 @@ def admin_panel():
     if user.role == 'ADMIN':
         count_filter['tenant'] = user.tenant
     
-    active_query = {'status': 'active', **count_filter}
-    rejected_query = {'status': 'rejected', **count_filter}
-
-    active = User.query.filter_by(**active_query).count()
-    rejected = User.query.filter_by(**rejected_query).count()
+    active_users = User.query.filter_by(status='active', **count_filter).all()
+    rejected_users = User.query.filter_by(status='rejected', **count_filter).all()
 
 
     return render_template('admin/panel.html',
                            pending_users=pending,
-                           active_count=active,
-                           rejected_count=rejected,
+                           active_users=active_users,
+                           rejected_users=rejected_users,
                            user=user,
                            config=config)
 
