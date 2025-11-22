@@ -11,7 +11,8 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('FLOW: Formulario de login encontrado. Adjuntando listener de "submit".');
         loginForm.addEventListener('submit', handleLogin);
     } else {
-        console.error('ERROR CRÍTICO: No se encontró el formulario con id="login-form". El login no funcionará.');
+        // Esto es normal en páginas que no son la de login. No es un error.
+        console.log('INFO: Formulario "login-form" no encontrado en esta página. Se omite el listener de login.');
     }
 });
 
