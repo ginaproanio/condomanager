@@ -437,59 +437,6 @@ def descargar_plantilla_unidades():
         mimetype="text/csv",
         headers={"Content-Disposition": "attachment;filename=plantilla_unidades.csv"}
     )
-
-@master_bp.route('/master/condominios/importar', methods=['POST'])
-@jwt_required()
-def master_importar_condos_csv():
-    user = get_current_user()
-    if not user or user.role != 'MASTER':
-        flash("Acceso denegado.", "error")
-        return redirect(url_for('master.master_condominios'))
-
-    if 'csv_file' not in request.files:
-        flash('No se encontró el archivo en la solicitud.', 'error')
-        return redirect(url_for('master.master_condominios'))
-
-    file = request.files['csv_file']
-    if file.filename == '':
-        flash('No se seleccionó ningún archivo.', 'error')
-        return redirect(url_for('master.master_condominios'))
-
-    if file and file.filename.endswith('.csv'):
-        try:
-            stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
-            csv_reader = csv.DictReader(stream)
-            created_count = 0
-            errors = []
-
-            for row in csv_reader:
-                if Condominium.query.filter_by(subdomain=row['subdomain']).first() or Condominium.query.filter_by(ruc=row['ruc']).first():
-                    errors.append(f"Condominio con subdominio {row['subdomain']} o RUC {row['ruc']} ya existe.")
-                    continue
-
-                admin = User.query.filter_by(email=row['admin_email']).first()
-                if not admin:
-                    errors.append(f"El administrador con email {row['admin_email']} no fue encontrado.")
-                    continue
-
-                new_condo = Condominium(
-                    name=row['name'], legal_name=row.get('legal_name'), email=row.get('email'), ruc=row['ruc'],
-                    main_street=row['main_street'], cross_street=row['cross_street'], city=row['city'], country=row.get('country', 'Ecuador'),
-                    subdomain=row['subdomain'], status='ACTIVO', admin_user_id=admin.id, created_by=user.id
-                )
-                db.session.add(new_condo)
-                created_count += 1
-            db.session.commit()
-            flash(f'{created_count} condominios creados exitosamente. Errores: {len(errors)}', 'success')
-            if errors:
-                flash(f"Detalles de errores: {'; '.join(errors)}", 'warning')
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Error al procesar el archivo CSV: {e}', 'error')
-        return redirect(url_for('master.master_condominios'))
-
-    flash('Formato de archivo inválido. Por favor, sube un archivo .csv', 'error')
-    return redirect(url_for('master.master_condominios'))
 @master_bp.route('/master/condominios/importar', methods=['POST'])
 @jwt_required()
 def master_importar_condos_csv():
