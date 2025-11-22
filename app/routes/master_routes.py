@@ -466,8 +466,7 @@ def master_importar_condos_csv():
                     errors.append(f"Condominio con subdominio {row['subdomain']} o RUC {row['ruc']} ya existe.")
                     continue
 
-                # CORRECCIÓN: Normalizar el email a minúsculas antes de buscar
-                admin = User.query.filter_by(email=row['admin_email'].lower().strip()).first()
+                admin = User.query.filter_by(email=row['admin_email']).first()
                 if not admin:
                     errors.append(f"El administrador con email {row['admin_email']} no fue encontrado.")
                     continue
