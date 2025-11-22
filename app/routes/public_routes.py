@@ -55,7 +55,7 @@ def register():
             cedula=cedula, email=email, first_name=first_name, last_name=last_name,
             password_hash=hashlib.sha256(password.encode()).hexdigest(),
             birth_date=birth_date, cellphone=cellphone, city=city, country=country,
-            tenant=tenant, role='USER', status='pending'
+            tenant=tenant, role='USER', status='PENDING'
         )
 
         db.session.add(new_user)
