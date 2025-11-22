@@ -40,6 +40,8 @@ Sistema multi-condominio implementado inicialmente para "Punta Blanca", diseñad
 │   │   │   # - /master/condominios (GET)
 │   │   │   # - /master/crear_condominio (GET, POST)
 │   │   │   # - /master/condominios/editar/<id> (GET, POST)
+│   │   │   # - /master/supervise/<id> (GET) - Panel de supervisión de solo lectura.
+│   │   │   # - /master/impersonate/admin/<id> (GET) - Acceso de emergencia (suplantación).
 │   │   │   # - /master/condominios/importar (POST)
 │   │   │   # (Incluye endpoints como /master/condominios, /master/usuarios, /master/condominios/importar, etc.)
 │   │   │   # - /master/usuarios (GET)

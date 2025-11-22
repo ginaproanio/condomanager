@@ -7,6 +7,8 @@ Versión: 1.0.0
 - Gestión global de condominios
 - Asignación de administradores
 - Configuración de sistema global
+- Supervisión de condominios (solo lectura)
+- Acceso de emergencia a paneles de administrador (suplantación explícita)
 
 ### 1.2 ADMINISTRADOR
 - Gestión completa de un condominio específico
