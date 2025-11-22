@@ -20,11 +20,16 @@
             </div>
             {% endif %}
 
-            {% if user and user.role in ['ADMIN', 'MASTER'] %}
+            {% if user and user.role == 'ADMIN' %}
                 <p>Bienvenido, <strong>{{ user.name }}</strong> ({{ user.role }})</p>
-                <p>Usuarios pendientes de aprobación: {{ pending_users|length }}</p>
-                <p>Usuarios activos: {{ active_users|length }}</p>
-                <p>Usuarios rechazados: {{ rejected_users|length }}</p>
+            {% elif user and user.role == 'MASTER' and session.get('impersonating_condominium_id') %}
+                <div class="alert alert-warning" role="alert">
+                    <h5 class="alert-heading"><i class="fas fa-user-shield me-2"></i>Modo de Suplantación Activo</h5>
+                    <p class="mb-0">
+                        Estás viendo este panel como <strong>{{ user.name }} (MASTER)</strong>, tomando control del condominio <strong>{{ condominium.name }}</strong>.
+                        Todas las acciones realizadas en este modo serán auditadas.
+                    </p>
+                </div>
             {% else %}
                 <p>No tienes acceso a este contenido.</p>
             {% endif %}

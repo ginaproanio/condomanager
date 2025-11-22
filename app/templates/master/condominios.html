@@ -91,7 +91,11 @@
                                                     <tbody>
                                                         {% for condo in all_condominiums %}
                                                         <tr>
-                                                            <td><a href="{{ url_for('admin.admin_panel', condominium_id=condo.id) }}">{{ condo.name }}</a></td>
+                                                            <td>
+                                                                <a href="{{ url_for('master.supervise_condominium', condominium_id=condo.id) }}" title="Supervisar {{ condo.name }}">
+                                                                    {{ condo.name }}
+                                                                </a>
+                                                            </td>
                                                             <td>{{ condo.get_full_address() }}</td>
                                                             <td>{{ condo.city }}</td>
                                                             <td>{{ condo.email or 'N/A' }}</td>
