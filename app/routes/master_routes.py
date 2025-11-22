@@ -4,8 +4,8 @@ from flask import (
 )
 from flask_jwt_extended import jwt_required
 from sqlalchemy import or_, func
-from app.auth import get_current_user, get_current_user_data
-from app.models import Condominium, User, CondominiumConfig, Unit
+from app.auth import get_current_user
+from app.models import Condominium, User, CondominiumConfig, Unit # get_current_user_data no existe
 from app import db, models
 from datetime import datetime, timedelta
 import io
@@ -56,8 +56,8 @@ def supervise_condominium(condominium_id):
     Muestra un panel de supervisión de solo lectura para un condominio específico.
     Accesible solo para el rol MASTER.
     """
-    user = get_current_user_data()
-    if not user or user.get('role') != 'MASTER':
+    user = get_current_user()
+    if not user or user.role != 'MASTER':
         flash('Acceso no autorizado.', 'danger')
         return redirect(url_for('public.login'))
 
@@ -86,8 +86,8 @@ def impersonate_admin(condominium_id):
     Permite a un MASTER tomar control temporal del panel de un ADMIN.
     Esta acción debe ser auditable.
     """
-    user = get_current_user_data()
-    if not user or user.get('role') != 'MASTER':
+    user = get_current_user()
+    if not user or user.role != 'MASTER':
         flash('Acceso no autorizado.', 'danger')
         return redirect(url_for('public.login'))
 
