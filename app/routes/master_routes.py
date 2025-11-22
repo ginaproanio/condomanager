@@ -3,6 +3,7 @@ from flask import (
     current_app, flash, Response, jsonify, request, url_for
 )
 from flask_jwt_extended import jwt_required
+from sqlalchemy import or_
 from app.auth import get_current_user
 from app.models import Condominium, User, CondominiumConfig
 from app import db, models
@@ -34,8 +35,19 @@ def master_condominios():
         flash("Acceso denegado – Se requiere rol MASTER", "error")
         return redirect('/dashboard')
 
-    all_condominiums = Condominium.query.order_by(Condominium.created_at.desc()).all()
-    return render_template('master/condominios.html', user=user, all_condominiums=all_condominiums)
+    search_query = request.args.get('q', '')
+    query = Condominium.query
+
+    if search_query:
+        search_term = f"%{search_query}%"
+        query = query.filter(or_(
+            Condominium.name.ilike(search_term),
+            Condominium.ruc.ilike(search_term),
+            Condominium.subdomain.ilike(search_term)
+        ))
+
+    all_condominiums = query.order_by(Condominium.created_at.desc()).all()
+    return render_template('master/condominios.html', user=user, all_condominiums=all_condominiums, search_query=search_query)
 
 @master_bp.route('/master/usuarios', methods=['GET'])
 @jwt_required()
@@ -45,11 +57,23 @@ def master_usuarios():
         flash("Acceso denegado – Se requiere rol MASTER", "error")
         return redirect('/dashboard')
 
+    search_query = request.args.get('q', '')
+    base_query = User.query
+
+    if search_query:
+        search_term = f"%{search_query}%"
+        base_query = base_query.filter(or_(
+            User.first_name.ilike(search_term),
+            User.last_name.ilike(search_term),
+            User.email.ilike(search_term),
+            User.cedula.ilike(search_term)
+        ))
+
     # Lógica para GET (mostrar las listas de usuarios)
-    pending_users = User.query.filter_by(status='pending').order_by(User.created_at.desc()).all()
-    active_users = User.query.filter_by(status='active').order_by(User.created_at.desc()).all()
-    rejected_users = User.query.filter_by(status='rejected').order_by(User.created_at.desc()).all()
-    all_users = User.query.order_by(User.created_at.desc()).all()
+    pending_users = base_query.filter_by(status='PENDING').order_by(User.created_at.desc()).all()
+    active_users = base_query.filter_by(status='ACTIVE').order_by(User.created_at.desc()).all()
+    rejected_users = base_query.filter_by(status='REJECTED').order_by(User.created_at.desc()).all()
+    all_users = base_query.order_by(User.created_at.desc()).all()
     all_condominiums = Condominium.query.order_by(Condominium.name).all() # Necesario para el modal de gestión
 
     return render_template(
@@ -59,7 +83,8 @@ def master_usuarios():
         active_users=active_users,
         rejected_users=rejected_users,
         all_users=all_users,
-        all_condominiums=all_condominiums # Se pasa para el modal de gestión de usuarios
+        all_condominiums=all_condominiums, # Se pasa para el modal de gestión de usuarios
+        search_query=search_query
     )
 
 @master_bp.route('/master/usuarios/manage', methods=['POST'])

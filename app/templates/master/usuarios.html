@@ -20,6 +20,23 @@
                         </a>
                     </div>
 
+                    <!-- Formulario de Búsqueda -->
+                    <div class="mb-4">
+                        <form method="GET" action="{{ url_for('master.master_usuarios') }}">
+                            <div class="input-group">
+                                <input type="search" name="q" class="form-control" placeholder="Buscar por nombre, apellido, email o cédula..." value="{{ search_query or '' }}">
+                                <button class="btn btn-primary" type="submit">
+                                    <i class="fas fa-search"></i> Buscar
+                                </button>
+                                {% if search_query %}
+                                <a href="{{ url_for('master.master_usuarios') }}" class="btn btn-outline-secondary" title="Limpiar búsqueda">
+                                    <i class="fas fa-times"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </form>
+                    </div>
+
                     {% with messages = get_flashed_messages(with_categories=true) %}
                         {% if messages %}
                             {% for category, message in messages %}
