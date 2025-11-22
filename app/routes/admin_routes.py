@@ -11,9 +11,7 @@ admin_bp = Blueprint('admin', __name__)
 
 @admin_bp.route('/admin')
 @jwt_required()
-@admin_bp.route('/admin/panel/<int:condominium_id>')
-@jwt_required()
-def admin_panel(condominium_id=None):
+def admin_panel():
     user = get_current_user()
     if not user or user.role not in ['ADMIN', 'MASTER']:
         flash("Acceso denegado", "error")
@@ -28,42 +26,13 @@ def admin_panel(condominium_id=None):
 
     # Si es un MASTER suplantando, redirigir al panel del condominio suplantado.
     if user.role == 'MASTER' and session.get('impersonating_condominium_id'):
-        return redirect(url_for('admin.admin_condominio_panel', condominium_id=session.get('impersonating_condominium_id')))
+        impersonated_condo_id = session.get('impersonating_condominium_id')
+        return redirect(url_for('admin.admin_condominio_panel', condominium_id=impersonated_condo_id))
 
-    from app.tenant import get_tenant
-    tenant = get_tenant()
-    config = current_app.get_tenant_config(tenant)
-
-    # MASTER ve todos los tenants, ADMIN solo el suyo
-    query_filter = {'status': 'pending'}
-    if user.role == 'ADMIN':
-        query_filter['tenant'] = user.tenant
-
-    # Obtener el ID del condominio para el enlace "Gestionar Mi Condominio"
-    condominium_id_for_link = None
-    if user.role == 'ADMIN':
-        condo = Condominium.query.filter_by(subdomain=user.tenant).first()
-        if condo:
-            condominium_id_for_link = condo.id
-
-    pending = User.query.filter_by(**query_filter).all()
-    
-    # Para los conteos, también filtrar por tenant si es ADMIN
-    count_filter = {}
-    if user.role == 'ADMIN':
-        count_filter['tenant'] = user.tenant
-    
-    active_users = User.query.filter_by(status='active', **count_filter).all()
-    rejected_users = User.query.filter_by(status='rejected', **count_filter).all()
-
-
-    return render_template('admin/panel.html',
-                           pending_users=pending,
-                           active_users=active_users,
-                           rejected_users=rejected_users,
-                           user=user,
-                           config=config,
-                           condominium_id_for_link=condominium_id_for_link)
+    # Si un MASTER llega aquí sin suplantar, no tiene un panel de admin al que ir.
+    # Lo enviamos a su propio panel maestro.
+    flash("Panel de administración no especificado.", "info")
+    return redirect(url_for('master.master_panel'))
 
 @admin_bp.route('/aprobar/<int:user_id>')
 @jwt_required()
