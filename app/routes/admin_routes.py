@@ -90,7 +90,7 @@ def crear_unidad(condominium_id):
     user = get_current_user()
     condominium = Condominium.query.get_or_404(condominium_id)
 
-    if user.role != 'ADMIN' or user.condominium_id != condominium.id:
+    if user.role != 'ADMIN' or user.tenant != condominium.subdomain:
         flash("Acceso no autorizado.", "error")
         return redirect(url_for('user.dashboard'))
 
@@ -122,7 +122,7 @@ def editar_unidad(unit_id):
     unit_to_edit = Unit.query.get_or_404(unit_id)
     condominium = unit_to_edit.condominium
 
-    if user.role != 'ADMIN' or user.condominium_id != condominium.id:
+    if user.role != 'ADMIN' or user.tenant != condominium.subdomain:
         flash("Acceso no autorizado.", "error")
         return redirect(url_for('user.dashboard'))
 
