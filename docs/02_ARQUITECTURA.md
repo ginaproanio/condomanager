@@ -36,6 +36,7 @@ Sistema multi-condominio implementado inicialmente para "Punta Blanca", diseñad
 │   │   ├── user_routes.py   # Rutas para usuarios autenticados (dashboard).
 │   │   ├── admin_routes.py  # Rutas para administradores de condominio.
 │   │   ├── master_routes.py # Rutas para el super-administrador (rol MASTER).
+│   │   │   # (Incluye endpoints como /master/condominios, /master/usuarios, /master/condominios/importar, etc.)
 │   │   ├── api_routes.py    # Endpoints de la API REST.
 │   │   └── dev_routes.py    # Rutas para desarrollo y depuración.
 │   ├── static/         # Archivos estáticos (CSS, JS, imágenes).
