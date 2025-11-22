@@ -437,6 +437,20 @@ def descargar_plantilla_unidades():
         mimetype="text/csv",
         headers={"Content-Disposition": "attachment;filename=plantilla_unidades.csv"}
     )
+
+@master_bp.route('/master/condominios/inactivar/<int:condo_id>', methods=['POST'])
+@jwt_required()
+def inactivar_condominio(condo_id):
+    user = get_current_user()
+    if not user or user.role != 'MASTER':
+        flash("Acceso denegado.", "error")
+        return redirect(url_for('master.master_condominios'))
+
+    condo_to_inactivate = Condominium.query.get_or_404(condo_id)
+    condo_to_inactivate.status = 'INACTIVO'
+    db.session.commit()
+    flash(f'El condominio "{condo_to_inactivate.name}" ha sido inactivado.', 'success')
+    return redirect(url_for('master.master_condominios'))
 @master_bp.route('/master/condominios/importar', methods=['POST'])
 @jwt_required()
 def master_importar_condos_csv():

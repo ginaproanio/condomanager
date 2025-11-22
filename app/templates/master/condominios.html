@@ -5,7 +5,7 @@
 {% block content %}
 <div class="container py-5">
     <div class="row justify-content-center">
-        <div class="col-md-10">
+        <div class="col-md-12"> {# Ampliado para mejor visualización de la tabla #}
             <div class="card border-0 shadow-lg">
                 <div class="card-body p-5">
                     <div class="text-center mb-4">
@@ -64,10 +64,8 @@
                                                             <th>Nombre</th>
                                                             <th>Dirección</th>
                                                             <th>Ciudad</th>
-                                                            <th>País</th>
                                                             <th>Email</th>
                                                             <th>RUC</th>
-                                                            <th>Lat/Lon</th>
                                                             <th>Estado</th>
                                                             <th>Fecha Creación</th>
                                                             <th>Acciones</th>
@@ -76,23 +74,31 @@
                                                     <tbody>
                                                         {% for condo in all_condominiums %}
                                                         <tr>
-                                                            <td><a href="{{ url_for('master.admin_condominio_panel', condominium_id=condo.id) }}">{{ condo.name }}</a></td>
+                                                            <td><a href="{{ url_for('admin.admin_panel', condominium_id=condo.id) }}">{{ condo.name }}</a></td>
                                                             <td>{{ condo.get_full_address() }}</td>
                                                             <td>{{ condo.city }}</td>
-                                                            <td>{{ condo.country }}</td>
                                                             <td>{{ condo.email or 'N/A' }}</td>
                                                             <td>{{ condo.ruc or 'N/A' }}</td>
-                                                            <td>{% if condo.latitude and condo.longitude %}{{ "%.4f"|format(condo.latitude) }}, {{ "%.4f"|format(condo.longitude) }}{% else %}N/A{% endif %}</td>
-                                                            <td><span class="badge bg-secondary">{{ condo.status }}</span></td>
-                                                            <td>{{ condo.created_at.strftime('%d/%m/%Y %H:%M') if condo.created_at else 'N/A' }}</td>
                                                             <td>
-                                                                <div class="btn-group btn-group-sm">
-                                                                    <a href="{{ url_for('master.master_condominio_editar', condo_id=condo.id) }}" class="btn btn-info">
+                                                                {% if condo.status == 'ACTIVO' %}
+                                                                    <span class="badge bg-success">Activo</span>
+                                                                {% elif condo.status == 'INACTIVO' %}
+                                                                    <span class="badge bg-danger">Inactivo</span>
+                                                                {% else %}
+                                                                    <span class="badge bg-warning text-dark">{{ condo.status }}</span>
+                                                                {% endif %}
+                                                            </td>
+                                                            <td>{{ condo.created_at.strftime('%Y-%m-%d') if condo.created_at else 'N/A' }}</td>
+                                                            <td>
+                                                                <div class="btn-group btn-group-sm" role="group">
+                                                                    <a href="{{ url_for('master.editar_condominio', condo_id=condo.id) }}" class="btn btn-info" title="Editar">
                                                                         <i class="fas fa-edit"></i>
                                                                     </a>
-                                                                    <a href="{{ url_for('master.master_condominio_eliminar', condo_id=condo.id) }}" class="btn btn-danger">
-                                                                        <i class="fas fa-trash"></i>
-                                                                    </a>
+                                                                    <form action="{{ url_for('master.inactivar_condominio', condo_id=condo.id) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Estás seguro de que quieres INACTIVAR este condominio?');">
+                                                                        <button type="submit" class="btn btn-danger" title="Inactivar">
+                                                                            <i class="fas fa-power-off"></i>
+                                                                        </button>
+                                                                    </form>
                                                                 </div>
                                                             </td>
                                                         </tr>
@@ -110,10 +116,31 @@
                                 </div>
                             </div>
 
+                            <!-- Pestaña: Importar CSV -->
+                            <div class="tab-pane fade" id="import-csv" role="tabpanel" aria-labelledby="import-csv-tab">
+                                <div class="card border-0 shadow-sm mb-4">
+                                    <div class="card-header bg-info text-white">
+                                        <h5 class="mb-0"><i class="fas fa-file-csv me-2"></i>Importar Condominios (CSV)</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="text-muted">Sube un archivo CSV para crear múltiples condominios. El estado por defecto será <strong>ACTIVO</strong>.</p>
+                                        <p>Estructura requerida: <code>name,legal_name,email,ruc,main_street,cross_street,city,country,subdomain,admin_email</code></p>
+                                        <p class="text-danger"><strong>Importante:</strong> El <code>admin_email</code> debe corresponder a un usuario con rol ADMIN o MASTER que ya exista en el sistema.</p>
+                                        
+                                        <form action="{{ url_for('master.master_importar_condos_csv') }}" method="POST" enctype="multipart/form-data">
+                                            <div class="mb-3">
+                                                <label for="csv_file" class="form-label">Seleccionar archivo CSV</label>
+                                                <input type="file" class="form-control" id="csv_file" name="csv_file" accept=".csv" required>
+                                            </div>
+                                            <button type="submit" class="btn btn-info"><i class="fas fa-upload me-2"></i>Importar CSV</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="text-center mt-5">
-                            <a href="/master" class="btn btn-secondary">
+                            <a href="{{ url_for('master.master_panel') }}" class="btn btn-secondary">
                                 <i class="fas fa-arrow-left me-2"></i>Volver al Panel Maestro
                             </a>
                         </div>
@@ -121,7 +148,7 @@
                     {% else %}
                         <div class="alert alert-warning text-center" role="alert">
                             <i class="fas fa-exclamation-triangle me-2"></i>
-                            No tienes acceso a la Gestión de Condominios. Por favor, <a href="/login" class="alert-link">inicia sesión</a> con una cuenta MASTER.
+                            No tienes acceso a la Gestión de Condominios. Por favor, <a href="{{ url_for('public.login') }}" class="alert-link">inicia sesión</a> con una cuenta MASTER.
                         </div>
                     {% endif %}
                 </div>
