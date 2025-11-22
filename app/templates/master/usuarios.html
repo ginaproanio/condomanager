@@ -24,8 +24,16 @@
                     <div class="mb-4">
                         <form method="GET" action="{{ url_for('master.master_usuarios') }}">
                             <div class="input-group">
-                                <input type="search" name="q" class="form-control" placeholder="Buscar por nombre, apellido, email o cédula..." value="{{ search_query or '' }}">
-                                <button class="btn btn-primary" type="submit">
+                                <input type="search" name="q" class="form-control" placeholder="Buscar por nombre, apellido, email o cédula..." value="{{ search_query or '' }}" aria-label="Buscar usuario">
+                                <button class="btn btn-outline-primary" type="submit">
+                                    <i class="fas fa-search"></i> Buscar aria-label="Buscar usuario">
+                                <button class="btn btn-outline-primary" type="submit">
+                                    <i class="fas fa-search"></i> Buscar aria-label="Buscar usuario">
+                                <button class="btn btn-outline-primary" type="submit">
+                                    <i class="fas fa-search"></i> Buscar aria-label="Buscar usuario">
+                                <button class="btn btn-outline-primary" type="submit">
+                                    <i class="fas fa-search"></i> Buscar aria-label="Buscar usuario">
+                                <button class="btn btn-outline-primary" type="submit">
                                     <i class="fas fa-search"></i> Buscar
                                 </button>
                                 {% if search_query %}

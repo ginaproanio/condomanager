@@ -83,7 +83,11 @@
                             <a href="{{ url_for('admin.admin_condominio_panel', condominium_id=condominium.id) }}" class="btn btn-secondary">
                                 <i class="fas fa-times me-2"></i>Cancelar
                             </a>
-                            <button type="submit" class="btn btn-primary">
+                            {% if unit %}
+                            <button type="submit" class="btn btn-outline-primary">
+                            {% else %}
+                            <button type="submit" class="btn btn-success">
+                            {% endif %}
                                 <i class="fas fa-save me-2"></i>Guardar Unidad
                             </button>
                         </div>
