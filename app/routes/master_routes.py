@@ -1,11 +1,11 @@
 from flask import (
     Blueprint, render_template, redirect,
-    current_app, flash, Response, jsonify, request, url_for
+    current_app, flash, Response, jsonify, request, url_for, session
 )
 from flask_jwt_extended import jwt_required
-from sqlalchemy import or_
-from app.auth import get_current_user
-from app.models import Condominium, User, CondominiumConfig
+from sqlalchemy import or_, func
+from app.auth import get_current_user, get_current_user_data
+from app.models import Condominium, User, CondominiumConfig, Unit
 from app import db, models
 from datetime import datetime, timedelta
 import io
@@ -48,6 +48,58 @@ def master_condominios():
 
     all_condominiums = query.order_by(Condominium.created_at.desc()).all()
     return render_template('master/condominios.html', user=user, all_condominiums=all_condominiums, search_query=search_query)
+
+@master_bp.route('/supervise/<int:condominium_id>', methods=['GET'])
+@jwt_required()
+def supervise_condominium(condominium_id):
+    """
+    Muestra un panel de supervisión de solo lectura para un condominio específico.
+    Accesible solo para el rol MASTER.
+    """
+    user = get_current_user_data()
+    if not user or user.get('role') != 'MASTER':
+        flash('Acceso no autorizado.', 'danger')
+        return redirect(url_for('public.login'))
+
+    condominium = db.session.get(Condominium, condominium_id)
+    if not condominium:
+        flash('Condominio no encontrado.', 'danger')
+        return redirect(url_for('master.master_condominios'))
+
+    # Calcular estadísticas
+    stats = {
+        'total_units': db.session.query(func.count(Unit.id)).filter_by(condominium_id=condominium.id).scalar() or 0,
+        'active_users': db.session.query(func.count(User.id)).filter_by(condominium_id=condominium.id, status='active').scalar() or 0,
+        'pending_users': db.session.query(func.count(User.id)).filter_by(condominium_id=condominium.id, status='pending').scalar() or 0
+    }
+
+    return render_template('master/supervise_condominium.html', 
+                           user=user, 
+                           condominium=condominium, 
+                           stats=stats)
+
+
+@master_bp.route('/impersonate/admin/<int:condominium_id>', methods=['GET'])
+@jwt_required()
+def impersonate_admin(condominium_id):
+    """
+    Permite a un MASTER tomar control temporal del panel de un ADMIN.
+    Esta acción debe ser auditable.
+    """
+    user = get_current_user_data()
+    if not user or user.get('role') != 'MASTER':
+        flash('Acceso no autorizado.', 'danger')
+        return redirect(url_for('public.login'))
+
+    condominium = db.session.get(Condominium, condominium_id)
+    if not condominium:
+        flash('Condominio no encontrado.', 'danger')
+        return redirect(url_for('master.master_condominios'))
+
+    session['impersonating_condominium_id'] = condominium_id
+    
+    flash(f'Has tomado control del panel de administración de {condominium.name}.', 'warning')
+    return redirect(url_for('admin.admin_panel', condominium_id=condominium_id))
 
 @master_bp.route('/master/usuarios', methods=['GET'])
 @jwt_required()
