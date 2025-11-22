@@ -202,7 +202,9 @@
                                                             <td>
                                                                 <div class="btn-group btn-group-sm">
                                                                     <form action="{{ url_for('master.master_usuarios_reaprobar', user_id=u.id) }}" method="POST" class="d-inline">
-                                                                        <i class="fas fa-redo"></i> Reaprobar
+                                                                        <button type="submit" class="btn btn-outline-success btn-sm" title="Mover a Pendientes">
+                                                                            <i class="fas fa-redo"></i> Reaprobar
+                                                                        </button>
                                                                     </form>
                                                                     <a href="{{ url_for('master.master_usuarios_eliminar', user_id=u.id) }}" class="btn btn-danger" onclick="return confirm('¿Estás seguro de que quieres eliminar a este usuario?');">
                                                                         <i class="fas fa-trash"></i> Eliminar
