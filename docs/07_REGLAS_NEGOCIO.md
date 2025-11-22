@@ -1,6 +1,6 @@
 # Reglas de Negocio
-Versión: 2.0.0 (Sincronizado con el código base actual: 2025-11-18)
-*(Nota: Este documento refleja el estado actual del proyecto. El estado de implementación se indica con ✅ Implementado, 🚧 En Proceso/Parcial, ❌ Faltante/Visión a Futuro.)*
+Versión: 2.1.0 (Sincronizado con el código base actual: 2025-11-22)
+*(Nota: Este documento refleja el estado real de la implementación. ✅ Implementado, 🚧 En Proceso/Parcial, ❌ Faltante/Visión a Futuro.)*
 
 ## 1. Roles del Sistema
 
@@ -8,6 +8,7 @@ Versión: 2.0.0 (Sincronizado con el código base actual: 2025-11-18)
 Rol con el más alto nivel de acceso, encargado de la gestión global de la plataforma.
 - ✅ **Crear nuevos condominios (Individual):** Implementado. El MASTER puede crear condominios uno por uno.
 - 🚧 **Crear nuevos condominios (Masivo):** La interfaz para carga por CSV existe, pero la lógica de procesamiento está pendiente.
+- ✅ **Crear nuevos condominios (Masivo):** Implementado. La carga por CSV para condominios es funcional.
 - ✅ **Asignar administradores a condominios:** Implementado. Se puede asignar un ADMIN al crear o editar un usuario.
 - ✅ **Gestionar Usuarios (Individual y Aprobación):** Flujo completo para crear, editar, aprobar, rechazar y gestionar usuarios.
 - ✅ **Acceso a funciones de Administrador:** Un `MASTER` puede acceder a las vistas y acciones de un `ADMIN` (comprobado en `admin_routes`).
@@ -15,6 +16,8 @@ Rol con el más alto nivel de acceso, encargado de la gestión global de la plat
 ### 1.2 Perfil Administrador (ADMIN)
 Rol para gestionar un condominio específico. Asignado por el Perfil Maestro.
 - 🚧 **Crear y gestionar unidades en su condominio:** Implementada la creación y edición individual. La carga masiva por CSV está pendiente.
+- ✅ **Crear y gestionar unidades en su condominio (Individual):** Implementada la creación y edición individual.
+- 🚧 **Crear y gestionar unidades en su condominio (Masivo):** La interfaz para carga por CSV existe, pero la lógica de procesamiento está pendiente.
 - ✅ **Aprobar/Rechazar registros de usuarios:** Implementado en `admin_routes`. Un `ADMIN` puede aprobar o rechazar usuarios de su propio `tenant`.
 - ❌ **Asignar unidades a usuarios:** No implementado. Depende de la creación de unidades.
 - ❌ **Gestionar configuraciones de su condominio:** No implementado.
@@ -37,7 +40,7 @@ Roles con permisos específicos dentro de un condominio (Presidente, Tesorero, e
 
 ### 2.1 Perfil Maestro
 - ✅ **Nivel más alto:** Confirmado por la lógica de roles en las rutas.
-- ✅ **Gestión de condominios:** Implementada la creación individual. Edición y eliminación pendientes.
+- ✅ **Gestión de condominios:** Implementada la creación, edición e inactivación de condominios.
 
 ### 2.2 Perfil Administrador
 - ✅ **Gestión de un condominio específico:** El `ADMIN` está asociado a un `tenant`. Las rutas de aprobación/rechazo de usuarios validan que el `ADMIN` solo pueda gestionar usuarios de su propio `tenant`.
@@ -54,7 +57,7 @@ Roles con permisos específicos dentro de un condominio (Presidente, Tesorero, e
 ## 3. Flujos de Trabajo
 
 ### 3.1 Creación de Condominio
-- ❌ **Flujo no implementado.**
+- ✅ **Flujo implementado:** El MASTER puede crear condominios de forma individual a través de un formulario dedicado o de forma masiva mediante la importación de un archivo CSV.
 
 ### 3.2 Gestión de Unidades
 - ✅ **Paso 1: Crear unidades (Individual):** Implementado para el rol ADMIN.
