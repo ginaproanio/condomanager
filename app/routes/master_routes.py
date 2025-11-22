@@ -68,9 +68,9 @@ def supervise_condominium(condominium_id):
 
     # Calcular estadísticas
     stats = {
-        'total_units': db.session.query(func.count(Unit.id)).filter_by(condominium_id=condominium.id).scalar() or 0,
-        'active_users': db.session.query(func.count(User.id)).filter_by(condominium_id=condominium.id, status='active').scalar() or 0,
-        'pending_users': db.session.query(func.count(User.id)).filter_by(condominium_id=condominium.id, status='pending').scalar() or 0
+        'total_units': Unit.query.filter_by(condominium_id=condominium.id).count(),
+        'active_users': User.query.filter_by(condominium_id=condominium.id, status='active').count(),
+        'pending_users': User.query.filter_by(condominium_id=condominium.id, status='pending').count()
     }
 
     return render_template('master/supervise_condominium.html', 
