@@ -29,10 +29,10 @@ def admin_panel():
         impersonated_condo_id = session.get('impersonating_condominium_id')
         return redirect(url_for('admin.admin_condominio_panel', condominium_id=impersonated_condo_id))
 
-    # Si un MASTER llega aquí sin suplantar, no tiene un panel de admin al que ir.
-    # Lo enviamos a su propio panel maestro.
-    flash("Panel de administración no especificado.", "info")
-    return redirect(url_for('master.master_panel'))
+    # Si un MASTER llega aquí sin suplantar, o si un ADMIN no tiene condominio (caso anómalo),
+    # se le redirige a su panel principal.
+    flash("Panel de administración no especificado. Redirigiendo a su panel principal.", "info")
+    return redirect(url_for('master.master_panel') if user.role == 'MASTER' else url_for('user.dashboard'))
 
 @admin_bp.route('/aprobar/<int:user_id>')
 @jwt_required()
