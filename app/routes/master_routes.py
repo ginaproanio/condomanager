@@ -122,9 +122,9 @@ def master_usuarios():
         ))
 
     # Lógica para GET (mostrar las listas de usuarios)
-    pending_users = base_query.filter_by(status='PENDING').order_by(User.created_at.desc()).all()
-    active_users = base_query.filter_by(status='ACTIVE').order_by(User.created_at.desc()).all()
-    rejected_users = base_query.filter_by(status='REJECTED').order_by(User.created_at.desc()).all()
+    pending_users = base_query.filter_by(status='pending').order_by(User.created_at.desc()).all()
+    active_users = base_query.filter_by(status='active').order_by(User.created_at.desc()).all()
+    rejected_users = base_query.filter_by(status='rejected').order_by(User.created_at.desc()).all()
     all_users = base_query.order_by(User.created_at.desc()).all()
     all_condominiums = Condominium.query.order_by(Condominium.name).all() # Necesario para el modal de gestión
 
