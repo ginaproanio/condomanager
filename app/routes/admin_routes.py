@@ -1,6 +1,6 @@
 from flask import (
     Blueprint, render_template, redirect, url_for,
-    current_app, flash, request
+    current_app, flash, request, session
 )
 from flask_jwt_extended import jwt_required
 from app import db
@@ -11,11 +11,24 @@ admin_bp = Blueprint('admin', __name__)
 
 @admin_bp.route('/admin')
 @jwt_required()
-def admin_panel():
+@admin_bp.route('/admin/panel/<int:condominium_id>')
+@jwt_required()
+def admin_panel(condominium_id=None):
     user = get_current_user()
     if not user or user.role not in ['ADMIN', 'MASTER']:
         flash("Acceso denegado", "error")
         return redirect('/dashboard')
+
+    # --- LÓGICA DE REDIRECCIÓN INTELIGENTE ---
+    # Si es un ADMIN, siempre debe ir a su propio panel de condominio.
+    if user.role == 'ADMIN':
+        admin_condo = Condominium.query.filter_by(subdomain=user.tenant).first()
+        if admin_condo:
+            return redirect(url_for('admin.admin_condominio_panel', condominium_id=admin_condo.id))
+
+    # Si es un MASTER suplantando, redirigir al panel del condominio suplantado.
+    if user.role == 'MASTER' and session.get('impersonating_condominium_id'):
+        return redirect(url_for('admin.admin_condominio_panel', condominium_id=session.get('impersonating_condominium_id')))
 
     from app.tenant import get_tenant
     tenant = get_tenant()
@@ -25,6 +38,13 @@ def admin_panel():
     query_filter = {'status': 'pending'}
     if user.role == 'ADMIN':
         query_filter['tenant'] = user.tenant
+
+    # Obtener el ID del condominio para el enlace "Gestionar Mi Condominio"
+    condominium_id_for_link = None
+    if user.role == 'ADMIN':
+        condo = Condominium.query.filter_by(subdomain=user.tenant).first()
+        if condo:
+            condominium_id_for_link = condo.id
 
     pending = User.query.filter_by(**query_filter).all()
     
@@ -42,7 +62,8 @@ def admin_panel():
                            active_users=active_users,
                            rejected_users=rejected_users,
                            user=user,
-                           config=config)
+                           config=config,
+                           condominium_id_for_link=condominium_id_for_link)
 
 @admin_bp.route('/aprobar/<int:user_id>')
 @jwt_required()
