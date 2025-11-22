@@ -69,8 +69,8 @@ def supervise_condominium(condominium_id):
     # Calcular estadísticas
     stats = {
         'total_units': Unit.query.filter_by(condominium_id=condominium.id).count(),
-        'active_users': User.query.filter_by(condominium_id=condominium.id, status='active').count(),
-        'pending_users': User.query.filter_by(condominium_id=condominium.id, status='pending').count()
+        'active_users': User.query.filter_by(tenant=condominium.subdomain, status='active').count(),
+        'pending_users': User.query.filter_by(tenant=condominium.subdomain, status='pending').count()
     }
 
     return render_template('master/supervise_condominium.html', 
