@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request, make_response, url_for # Importar url_for
+from flask import Blueprint, jsonify, request, make_response, url_for, flash
 from flask_jwt_extended import jwt_required, create_access_token, set_access_cookies, current_user
 from app.auth import get_current_user
 from app.models import Condominium, User, Unit
@@ -47,8 +47,12 @@ def api_login():
             # Si se encuentra, construir la URL final y específica.
             redirect_url = url_for('admin.admin_condominio_panel', condominium_id=admin_condo.id)
         else:
-            # Si es un ADMIN no asignado, se le envía a su dashboard de usuario normal con un aviso.
-            flash("Eres Administrador, pero no estás asignado a ningún condominio.", "warning")
+            # SOLUCIÓN DE INGENIERÍA: Si es un ADMIN no asignado, la API debe informar de esto
+            # en la respuesta JSON para que el frontend pueda actuar (mostrar un modal, etc.).
+            # No se usa flash. Se añade un mensaje específico en la respuesta.
+            response = jsonify({"status": "warning", "message": "Eres Administrador, pero no estás asignado a ningún condominio.", "user_role": user.role, "redirect_url": redirect_url})
+            set_access_cookies(response, access_token)
+            return response
 
     response = jsonify({"status": "success", "message": "Login exitoso", "user_role": user.role, "redirect_url": redirect_url})
     set_access_cookies(response, access_token)
