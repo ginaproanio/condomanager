@@ -26,6 +26,30 @@ def upgrade():
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.PrimaryKeyConstraint('tenant')
     )
+    op.create_table('users',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('cedula', sa.String(length=20), nullable=False),
+    sa.Column('email', sa.String(length=255), nullable=False),
+    sa.Column('first_name', sa.String(length=100), nullable=False),
+    sa.Column('last_name', sa.String(length=100), nullable=False),
+    sa.Column('birth_date', sa.Date(), nullable=True),
+    sa.Column('cellphone', sa.String(length=20), nullable=True),
+    sa.Column('city', sa.String(length=50), nullable=True),
+    sa.Column('country', sa.String(length=50), nullable=True),
+    sa.Column('password_hash', sa.String(length=255), nullable=True),
+    sa.Column('tenant', sa.String(length=50), nullable=True),
+    sa.Column('role', sa.String(length=20), nullable=True),
+    sa.Column('status', sa.String(length=20), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.Column('unit_id', sa.Integer(), nullable=True),
+    sa.Column('has_electronic_signature', sa.Boolean(), nullable=True),
+    sa.Column('signature_certificate', sa.LargeBinary(), nullable=True),
+    sa.Column('signature_cert_password_hash', sa.String(length=255), nullable=True),
+    sa.ForeignKeyConstraint(['unit_id'], ['units.id'], ),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('cedula'),
+    sa.UniqueConstraint('email')
+    )
     op.create_table('condominiums',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=200), nullable=False),
@@ -95,30 +119,6 @@ def upgrade():
     sa.ForeignKeyConstraint(['created_by'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('property_tax_code')
-    )
-    op.create_table('users',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('cedula', sa.String(length=20), nullable=False),
-    sa.Column('email', sa.String(length=255), nullable=False),
-    sa.Column('first_name', sa.String(length=100), nullable=False),
-    sa.Column('last_name', sa.String(length=100), nullable=False),
-    sa.Column('birth_date', sa.Date(), nullable=True),
-    sa.Column('cellphone', sa.String(length=20), nullable=True),
-    sa.Column('city', sa.String(length=50), nullable=True),
-    sa.Column('country', sa.String(length=50), nullable=True),
-    sa.Column('password_hash', sa.String(length=255), nullable=True),
-    sa.Column('tenant', sa.String(length=50), nullable=True),
-    sa.Column('role', sa.String(length=20), nullable=True),
-    sa.Column('status', sa.String(length=20), nullable=True),
-    sa.Column('created_at', sa.DateTime(), nullable=True),
-    sa.Column('unit_id', sa.Integer(), nullable=True),
-    sa.Column('has_electronic_signature', sa.Boolean(), nullable=True),
-    sa.Column('signature_certificate', sa.LargeBinary(), nullable=True),
-    sa.Column('signature_cert_password_hash', sa.String(length=255), nullable=True),
-    sa.ForeignKeyConstraint(['unit_id'], ['units.id'], ),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('cedula'),
-    sa.UniqueConstraint('email')
     )
     op.create_table('documents',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -198,8 +198,8 @@ def downgrade():
     op.drop_table('user_special_roles')
     op.drop_table('invoices')
     op.drop_table('documents')
-    op.drop_table('users')
     op.drop_table('units')
     op.drop_table('condominiums')
+    op.drop_table('users')
     op.drop_table('condominium_configs')
     # ### end Alembic commands ###
