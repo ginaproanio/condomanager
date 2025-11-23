@@ -9,6 +9,23 @@ from app.auth import get_current_user
 
 admin_bp = Blueprint('admin', __name__)
 
+def is_authorized_admin_for_condo(user, condominium):
+    """
+    Función de seguridad centralizada para verificar si un usuario es un administrador autorizado
+    para un condominio específico.
+    """
+    if not user or not condominium:
+        return False
+
+    # Un MASTER suplantando tiene acceso.
+    if user.role == 'MASTER' and session.get('impersonating_condominium_id') == condominium.id:
+        return True
+    
+    # Un ADMIN tiene acceso si su tenant coincide con el subdomain del condominio.
+    return (user.role == 'ADMIN' and 
+            user.tenant and condominium.subdomain and 
+            user.tenant.strip().lower() == condominium.subdomain.strip().lower())
+
 @admin_bp.route('/admin')
 @jwt_required()
 def admin_panel(): # Esta función ahora es solo un despachador (dispatcher)
@@ -46,11 +63,11 @@ def aprobar_usuario(user_id):
 
     # --- LÓGICA DE SEGURIDAD UNIFICADA ---
     # Un ADMIN solo puede aprobar usuarios de su propio tenant.
-    is_authorized = (current_user.role == 'MASTER' or 
-                     (current_user.role == 'ADMIN' and user_to_approve.tenant and current_user.tenant.strip().lower() == user_to_approve.tenant.strip().lower()))
-    if not is_authorized:
+    user_condo = Condominium.query.filter_by(subdomain=current_user.tenant).first()
+    if not (current_user.role == 'MASTER' or (user_condo and is_authorized_admin_for_condo(current_user, user_condo))):
         flash("No tiene permiso para aprobar a este usuario.", "error")
         return redirect('/admin')
+
 
     user_to_approve.status = 'active'
     db.session.commit()
@@ -69,10 +86,8 @@ def rechazar_usuario(user_id):
 
     # --- LÓGICA DE SEGURIDAD UNIFICADA ---
     # Un ADMIN solo puede rechazar usuarios de su propio tenant.
-    is_authorized = (current_user.role == 'MASTER' or 
-                     (current_user.role == 'ADMIN' and user_to_reject.tenant and current_user.tenant.strip().lower() == user_to_reject.tenant.strip().lower()))
-
-    if not is_authorized:
+    user_condo = Condominium.query.filter_by(subdomain=current_user.tenant).first()
+    if not (current_user.role == 'MASTER' or (user_condo and is_authorized_admin_for_condo(current_user, user_condo))):
         flash("No tiene permiso para rechazar a este usuario.", "error")
         return redirect('/admin')
 
@@ -91,18 +106,7 @@ def admin_condominio_panel(condominium_id):
     user = get_current_user()
     condominium = Condominium.query.get_or_404(condominium_id)
 
-    # Verificación de seguridad: El ADMIN debe pertenecer al tenant del condominio
-    # O debe ser un MASTER suplantando a ese condominio.
-    is_impersonating = user.role == 'MASTER' and session.get('impersonating_condominium_id') == condominium_id
-
-    # --- LÓGICA DE AUTORIZACIÓN DEFINITIVA ---
-    # Un usuario es un administrador correcto si tiene el rol ADMIN y su 'tenant'
-    # coincide con el 'subdomain' del condominio. Esto permite múltiples administradores.
-    is_correct_admin = (user and user.role == 'ADMIN' and
-                          user.tenant and condominium.subdomain and 
-                          user.tenant.strip().lower() == condominium.subdomain.strip().lower())
-
-    if not (is_impersonating or is_correct_admin):
+    if not is_authorized_admin_for_condo(user, condominium):
         flash("No tienes acceso a este panel de administración de condominio o no estás asignado a este condominio. Por favor, inicia sesión como un Administrador autorizado.", "error")
         return redirect(url_for('public.login'))
 
@@ -115,13 +119,7 @@ def crear_unidad(condominium_id):
     user = get_current_user()
     condominium = Condominium.query.get_or_404(condominium_id)
 
-    # --- LÓGICA DE SEGURIDAD UNIFICADA Y CORREGIDA ---
-    is_impersonating = user and user.role == 'MASTER' and session.get('impersonating_condominium_id') == condominium_id
-    is_correct_admin = (user and user.role == 'ADMIN' and 
-                        user.tenant and condominium.subdomain and 
-                        user.tenant.strip().lower() == condominium.subdomain.strip().lower())
-
-    if not (is_impersonating or is_correct_admin):
+    if not is_authorized_admin_for_condo(user, condominium):
         flash("Acceso no autorizado.", "error")
         return redirect(url_for('public.login')) # Redirigir al login en caso de fallo de seguridad
 
@@ -153,13 +151,7 @@ def editar_unidad(unit_id):
     unit_to_edit = Unit.query.get_or_404(unit_id)
     condominium = unit_to_edit.condominium
 
-    # --- LÓGICA DE SEGURIDAD UNIFICADA Y CORREGIDA ---
-    is_impersonating = user and user.role == 'MASTER' and session.get('impersonating_condominium_id') == condominium.id
-    is_correct_admin = (user and user.role == 'ADMIN' and 
-                        user.tenant and condominium.subdomain and 
-                        user.tenant.strip().lower() == condominium.subdomain.strip().lower())
-
-    if not (is_impersonating or is_correct_admin):
+    if not is_authorized_admin_for_condo(user, condominium):
         flash("Acceso no autorizado.", "error")
         return redirect(url_for('public.login')) # Redirigir al login en caso de fallo de seguridad
 
