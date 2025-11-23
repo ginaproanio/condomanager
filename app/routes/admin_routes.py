@@ -25,28 +25,27 @@ def is_authorized_admin_for_condo(user, condominium):
 @admin_bp.route('/admin')
 @jwt_required()
 def admin_panel(): # Esta función ahora es solo un despachador (dispatcher)
+    """
+    Redirige a un usuario ADMIN a su panel de condominio asignado.
+    Esta ruta no es accesible para otros roles.
+    """
     user = get_current_user()
-    if not user or user.role not in ['ADMIN', 'MASTER']:
+    if not user or user.role != 'ADMIN':
         flash("Acceso denegado", "error")
         return redirect('/dashboard')
 
-    # --- LÓGICA DE REDIRECCIÓN INTELIGENTE ---
-    # Si es un ADMIN, siempre debe ir a su propio panel de condominio.
-    if user.role == 'ADMIN':
-        admin_condo = Condominium.query.filter(func.lower(Condominium.subdomain) == func.lower(user.tenant)).first()
-        if admin_condo:
-            return redirect(url_for('admin.admin_condominio_panel', condominium_id=admin_condo.id))
+    admin_condo = Condominium.query.filter(func.lower(Condominium.subdomain) == func.lower(user.tenant)).first()
+    if admin_condo and admin_condo.admin_user_id == user.id:
+        return redirect(url_for('admin.admin_condominio_panel', condominium_id=admin_condo.id))
 
-    # Si un MASTER llega aquí sin suplantar, no tiene un panel de admin al que ir.
-    # Lo enviamos a su propio panel maestro.
-    flash("Panel de administración no especificado.", "info")
-    return redirect(url_for('master.master_panel'))
+    flash("No estás asignado como administrador a ningún condominio.", "error")
+    return redirect(url_for('user.dashboard'))
 
 @admin_bp.route('/aprobar/<int:user_id>')
 @jwt_required()
 def aprobar_usuario(user_id):
     current_user = get_current_user()
-    if not current_user or current_user.role not in ['ADMIN', 'MASTER']:
+    if not current_user or current_user.role != 'ADMIN':
         flash("Acceso denegado.", "error")
         return redirect('/dashboard')
 
@@ -54,7 +53,7 @@ def aprobar_usuario(user_id):
 
     # --- LÓGICA DE SEGURIDAD UNIFICADA ---
     # Un ADMIN solo puede aprobar usuarios de su propio tenant.
-    if current_user.role == 'ADMIN' and (not user_to_approve.tenant or user_to_approve.tenant.strip().lower() != current_user.tenant.strip().lower()):
+    if not user_to_approve.tenant or user_to_approve.tenant.strip().lower() != current_user.tenant.strip().lower():
         flash("No tiene permiso para aprobar a este usuario.", "error")
         return redirect('/admin')
 
@@ -67,7 +66,7 @@ def aprobar_usuario(user_id):
 @jwt_required()
 def rechazar_usuario(user_id):
     current_user = get_current_user()
-    if not current_user or current_user.role not in ['ADMIN', 'MASTER']:
+    if not current_user or current_user.role != 'ADMIN':
         flash("Acceso denegado.", "error")
         return redirect('/dashboard')
 
@@ -75,7 +74,7 @@ def rechazar_usuario(user_id):
 
     # --- LÓGICA DE SEGURIDAD UNIFICADA ---
     # Un ADMIN solo puede rechazar usuarios de su propio tenant.
-    if current_user.role == 'ADMIN' and (not user_to_reject.tenant or user_to_reject.tenant.strip().lower() != current_user.tenant.strip().lower()):
+    if not user_to_reject.tenant or user_to_reject.tenant.strip().lower() != current_user.tenant.strip().lower():
         flash("No tiene permiso para rechazar a este usuario.", "error")
         return redirect('/admin')
 
