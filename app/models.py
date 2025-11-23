@@ -86,9 +86,9 @@ class Condominium(db.Model):
     has_requests_module = db.Column(db.Boolean, default=False, nullable=False)  # Módulo "Requerimientos"
 
     # FK corregidas a 'users.id'
-    admin_user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    legal_representative_id = db.Column(db.Integer, db.ForeignKey('users.id')) # Representante Legal
-    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    admin_user_id = db.Column(db.Integer, db.ForeignKey('users.id', name='fk_condominium_admin_user'))
+    legal_representative_id = db.Column(db.Integer, db.ForeignKey('users.id', name='fk_condominium_legal_rep')) # Representante Legal
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id', name='fk_condominium_creator'))
 
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
