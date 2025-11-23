@@ -78,6 +78,31 @@ def reports():
                 mimetype="text/csv",
                 headers={"Content-Disposition": f"attachment;filename=reporte_condominios_{datetime.now().strftime('%Y%m%d')}.csv"}
             )
+            
+        elif action == 'export_users':
+            output = io.StringIO()
+            writer = csv.writer(output)
+            # Cabeceras
+            writer.writerow(['ID', 'Nombre', 'Email', 'Rol', 'Estado', 'Tenant/Condominio', 'Fecha Registro'])
+            
+            users = User.query.order_by(User.created_at.desc()).all()
+            for u in users:
+                writer.writerow([
+                    u.id,
+                    u.name,
+                    u.email,
+                    u.role,
+                    u.status,
+                    u.tenant or 'N/A',
+                    u.created_at.strftime('%Y-%m-%d') if u.created_at else ''
+                ])
+                
+            output.seek(0)
+            return Response(
+                output.getvalue().encode('utf-8-sig'),
+                mimetype="text/csv",
+                headers={"Content-Disposition": f"attachment;filename=reporte_usuarios_global_{datetime.now().strftime('%Y%m%d')}.csv"}
+            )
 
     return render_template('master/reports.html', 
                            user=user,

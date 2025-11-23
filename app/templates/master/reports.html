@@ -11,12 +11,6 @@
             </a>
             <h2 class="text-primary mb-0"><i class="fas fa-chart-line me-2"></i>Reportes Gerenciales</h2>
         </div>
-        <form method="POST">
-            <input type="hidden" name="action" value="export_condos">
-            <button type="submit" class="btn btn-success shadow-sm">
-                <i class="fas fa-file-excel me-2"></i>Descargar Reporte Global (CSV)
-            </button>
-        </form>
     </div>
 
     <!-- Scorecards -->
@@ -95,15 +89,46 @@
         </div>
     </div>
 
-    <!-- Sección de Gráficos / Tablas futuras -->
-    <div class="card border-0 shadow-sm">
+    <!-- Sección de Descargas -->
+    <div class="card border-0 shadow-lg">
         <div class="card-header bg-white py-3">
-            <h5 class="mb-0 text-primary">Detalle de Auditoría</h5>
+            <h5 class="mb-0 text-dark"><i class="fas fa-file-download me-2"></i>Exportación de Datos</h5>
         </div>
-        <div class="card-body">
-            <div class="text-center py-5 text-muted">
-                <i class="fas fa-chart-bar fa-3x mb-3 opacity-25"></i>
-                <p>Próximamente: Gráficos de crecimiento mensual y actividad de usuarios.</p>
+        <div class="card-body p-4">
+            <div class="row">
+                <!-- Reporte Condominios -->
+                <div class="col-md-6 mb-4">
+                    <div class="d-flex align-items-start p-3 border rounded bg-light h-100">
+                        <i class="fas fa-building fa-2x text-primary me-3 mt-1"></i>
+                        <div class="flex-grow-1">
+                            <h6 class="fw-bold">Reporte de Condominios</h6>
+                            <p class="text-muted small mb-3">Detalle completo de condominios, RUC, Administrador y Módulos contratados.</p>
+                            <form method="POST">
+                                <input type="hidden" name="action" value="export_condos">
+                                <button type="submit" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-file-csv me-2"></i>Descargar CSV
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reporte Usuarios -->
+                <div class="col-md-6 mb-4">
+                    <div class="d-flex align-items-start p-3 border rounded bg-light h-100">
+                        <i class="fas fa-users fa-2x text-info me-3 mt-1"></i>
+                        <div class="flex-grow-1">
+                            <h6 class="fw-bold">Auditoría de Usuarios Globales</h6>
+                            <p class="text-muted small mb-3">Base de datos completa de todos los usuarios registrados en la plataforma.</p>
+                            <form method="POST">
+                                <input type="hidden" name="action" value="export_users">
+                                <button type="submit" class="btn btn-info text-white btn-sm">
+                                    <i class="fas fa-file-csv me-2"></i>Descargar CSV
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

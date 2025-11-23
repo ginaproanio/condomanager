@@ -1,49 +1,73 @@
 {% extends "base.html" %}
 
-{% block title %}Reportes - CondoManager{% endblock %}
+{% block title %}Mi Historial - CondoManager{% endblock %}
 
 {% block content %}
 <div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary"><i class="fas fa-history me-2"></i>Mi Historial</h2>
+        <a href="{{ url_for('user.dashboard') }}" class="btn btn-outline-secondary">Volver al Panel</a>
+    </div>
+
     <div class="row">
-        <div class="col">
+        <!-- Historial de Firmas -->
+        <div class="col-md-12 mb-4">
             <div class="card border-0 shadow-sm">
-                <div class="card-body text-center py-5">
-                    <div class="text-primary mb-4">
-                        <i class="fas fa-chart-bar fa-4x"></i>
-                    </div>
-                    <h2 class="text-primary mb-3">Reportes y Estadísticas</h2>
-                    
-                    {% if mensaje %}
-                    <div class="alert alert-info alert-dismissible fade show w-75 mx-auto" role="alert">
-                        <i class="fas fa-info-circle me-2"></i>{{ mensaje }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0"><i class="fas fa-file-signature text-success me-2"></i>Documentos Firmados</h5>
+                </div>
+                <div class="card-body">
+                    {% if signed_docs %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Fecha de Firma</th>
+                                        <th>Documento</th>
+                                        <th>Rol en Firma</th>
+                                        <th>Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for sig in signed_docs %}
+                                    <tr>
+                                        <td>{{ sig.signed_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                        <td>
+                                            <strong>{{ sig.document.title }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ sig.document.category }}</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">{{ sig.role }}</span>
+                                        </td>
+                                        <td>
+                                            <a href="{{ url_for('documents.view_document', doc_id=sig.document.id) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i> Ver
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-signature fa-3x mb-3 opacity-50"></i>
+                            <p>No has firmado ningún documento digitalmente aún.</p>
+                        </div>
                     {% endif %}
-
-                    <p class="lead text-muted mb-4">
-                        Módulo en desarrollo. Próximamente tendrás acceso a reportes detallados y métricas de tu condominio.
-                    </p>
-
-                    <div class="row text-start w-75 mx-auto mb-4">
-                        <div class="col-md-6 mb-3">
-                            <i class="fas fa-chart-line text-primary me-2"></i>Reportes financieros
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <i class="fas fa-users text-primary me-2"></i>Estadísticas de usuarios
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <i class="fas fa-home text-primary me-2"></i>Reportes de unidades
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <i class="fas fa-download text-primary me-2"></i>Exportación a Excel/PDF
-                        </div>
-                    </div>
-
-                    <div class="mt-4">
-                        <a href="{{ url_for('user.dashboard') }}" class="btn btn-primary">
-                            <i class="fas fa-arrow-left me-2"></i>Volver a mi Panel
-                        </a>
-                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Placeholder Pagos (Futuro) -->
+        <div class="col-md-12">
+            <div class="card border-0 shadow-sm opacity-75">
+                 <div class="card-header bg-light py-3">
+                    <h5 class="mb-0 text-muted"><i class="fas fa-wallet me-2"></i>Historial de Pagos (Próximamente)</h5>
+                </div>
+                <div class="card-body text-center py-4">
+                    <p class="text-muted">El módulo de pagos y expensas estará disponible pronto.</p>
                 </div>
             </div>
         </div>

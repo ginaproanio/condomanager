@@ -4,7 +4,7 @@ from flask import (
 )
 from flask_jwt_extended import jwt_required
 from app.auth import get_current_user
-from app.models import db, User, Document, Condominium, Unit # Importar modelos necesarios
+from app.models import db, User, Document, Condominium, Unit, DocumentSignature # Importar DocumentSignature
 import hashlib
 from datetime import datetime, timedelta
 
@@ -149,4 +149,15 @@ def reportes():
     from app.tenant import get_tenant
     tenant = get_tenant()
     config = current_app.get_tenant_config(tenant)
-    return render_template('services/reportes.html', mensaje="Reportes", config=config, user=user)
+    
+    # --- HISTORIAL DE FIRMAS Y ACTIVIDAD ---
+    # Buscar documentos firmados por el usuario
+    signed_docs = DocumentSignature.query.filter_by(user_id=user.id).order_by(DocumentSignature.signed_at.desc()).all()
+    
+    # Si tuviera pagos, los buscaríamos aquí también
+    
+    return render_template('services/reportes.html', 
+                           mensaje="Mi Historial", 
+                           config=config, 
+                           user=user,
+                           signed_docs=signed_docs)

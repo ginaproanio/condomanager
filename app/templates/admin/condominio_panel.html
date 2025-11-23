@@ -73,6 +73,12 @@
                                 <i class="fab fa-whatsapp me-2 text-success"></i>Comunicaciones
                             </button>
                         </li>
+                        <!-- NUEVA PESTAÑA REPORTES -->
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="reports-tab" data-bs-toggle="tab" data-bs-target="#reports" type="button" role="tab" aria-controls="reports" aria-selected="false">
+                                <i class="fas fa-chart-pie me-2"></i>Reportes
+                            </button>
+                        </li>
                     </ul>
 
                     <!-- Contenido de las Pestañas -->
@@ -416,6 +422,37 @@
                             </div>
                         </div>
                         
+                        <!-- PESTAÑA REPORTES -->
+                        <div class="tab-pane fade" id="reports" role="tabpanel" aria-labelledby="reports-tab">
+                            <div class="card border-0 shadow-sm mb-4">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Centro de Reportes</h5>
+                                </div>
+                                <div class="card-body text-center py-5">
+                                    <i class="fas fa-chart-line fa-5x text-primary mb-4"></i>
+                                    <h3>Estadísticas y Listados</h3>
+                                    <p class="lead text-muted">Descarga información clave para la administración y seguridad.</p>
+                                    
+                                    <div class="row justify-content-center mt-4">
+                                        <div class="col-md-6">
+                                            <div class="list-group text-start">
+                                                <div class="list-group-item border-0 bg-light mb-2 rounded">
+                                                    <i class="fas fa-check text-success me-2"></i>Listado de Residentes (Excel)
+                                                </div>
+                                                <div class="list-group-item border-0 bg-light mb-2 rounded">
+                                                    <i class="fas fa-check text-success me-2"></i>Estado de Ocupación
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <a href="{{ url_for('admin.reportes_condominio', condominium_id=condominium.id) }}" class="btn btn-primary btn-lg mt-4 shadow-sm">
+                                        <i class="fas fa-external-link-alt me-2"></i>Abrir Panel de Reportes
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- FIN NUEVA PESTAÑA -->
 
                     </div>

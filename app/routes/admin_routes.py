@@ -1,6 +1,6 @@
 from flask import (
     Blueprint, render_template, redirect, url_for,
-    current_app, flash, request, session, abort
+    current_app, flash, request, session, abort, Response
 )
 from flask_jwt_extended import jwt_required
 from sqlalchemy import func
@@ -10,6 +10,8 @@ from app.models import User, Condominium, Unit, UserSpecialRole
 from app.auth import get_current_user
 from app.decorators import condominium_admin_required
 from datetime import date, datetime
+import io
+import csv
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -194,3 +196,44 @@ def configurar_whatsapp(condominium_id):
         flash(f"Error al guardar configuración: {str(e)}", "error")
         
     return redirect(url_for('admin.comunicaciones', condominium_id=condominium_id))
+
+@admin_bp.route('/admin/condominio/<int:condominium_id>/reportes', methods=['GET', 'POST'])
+@condominium_admin_required
+def reportes_condominio(condominium_id):
+    """
+    Módulo de Reportes para el Administrador.
+    """
+    condominium = Condominium.query.get_or_404(condominium_id)
+    
+    if request.method == 'POST':
+        tipo_reporte = request.form.get('tipo_reporte')
+        
+        if tipo_reporte == 'residentes':
+            # Generar CSV de Residentes
+            output = io.StringIO()
+            writer = csv.writer(output)
+            writer.writerow(['Unidad', 'Nombre', 'Email', 'Teléfono', 'Rol', 'Estado'])
+            
+            residentes = User.query.filter(
+                User.tenant == condominium.subdomain,
+                User.status == 'active'
+            ).order_by(User.unit_id).all()
+            
+            for res in residentes:
+                unidad = res.unit.property_number if res.unit else 'Sin Asignar'
+                writer.writerow([unidad, res.name, res.email, res.cellphone, res.role, res.status])
+                
+            output.seek(0)
+            return Response(
+                output.getvalue().encode('utf-8-sig'), # UTF-8 con BOM
+                mimetype="text/csv",
+                headers={"Content-Disposition": f"attachment;filename=residentes_{condominium.name}.csv"}
+            )
+            
+    # Estadísticas para la vista
+    total_unidades = Unit.query.filter_by(condominium_id=condominium.id).count()
+    total_residentes = User.query.filter_by(tenant=condominium.subdomain, status='active').count()
+    
+    return render_template('admin/reportes.html', 
+                           condominium=condominium,
+                           stats={'unidades': total_unidades, 'residentes': total_residentes})
