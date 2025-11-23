@@ -108,7 +108,7 @@ Para dar soporte a las reglas de negocio futuras, se proponen los siguientes mod
     - `created_at`: Timestamp de creación.
 
 #### 5.5.2 Módulo "Firmas & Comunicados"
-- **Estado:** ✅ Implementado.
+- **Estado:** ✅ Implementado (Fases 1, 2 y 4).
 - **Propósito:** Gestionar el ciclo de vida completo de documentos oficiales, incluyendo creación, firma (física y electrónica), envío masivo y recolección de firmas públicas.
 - **Modelos Clave:**
     - `Document`: Almacena el contenido del documento, sus estados (`draft`, `signed`, `sent`), los PDFs generados y la configuración de recolección de firmas.
@@ -116,7 +116,7 @@ Para dar soporte a las reglas de negocio futuras, se proponen los siguientes mod
     - `ResidentSignature`: Almacena las firmas recolectadas a través de un enlace público para peticiones (ej. al municipio), registrando nombre, cédula y fecha, desvinculado de los usuarios del sistema.
 - **Control de Acceso:**
     - **Nivel Condominio:** Protegido por el flag `has_documents_module` en el modelo `Condominium`.
-    - **Nivel Usuario:** El acceso a la gestión del módulo está controlado por el decorador `@module_required('documents')` y la lógica de roles (`MASTER`, `ADMIN`, `UserSpecialRole`).
+    - **Nivel Usuario:** El acceso a la gestión del módulo está controlado por el decorador `@module_required('documents')` y la lógica de roles (`MASTER`, `ADMIN`, o `UserSpecialRole` activo).
 
 #### 5.5.2 AuditLog
 - **Propósito:** Registrar acciones clave en el sistema para trazabilidad y seguridad.

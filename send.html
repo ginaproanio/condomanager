@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}Enviar: {{ doc.title }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h2 class="mb-4">
+        <i class="fas fa-paper-plane text-primary"></i> Enviar documento: {{ doc.title }}
+    </h2>
+    <div class="row">
+        <div class="col-lg-9">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <form method="POST">
+                        <div class="row">
+                            <!-- FILTROS RÁPIDOS -->
+                            <div class="col-md-4 mb-4">
+                                <h5><i class="fas fa-filter"></i> Filtros rápidos</h5>
+                                <div class="list-group">
+                                    <label class="list-group-item d-flex gap-2">
+                                        <input class="form-check-input flex-shrink-0" type="radio" name="filter" value="all" checked>
+                                        <span>
+                                            <strong>Todos los residentes</strong>
+                                            <small class="d-block text-muted">{{ recipients_count }} destinatarios</small>
+                                        </span>
+                                    </label>
+                                    <label class="list-group-item d-flex gap-2">
+                                        <input class="form-check-input flex-shrink-0" type="radio" name="filter" value="owners">
+                                        <span>Solo propietarios</span>
+                                    </label>
+                                    <label class="list-group-item d-flex gap-2">
+                                        <input class="form-check-input flex-shrink-0" type="radio" name="filter" value="tenants">
+                                        <span>Solo inquilinos</span>
+                                    </label>
+                                    <label class="list-group-item d-flex gap-2">
+                                        <input class="form-check-input flex-shrink-0" type="radio" name="filter" value="debtors">
+                                        <span class="text-danger">Solo morosos</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <!-- FILTROS AVANZADOS -->
+                            <div class="col-md-4 mb-4">
+                                <h5><i class="fas fa-cog"></i> Filtros avanzados</h5>
+                                <div class="mb-3">
+                                    <label class="form-label">Tipo de unidad</label>
+                                    <select class="form-select" name="unit_type">
+                                        <option value="">Todos los tipos</option>
+                                        {# Asume que pasas unit_types a la plantilla #}
+                                        {% for ut in unit_types %} 
+                                        <option value="{{ ut.id }}">{{ ut.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Estado de unidad</label>
+                                    <select class="form-select" name="unit_state">
+                                        <option value="">Todos los estados</option>
+                                        {# Asume que pasas unit_states a la plantilla #}
+                                        {% for state in unit_states %}
+                                        <option value="{{ state.code }}">{{ state.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <!-- VISTA PREVIA -->
+                            <div class="col-md-4">
+                                <h5><i class="fas fa-users"></i> Vista previa</h5>
+                                <div class="border rounded bg-light p-2" style="max-height: 300px; overflow-y: auto; font-size: 0.85em;">
+                                    {% if preview_list %}
+                                        {% for unit, user in preview_list %}
+                                        <div class="mb-1 pb-1 border-bottom">
+                                            <strong>{{ user.name }}</strong><br>
+                                            <small class="text-muted">{{ unit.name }} • {{ user.cellphone or 'Sin Celular' }}</small>
+                                        </div>
+                                        {% endfor %}
+                                        {% if preview_list|length >= 25 %}
+                                        <div class="text-center text-muted small mt-2">... y más</div>
+                                        {% endif %}
+                                    {% else %}
+                                        <p class="text-muted small p-3 text-center">No hay destinatarios con los filtros seleccionados.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <hr class="my-4">
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-success btn-lg px-5" name="action" value="send_massive">
+                                <i class="fab fa-whatsapp me-2"></i>
+                                <i class="fas fa-envelope me-2"></i>
+                                Enviar por WhatsApp + Email
+                            </button>
+                        </div>
+                    </form>
+                    <div class="text-center mt-3">
+                        <form method="POST" class="d-inline">
+                            <button type="submit" class="btn btn-outline-info btn-sm" name="action" value="send_test">
+                                <i class="fab fa-whatsapp text-success"></i>
+                                Enviar prueba a mi WhatsApp
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <i class="fas fa-file-pdf fa-3x text-success mb-3"></i>
+                    <p><strong>PDF firmado listo</strong></p>
+                    <a href="{{ url_for('static', filename=doc.pdf_signed_path) }}" target="_blank" class="btn btn-outline-success btn-sm">
+                        Ver documento final
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

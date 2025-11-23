@@ -61,7 +61,7 @@ def generate_unsigned_pdf(doc):
 @module_required('documents')
 def index(current_user):
     docs = Document.query.filter_by(condominium_id=current_user.condominium_id).order_by(Document.created_at.desc()).all()
-    return render_template('services/documents_index.html', documents=docs)
+    return render_template('documents/index.html', documents=docs)
 
 @document_bp.route('/nuevo', methods=['GET', 'POST'])
 @document_bp.route('/<int:doc_id>/editar', methods=['GET', 'POST'])
@@ -100,7 +100,7 @@ def create_or_edit(current_user, doc_id=None):
         generate_unsigned_pdf(doc)
         return redirect(url_for('document.view', doc_id=doc.id))
 
-    return render_template('services/document_editor.html', doc=doc)
+    return render_template('documents/editor.html', doc=doc)
 
 @document_bp.route('/<int:doc_id>')
 @module_required('documents')
@@ -108,7 +108,7 @@ def view(current_user, doc_id):
     doc = Document.query.get_or_404(doc_id)
     if doc.condominium_id != current_user.condominium_id:
         abort(403)
-    return render_template('services/document_view.html', doc=doc)
+    return render_template('documents/view.html', doc=doc)
 
 @document_bp.route('/<int:doc_id>/descargar-sin-firmar')
 @module_required('documents')
@@ -150,7 +150,7 @@ def sign(current_user, doc_id):
         else:
             flash("Solo se permiten archivos PDF.", "danger")
 
-    return render_template('services/document_sign_options.html', doc=doc)
+    return render_template('documents/sign_options.html', doc=doc)
 
 @document_bp.route('/<int:doc_id>/enviar', methods=['POST'])
 @module_required('documents')
@@ -198,14 +198,14 @@ def public_signature(public_link):
             db.session.commit()
             flash("¡FIRMA REGISTRADA CORRECTAMENTE! Gracias por tu apoyo.", "success")
         
-        return redirect(url_for('document.public_signature_thanks'))
+        return redirect(url_for('document.public_signature_thanks', public_link=public_link))
 
-    return render_template('public/public_signature.html', doc=doc)
+    return render_template('documents/public_signature.html', doc=doc)
 
 @document_bp.route('/firmar/<public_link>/gracias')
 def public_signature_thanks(public_link):
     doc = Document.query.filter_by(public_signature_link=public_link).first_or_404()
-    return render_template('public/public_thanks.html', doc=doc)
+    return render_template('documents/public_thanks.html', doc=doc)
 
 @document_bp.route('/<int:doc_id>/descargar-firmas')
 @module_required('documents')

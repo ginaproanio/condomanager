@@ -35,6 +35,12 @@ class User(db.Model):
     @property
     def name(self):
         return f"{self.first_name} {self.last_name}"
+    
+    # --- Firma Electrónica ---
+    has_electronic_signature = db.Column(db.Boolean, default=False)
+    signature_certificate = db.Column(db.LargeBinary) # Almacena el archivo .p12 encriptado
+    signature_cert_password_hash = db.Column(db.String(255)) # Hash de la contraseña del certificado
+
 
 # 2. CONFIGURACIÓN CONDOMINIO
 class CondominiumConfig(db.Model):
@@ -173,3 +179,57 @@ class Unit(db.Model):
     status = db.Column(db.String(20), default='disponible')
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+
+# --- MÓDULO DE FIRMAS & COMUNICADOS ---
+import random
+import string
+
+class Document(db.Model):
+    __tablename__ = 'documents'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(300), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    pdf_unsigned_path = db.Column(db.String(500))
+    pdf_signed_path = db.Column(db.String(500))
+    signature_type = db.Column(db.String(20), default='none')
+    status = db.Column(db.String(20), default='draft')
+    requires_signature = db.Column(db.Boolean, default=True)
+
+    created_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    created_by = db.relationship('User', foreign_keys=[created_by_id])
+    condominium_id = db.Column(db.Integer, db.ForeignKey('condominiums.id'))
+    condominium = db.relationship('Condominium', backref='documents')
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    signatures = db.relationship('DocumentSignature', backref='document', lazy=True, cascade='all, delete-orphan')
+
+    # Para recolección de firmas públicas
+    collect_signatures_from_residents = db.Column(db.Boolean, default=False)
+    public_signature_link = db.Column(db.String(100), unique=True)
+    signature_count = db.Column(db.Integer, default=0)
+
+    def generate_public_link(self):
+        if not self.public_signature_link:
+            self.public_signature_link = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
+
+class DocumentSignature(db.Model):
+    __tablename__ = 'document_signatures'
+    id = db.Column(db.Integer, primary_key=True)
+    document_id = db.Column(db.Integer, db.ForeignKey('documents.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    signed_by = db.relationship('User')
+    signature_type = db.Column(db.String(20), nullable=False)
+    signed_at = db.Column(db.DateTime, default=datetime.utcnow)
+    ip_address = db.Column(db.String(45))
+
+class ResidentSignature(db.Model):
+    __tablename__ = 'resident_signatures'
+    id = db.Column(db.Integer, primary_key=True)
+    document_id = db.Column(db.Integer, db.ForeignKey('documents.id'), nullable=False)
+    full_name = db.Column(db.String(200), nullable=False)
+    cedula = db.Column(db.String(20), nullable=False)
+    phone = db.Column(db.String(20))
+    ip_address = db.Column(db.String(45))
+    signed_at = db.Column(db.DateTime, default=datetime.utcnow)
+    document = db.relationship('Document', backref='resident_signatures')
