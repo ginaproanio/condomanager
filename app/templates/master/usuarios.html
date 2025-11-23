@@ -118,6 +118,9 @@
                                                                             data-user-tenant="{{ u.tenant or '' }}" data-user-role="{{ u.role }}">
                                                                         <i class="fas fa-tasks me-2"></i>Gestionar
                                                                     </button>
+                                                                    <a href="{{ url_for('master.master_usuarios_editar', user_id=u.id) }}" class="btn btn-sm btn-outline-secondary" title="Editar antes de aprobar">
+                                                                        <i class="fas fa-edit"></i>
+                                                                    </a>
                                                                 </div>
                                                             </td>
                                                         </tr>
@@ -163,8 +166,14 @@
                                                             <td><span class="badge bg-info text-dark">{{ u.tenant or 'N/A' }}</span></td>
                                                             <td>
                                                                 <a href="{{ url_for('master.master_usuarios_editar', user_id=u.id) }}" class="btn btn-sm btn-info" title="Editar Usuario">
-                                                                    <i class="fas fa-edit"></i> Editar
+                                                                    <i class="fas fa-edit me-1"></i> Editar
                                                                 </a>
+                                                                <!-- Formulario para inactivar/eliminar (actualmente no implementado) -->
+                                                                <form action="{{ url_for('master.master_usuarios_eliminar', user_id=u.id) }}" method="POST" class="d-inline ms-1">
+                                                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar Usuario (No Implementado)" onclick="return confirm('¿Estás seguro? Esta acción no se puede deshacer.');">
+                                                                        <i class="fas fa-trash"></i>
+                                                                    </button>
+                                                                </form>
                                                             </td>
                                                         </tr>
                                                         {% endfor %}
@@ -217,8 +226,14 @@
                                                             </td>
                                                             <td>
                                                                 <a href="{{ url_for('master.master_usuarios_editar', user_id=u.id) }}" class="btn btn-sm btn-info" title="Editar Usuario">
-                                                                    <i class="fas fa-edit"></i>
+                                                                    <i class="fas fa-edit me-1"></i>
                                                                 </a>
+                                                                <!-- Formulario para inactivar/eliminar -->
+                                                                <form action="{{ url_for('master.master_usuarios_eliminar', user_id=u.id) }}" method="POST" class="d-inline ms-1">
+                                                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar Usuario (No Implementado)" onclick="return confirm('¿Estás seguro? Esta acción no se puede deshacer.');">
+                                                                        <i class="fas fa-trash"></i>
+                                                                    </button>
+                                                                </form>
                                                             </td>
                                                         </tr>
                                                         {% endfor %}
