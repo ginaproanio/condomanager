@@ -460,7 +460,7 @@ def manage_module_catalog():
         
         return redirect(url_for('master.manage_module_catalog'))
 
-    all_modules = models.Module.query.order_by(models.Module.name).all()
+    all_modules = db.session.query(models.Module).order_by(models.Module.name).all()
     return render_template('master/module_catalog.html', user=user, all_modules=all_modules)
 
 @master_bp.route('/master/condominios/importar', methods=['POST'])

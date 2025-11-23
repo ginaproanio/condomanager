@@ -233,3 +233,18 @@ class ResidentSignature(db.Model):
     ip_address = db.Column(db.String(45))
     signed_at = db.Column(db.DateTime, default=datetime.utcnow)
     document = db.relationship('Document', backref='resident_signatures')
+
+# --- ARQUITECTURA ESCALABLE DE MÓDULOS ---
+
+class Module(db.Model):
+    __tablename__ = 'modules'
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(50), unique=True, nullable=False) # ej: 'documents', 'billing'
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text)
+    base_price = db.Column(db.Float, default=0.0)
+    billing_cycle = db.Column(db.String(20), default='monthly') # 'monthly', 'yearly'
+    status = db.Column(db.String(30), default='COMING_SOON') # 'ACTIVE', 'MAINTENANCE', 'ARCHIVED'
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+# Aquí irían CondominiumModuleActivation y ModuleActivationHistory en el futuro.
