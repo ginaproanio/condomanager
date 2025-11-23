@@ -1,12 +1,13 @@
 from flask import (
     Blueprint, render_template, redirect, url_for,
-    current_app, flash, request, session
+    current_app, flash, request, session, abort
 )
 from flask_jwt_extended import jwt_required
 from sqlalchemy import func
 from app import db
-from app.models import User, Condominium, Unit
+from app.models import User, Condominium, Unit, UserSpecialRole
 from app.auth import get_current_user
+from app.decorators import condominium_admin_required
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -17,30 +18,9 @@ def is_authorized_admin_for_condo(user, condominium):
     """
     if not user or not condominium:
         return False
-
-    # --- SOLUCIÓN DE INGENIERÍA DEFINITIVA ---
-    # La regla de negocio más robusta es la pertenencia al tenant.
-    # Un usuario es un administrador autorizado si y solo si:
-    # 1. Su rol es ADMIN.
-    # 2. El subdominio del condominio coincide con el tenant del usuario.
-    return user.role == 'ADMIN' and condominium.subdomain.lower() == user.tenant.lower()
-
-@admin_bp.route('/admin')
-@jwt_required()
-def admin_panel(): # Esta función ahora es solo un despachador (dispatcher)
-    user = get_current_user()
-    if not user or user.role != 'ADMIN':
-        flash("Acceso denegado", "error")
-        return redirect('/dashboard')
-
-    # La redirección debe seguir la misma lógica robusta basada en el tenant.
-    admin_condo = Condominium.query.filter(func.lower(Condominium.subdomain) == func.lower(user.tenant)).first()
-
-    if admin_condo:
-        return redirect(url_for('admin.admin_condominio_panel', condominium_id=admin_condo.id))
-
-    flash("No se encontró un condominio que coincida con tu asignación de tenant.", "error")
-    return redirect(url_for('user.dashboard'))
+    # --- LÓGICA DE AUTORIZACIÓN ÚNICA Y DEFINITIVA ---
+    # La única fuente de verdad es la asignación explícita en la tabla de condominios.
+    return user.role == 'ADMIN' and condominium.admin_user_id == user.id
 
 @admin_bp.route('/aprobar/<int:user_id>')
 @jwt_required()
@@ -94,19 +74,19 @@ def admin_condominio_panel(condominium_id):
     current_user = get_current_user()
     condominium = Condominium.query.get_or_404(condominium_id)
 
-    # --- LÓGICA DE SEGURIDAD REFORZADA ---
+    # --- GUARDIÁN ÚNICO Y ESTRICTO ---
     if not is_authorized_admin_for_condo(current_user, condominium):
         flash("No tienes acceso a este panel de administración de condominio o no estás asignado a este condominio. Por favor, inicia sesión como un Administrador autorizado.", "error")
         return redirect(url_for('public.login'))
 
-    # Lógica para obtener usuarios pendientes solo de este condominio
+    # Si la autorización pasa, se obtiene el resto de la información.
     pending_users_in_condo = User.query.filter_by(tenant=condominium.subdomain, status='pending').all()
     users_in_condo = User.query.filter(User.tenant == condominium.subdomain, User.status != 'pending').all()
     units = Unit.query.filter_by(condominium_id=condominium_id).order_by(Unit.name).all()
 
-    return render_template('admin/condominio_panel.html', 
-                           user=current_user, 
-                           condominium=condominium, 
+    return render_template('admin/condominio_panel.html',
+                           user=current_user,
+                           condominium=condominium,
                            units=units,
                            pending_users_in_condo=pending_users_in_condo,
                            users_in_condo=users_in_condo)

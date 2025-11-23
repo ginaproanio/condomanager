@@ -129,24 +129,20 @@ def condominium_admin_required(f):
     La función de la ruta debe aceptar 'condominium_id' como argumento.
     """
     @wraps(f)
-    @admin_required
+    @login_required # Solo necesita que esté logueado, la lógica interna valida el rol
     def decorated_function(*args, **kwargs):
         user = kwargs.get('current_user')
-        # Asume que el ID del condominio viene en los argumentos de la ruta (ej. /condo/<int:condo_id>/dashboard)
-        condominium_id = kwargs.get('condo_id') or kwargs.get('condominium_id')
-
-        if user.role.upper() == 'MASTER': # Usar upper() para consistencia
-            # El rol MASTER tiene acceso a todo, no necesita más validaciones.
-            return f(*args, **kwargs)
-
+        condominium_id = kwargs.get('condominium_id')
+        
         if not condominium_id:
-            current_app.logger.error(f"Ruta protegida por 'condominium_admin_required' no recibió 'condo_id'.")
-            flash("Error de configuración de la ruta.", "error")
+            abort(500, "Error de configuración: la ruta protegida no recibió un ID de condominio.")
+        
+        condominium = Condominium.query.get_or_404(condominium_id)
+        
+        # --- LÓGICA DE AUTORIZACIÓN ÚNICA Y CENTRALIZADA ---
+        if not (user.role == 'ADMIN' and user.tenant.lower() == condominium.subdomain.lower()):
+            flash("No tienes autorización para acceder a este panel de administración.", "error")
             return redirect(url_for('user.dashboard'))
-
-        condo = Condominium.query.filter_by(id=condominium_id, admin_user_id=user.id).first()
-        if not condo:
-            flash("Acceso denegado. No está autorizado para gestionar este condominio.", "error")
-            return redirect(url_for('user.dashboard'))
+        
         return f(*args, **kwargs)
     return decorated_function
