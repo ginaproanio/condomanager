@@ -65,7 +65,12 @@
                                         <div class="mb-3 text-primary">
                                             <i class="fas fa-file-contract fa-3x"></i>
                                         </div>
-                                        <h5 class="card-title">Documentos y Firmas</h5>
+                                        <h5 class="card-title">
+                                            Documentos y Firmas
+                                            {% if new_docs_count > 0 %}
+                                                <span class="badge bg-danger ms-2 fs-6">{{ new_docs_count }} Nuevos</span>
+                                            {% endif %}
+                                        </h5>
                                         <p class="card-text small text-muted">Accede a actas, reglamentos y firma documentos oficiales.</p>
                                         <a href="{{ url_for('document.index') }}" class="btn btn-primary w-100 stretched-link">
                                             Ir a Documentos

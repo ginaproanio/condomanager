@@ -4,8 +4,9 @@ from flask import (
 )
 from flask_jwt_extended import jwt_required
 from app.auth import get_current_user
-from app.models import db, User
+from app.models import db, User, Document, Condominium, Unit # Importar modelos necesarios
 import hashlib
+from datetime import datetime, timedelta
 
 # Librerías para validación criptográfica
 from cryptography.hazmat.primitives.serialization import pkcs12
@@ -24,10 +25,8 @@ def dashboard():
     # Inyectar unidad del usuario
     user_unit = None
     if user.unit_id:
-        from app.models import Unit
         user_unit = Unit.query.get(user.unit_id)
     elif user.email: # Fallback: buscar unidad por email del creador (temporal)
-         from app.models import Unit
          # Lógica simple para demo: primera unidad del condominio
          pass
 
@@ -35,7 +34,31 @@ def dashboard():
     tenant = get_tenant()
     config = current_app.get_tenant_config(tenant)
     
-    return render_template('user/dashboard.html', user=user, config=config, user_unit=user_unit)
+    # --- Lógica de Notificaciones de Documentos ---
+    new_docs_count = 0
+    condo_id = None
+    
+    if user_unit and user_unit.condominium_id:
+        condo_id = user_unit.condominium_id
+    elif user.tenant:
+        condo = Condominium.query.filter_by(subdomain=user.tenant).first()
+        if condo:
+            condo_id = condo.id
+            
+    if condo_id:
+        # Contar documentos firmados/enviados en los últimos 7 días
+        seven_days_ago = datetime.utcnow() - timedelta(days=7)
+        new_docs_count = Document.query.filter(
+            Document.condominium_id == condo_id,
+            Document.created_at >= seven_days_ago,
+            Document.status.in_(['signed', 'sent']) # Solo contar documentos públicos oficiales
+        ).count()
+
+    return render_template('user/dashboard.html', 
+                           user=user, 
+                           config=config, 
+                           user_unit=user_unit,
+                           new_docs_count=new_docs_count)
 
 @user_bp.route('/perfil', methods=['GET', 'POST'])
 @jwt_required()

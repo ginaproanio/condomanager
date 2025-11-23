@@ -4,6 +4,7 @@ from flask import (
 )
 from flask_jwt_extended import jwt_required
 from sqlalchemy import func
+from sqlalchemy.orm.attributes import flag_modified
 from app import db
 from app.models import User, Condominium, Unit, UserSpecialRole
 from app.auth import get_current_user
@@ -137,3 +138,59 @@ def revocar_rol_especial(role_id):
     
     flash("Rol revocado correctamente.", "success")
     return redirect(url_for('admin.admin_condominio_panel', condominium_id=role_entry.condominium_id))
+
+@admin_bp.route('/admin/condominio/<int:condominium_id>/comunicaciones')
+@condominium_admin_required
+def comunicaciones(condominium_id):
+    """
+    Panel de gestión de comunicaciones (WhatsApp).
+    """
+    condominium = Condominium.query.get_or_404(condominium_id)
+    # En el futuro aquí consultaremos a la API de Twilio/Gateway para ver el estado
+    whatsapp_status = 'disconnected' 
+    return render_template('admin/comunicaciones.html', condominium=condominium, status=whatsapp_status)
+
+@admin_bp.route('/admin/condominio/<int:condominium_id>/configurar-whatsapp', methods=['POST'])
+@condominium_admin_required
+def configurar_whatsapp(condominium_id):
+    """
+    Guarda la configuración del proveedor de WhatsApp (Gateway o Meta).
+    """
+    condo = Condominium.query.get_or_404(condominium_id)
+    
+    provider = request.form.get('whatsapp_provider')
+    
+    # Validar que sea un proveedor válido
+    if provider not in ['GATEWAY_QR', 'META_API']:
+        flash("Proveedor no válido", "error")
+        return redirect(url_for('admin.comunicaciones', condominium_id=condominium_id))
+        
+    condo.whatsapp_provider = provider
+    
+    # Actualizar configuración JSON
+    # Asegurar que whatsapp_config es un diccionario
+    if not condo.whatsapp_config:
+        current_config = {}
+    else:
+        # Copiar para asegurar mutabilidad
+        current_config = dict(condo.whatsapp_config)
+    
+    if provider == 'META_API':
+        current_config['phone_id'] = request.form.get('meta_phone_id')
+        current_config['business_id'] = request.form.get('meta_business_id')
+        current_config['access_token'] = request.form.get('meta_access_token')
+    
+    # Guardar en el objeto
+    condo.whatsapp_config = current_config
+    
+    # Flag de migración forzosa para SQLAlchmey (a veces no detecta cambios internos en JSON)
+    flag_modified(condo, "whatsapp_config")
+    
+    try:
+        db.session.commit()
+        flash("Configuración de WhatsApp actualizada correctamente.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error al guardar configuración: {str(e)}", "error")
+        
+    return redirect(url_for('admin.comunicaciones', condominium_id=condominium_id))

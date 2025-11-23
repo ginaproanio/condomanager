@@ -85,6 +85,11 @@ class Condominium(db.Model):
     has_billing_module = db.Column(db.Boolean, default=False, nullable=False)   # Módulo "Facturación"
     has_requests_module = db.Column(db.Boolean, default=False, nullable=False)  # Módulo "Requerimientos"
 
+    # --- Configuración de WhatsApp (Módulo de Comunicaciones) ---
+    # Estrategia Híbrida: Permite elegir entre Gateway (QR) o Meta API (Oficial)
+    whatsapp_provider = db.Column(db.String(20), default='GATEWAY_QR') # Opciones: 'GATEWAY_QR', 'META_API'
+    whatsapp_config = db.Column(db.JSON, default={}) # Almacena credenciales flexibles (tokens, session_ids)
+
     # FK corregidas a 'users.id'
     admin_user_id = db.Column(db.Integer, db.ForeignKey('users.id', name='fk_condominium_admin_user'))
     legal_representative_id = db.Column(db.Integer, db.ForeignKey('users.id', name='fk_condominium_legal_rep')) # Representante Legal

@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+
+{% block title %}Comunicaciones - {{ condominium.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <a href="{{ url_for('admin.admin_condominio_panel', condominium_id=condominium.id) }}" class="btn btn-outline-secondary mb-2">
+                <i class="fas fa-arrow-left me-2"></i>Volver al Panel
+            </a>
+            <h2 class="text-success mb-0"><i class="fab fa-whatsapp me-2"></i>Comunicaciones Masivas</h2>
+        </div>
+        
+        <!-- Indicador de Estado -->
+        <div class="card bg-light border-0 shadow-sm">
+            <div class="card-body py-2 px-4 d-flex align-items-center">
+                <div class="me-3 text-end">
+                    <small class="text-muted d-block">Proveedor Activo</small>
+                    <strong>
+                        {% if condominium.whatsapp_provider == 'META_API' %}
+                            Meta Oficial
+                        {% else %}
+                            Gateway QR
+                        {% endif %}
+                    </strong>
+                </div>
+                {% if status == 'connected' %}
+                    <span class="badge bg-success rounded-pill px-3 py-2">ONLINE</span>
+                {% else %}
+                    <span class="badge bg-secondary rounded-pill px-3 py-2">OFFLINE</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Pestañas de Navegación -->
+    <ul class="nav nav-tabs mb-4" id="commTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="send-tab" data-bs-toggle="tab" data-bs-target="#send-panel" type="button" role="tab">
+                <i class="fas fa-paper-plane me-2"></i>Consola de Envío
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="config-tab" data-bs-toggle="tab" data-bs-target="#config-panel" type="button" role="tab">
+                <i class="fas fa-cogs me-2"></i>Configuración de Canal
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="commTabsContent">
+        
+        <!-- PESTAÑA 1: CONSOLA DE ENVÍO -->
+        <div class="tab-pane fade show active" id="send-panel" role="tabpanel">
+            <div class="row">
+                <!-- Columna de Estado/Info (Izquierda) -->
+                <div class="col-md-4">
+                    {% if condominium.whatsapp_provider == 'META_API' %}
+                        <!-- Info Meta API -->
+                        <div class="card border-0 shadow-sm mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="fas fa-check-circle me-2"></i>Meta Business</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="small text-muted">Estás utilizando la API Oficial. Tus mensajes tienen alta prioridad y menor riesgo de bloqueo.</p>
+                                <div class="d-grid">
+                                    <button class="btn btn-outline-primary btn-sm">Ver Saldo (Meta)</button>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <!-- Info Gateway QR -->
+                        <div class="card border-0 shadow-sm mb-4">
+                            <div class="card-header bg-dark text-white">
+                                <h5 class="mb-0"><i class="fas fa-qrcode me-2"></i>Conexión QR</h5>
+                            </div>
+                            <div class="card-body text-center">
+                                <p class="text-muted small">Vincula el celular del condominio escaneando este código.</p>
+                                
+                                <div class="bg-light p-3 mb-3 border rounded d-flex align-items-center justify-content-center" style="height: 180px;">
+                                    <i class="fas fa-qrcode fa-5x opacity-25"></i>
+                                    <!-- Aquí iría el QR real -->
+                                </div>
+                                
+                                <button class="btn btn-primary w-100 btn-sm" disabled>
+                                    <i class="fas fa-sync me-2"></i>Generar Nuevo QR
+                                </button>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white">
+                            <h6 class="mb-0">Historial Reciente</h6>
+                        </div>
+                        <div class="list-group list-group-flush small">
+                            <div class="list-group-item text-center text-muted py-3">
+                                No hay envíos recientes.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Columna de Formulario (Derecha) -->
+                <div class="col-md-8">
+                    <div class="card border-0 shadow-lg">
+                        <div class="card-body p-4">
+                            <h4 class="card-title mb-4">Nuevo Mensaje Masivo</h4>
+                            
+                            <form>
+                                <!-- Segmentación -->
+                                <div class="mb-4">
+                                    <label class="form-label fw-bold">Destinatarios</label>
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <div class="form-check p-3 border rounded bg-light">
+                                                <input class="form-check-input" type="radio" name="audience" id="audience_all" checked>
+                                                <label class="form-check-label" for="audience_all">
+                                                    <strong>Todos los Residentes</strong><br>
+                                                    <small class="text-muted">Propietarios e Inquilinos activos</small>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-check p-3 border rounded bg-light">
+                                                <input class="form-check-input" type="radio" name="audience" id="audience_debtors">
+                                                <label class="form-check-label" for="audience_debtors">
+                                                    <strong>Solo Morosos</strong><br>
+                                                    <small class="text-muted">Con deuda pendiente > 0</small>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <!-- Más filtros... -->
+                                    </div>
+                                </div>
+
+                                <!-- Mensaje -->
+                                <div class="mb-4">
+                                    <label for="message" class="form-label fw-bold">Contenido del Mensaje</label>
+                                    <textarea class="form-control" id="message" rows="5" placeholder="Escribe tu comunicado aquí..."></textarea>
+                                    <div class="form-text text-end">0 / 1000 caracteres</div>
+                                </div>
+
+                                <div class="d-grid">
+                                    <button type="button" class="btn btn-success btn-lg" disabled>
+                                        <i class="fab fa-whatsapp me-2"></i>Enviar Comunicado
+                                    </button>
+                                    <p class="text-center mt-2 small text-muted">
+                                        {% if condominium.whatsapp_provider == 'GATEWAY_QR' %}
+                                            Los mensajes se enviarán progresivamente (1 cada 20s) para seguridad.
+                                        {% else %}
+                                            Envío inmediato vía Meta API.
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PESTAÑA 2: CONFIGURACIÓN -->
+        <div class="tab-pane fade" id="config-panel" role="tabpanel">
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white py-3">
+                            <h5 class="mb-0">Configuración del Motor de Envío</h5>
+                        </div>
+                        <div class="card-body p-4">
+                            
+                            <form method="POST" action="{{ url_for('admin.configurar_whatsapp', condominium_id=condominium.id) }}">
+                                <div class="mb-4">
+                                    <label class="form-label fw-bold">Selecciona tu Proveedor</label>
+                                    <div class="list-group">
+                                        <!-- Opción A: Gateway -->
+                                        <label class="list-group-item d-flex gap-3 align-items-start p-3">
+                                            <input class="form-check-input flex-shrink-0" type="radio" name="whatsapp_provider" value="GATEWAY_QR" 
+                                                {% if condominium.whatsapp_provider == 'GATEWAY_QR' %}checked{% endif %} 
+                                                onchange="toggleConfigForm()">
+                                            <span>
+                                                <strong class="d-block mb-1">Gateway QR (Tu propio número)</strong>
+                                                <span class="text-muted small">
+                                                    Usa el celular del condominio. Costo $0. Riesgo de bloqueo si se abusa. Requiere mantener el celular encendido.
+                                                </span>
+                                            </span>
+                                        </label>
+                                        
+                                        <!-- Opción B: Meta API -->
+                                        <label class="list-group-item d-flex gap-3 align-items-start p-3">
+                                            <input class="form-check-input flex-shrink-0" type="radio" name="whatsapp_provider" value="META_API" 
+                                                {% if condominium.whatsapp_provider == 'META_API' %}checked{% endif %}
+                                                onchange="toggleConfigForm()">
+                                            <span>
+                                                <strong class="d-block mb-1">Meta WhatsApp Business API (Premium)</strong>
+                                                <span class="text-muted small">
+                                                    Línea corporativa verificada. Sin riesgo de bloqueo. Costo por mensaje enviado (según tarifas de Meta).
+                                                </span>
+                                                <span class="badge bg-warning text-dark ms-2">Recomendado</span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Configuración Meta API (Oculto por defecto) -->
+                                <div id="meta-config-fields" class="p-3 bg-light rounded mb-4 border" style="display: none;">
+                                    <h6 class="mb-3 text-primary">Credenciales de Meta Business</h6>
+                                    <div class="mb-3">
+                                        <label class="form-label">Phone Number ID</label>
+                                        <input type="text" class="form-control" name="meta_phone_id" placeholder="Ej: 10567..." value="{{ condominium.whatsapp_config.get('phone_id', '') }}">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">WhatsApp Business Account ID</label>
+                                        <input type="text" class="form-control" name="meta_business_id" placeholder="Ej: 10023..." value="{{ condominium.whatsapp_config.get('business_id', '') }}">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Access Token (Permanente)</label>
+                                        <input type="password" class="form-control" name="meta_access_token" placeholder="EAAG..." value="{{ condominium.whatsapp_config.get('access_token', '') }}">
+                                    </div>
+                                </div>
+
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-2"></i>Guardar Configuración
+                                    </button>
+                                </div>
+                            </form>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    function toggleConfigForm() {
+        const provider = document.querySelector('input[name="whatsapp_provider"]:checked').value;
+        const metaFields = document.getElementById('meta-config-fields');
+        
+        if (provider === 'META_API') {
+            metaFields.style.display = 'block';
+        } else {
+            metaFields.style.display = 'none';
+        }
+    }
+    // Ejecutar al cargar
+    document.addEventListener('DOMContentLoaded', toggleConfigForm);
+</script>
+{% endblock %}
