@@ -2,7 +2,7 @@ from flask import (
     Blueprint, render_template, redirect, url_for,
     current_app, flash, request, session
 )
-from flask_jwt_extended import jwt_required
+from sqlalchemy import func
 from app import db
 from app.models import User, Condominium, Unit
 from app.auth import get_current_user
