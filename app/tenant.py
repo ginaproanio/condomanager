@@ -6,14 +6,20 @@ def get_tenant():
         # Si hay contexto de request (durante peticiones web)
         if request:
             host = request.host
-            # Forzar 'puntablanca' en desarrollo local y en el entorno de pruebas de Railway
+            # CORRECCIÓN DE LOGIN: 
+            # En Railway y Localhost, NO forzamos 'puntablanca'.
+            # Devolvemos None para indicar que estamos en el "dominio raíz" o "global".
+            # Esto permite que el login busque usuarios en CUALQUIER tenant si no estamos en un subdominio específico.
             if 'localhost' in host or 'railway.app' in host:
-                return 'puntablanca'
+                return None 
+            
             # Extraer subdominio: admin.condomanager.com → admin
             parts = host.split('.') 
             if len(parts) > 2:
                 return parts[0]
-            return 'puntablanca'
+                
+            # Si es condomanager.com (sin subdominio)
+            return None
     except RuntimeError:
         # No hay contexto de request (durante inicialización)
         # Esto es normal al inicio de la aplicación o en tareas en segundo plano
@@ -25,4 +31,4 @@ def get_tenant():
         else:
             current_app.logger.error(f"Error inesperado al obtener el tenant (sin contexto de request): {e}")
 
-    return 'puntablanca'  # Valor por defecto
+    return None # Por defecto devolvemos None (Global) en lugar de un tenant hardcodeado
