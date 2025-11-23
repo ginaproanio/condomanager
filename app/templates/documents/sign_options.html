@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Gestionar Firma - {{ doc.title }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="text-center mb-5">
+                <h2 class="text-primary">Gestionar Firma del Documento</h2>
+                <p class="lead text-muted">{{ doc.title }}</p>
+            </div>
+
+            <div class="card border-0 shadow-lg mb-4">
+                <div class="card-body p-5">
+                    <!-- Opción 1: Firma Física (Flujo Completo) -->
+                    <h4 class="mb-3"><i class="fas fa-pen-nib me-2"></i>Opción 1: Firma Física (Manual)</h4>
+                    <p>Descarga el documento, imprímelo, fírmalo a mano, escanéalo y sube el PDF resultante.</p>
+                    
+                    <div class="d-grid gap-2 mb-4">
+                        <a href="{{ url_for('document.download_unsigned', doc_id=doc.id) }}" class="btn btn-outline-primary btn-lg">
+                            <i class="fas fa-download me-2"></i>1. Descargar para Firmar
+                        </a>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <form method="POST" enctype="multipart/form-data">
+                        <input type="hidden" name="action" value="upload_physical">
+                        <div class="mb-3">
+                            <label for="signed_file" class="form-label fw-bold">2. Subir Documento Firmado (PDF Escaneado)</label>
+                            <input type="file" class="form-control form-control-lg" id="signed_file" name="signed_file" accept=".pdf" required>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-upload me-2"></i>Registrar Firma
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Opción 2: Firma Electrónica (Placeholder para Fase 2) -->
+            <div class="card border-0 shadow-sm bg-light opacity-75">
+                <div class="card-body p-4 text-center">
+                    <h5 class="text-muted"><i class="fas fa-certificate me-2"></i>Opción 2: Firma Electrónica (.p12)</h5>
+                    <p class="mb-0 text-muted small">Próximamente disponible para usuarios con certificado digital configurado.</p>
+                </div>
+            </div>
+
+            <div class="text-center mt-4">
+                <a href="{{ url_for('document.view', doc_id=doc.id) }}" class="text-decoration-none">
+                    <i class="fas fa-arrow-left me-1"></i>Volver al Documento
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

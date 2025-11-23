@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Documentos{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-primary mb-0"><i class="fas fa-folder-open me-2"></i>Documentos del Condominio</h2>
+            <p class="text-muted">Repositorio de actas, reglamentos y comunicados oficiales.</p>
+        </div>
+        
+        {% if has_premium_access %}
+            <a href="{{ url_for('document.create') }}" class="btn btn-success shadow-sm">
+                <i class="fas fa-plus-circle me-2"></i>Nuevo Trámite / Documento
+            </a>
+        {% else %}
+            <button class="btn btn-secondary" disabled title="Contacta a tu administrador para activar esta función">
+                <i class="fas fa-lock me-2"></i>Nuevo Documento
+            </button>
+        {% endif %}
+    </div>
+
+    <!-- Banner Freemium -->
+    {% if not has_premium_access %}
+    <div class="alert alert-info border-0 shadow-sm mb-4" role="alert">
+        <div class="d-flex align-items-center">
+            <div class="display-4 me-4 text-primary"><i class="fas fa-signature"></i></div>
+            <div>
+                <h5 class="alert-heading fw-bold">¿Necesitas gestionar firmas y trámites legales?</h5>
+                <p class="mb-0">
+                    Actualmente tienes acceso al <strong>Repositorio Básico</strong>. 
+                    El Módulo Premium de Firmas te permite crear documentos, recolectar firmas digitales de residentes y gestionar trámites oficiales.
+                    <br>
+                    <small class="text-muted">Solicita a tu administración que active el módulo "Firmas & Comunicados".</small>
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% include '_messages.html' %}
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            {% if documents %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4">Documento</th>
+                                <th>Estado</th>
+                                <th>Fecha</th>
+                                <th>Firmas</th>
+                                <th class="text-end pe-4">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for doc in documents %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-light rounded p-2 me-3 text-danger">
+                                            <i class="fas fa-file-pdf fa-lg"></i>
+                                        </div>
+                                        <div>
+                                            <a href="{{ url_for('document.view', doc_id=doc.id) }}" class="text-decoration-none fw-bold text-dark stretched-link">
+                                                {{ doc.title }}
+                                            </a>
+                                            {% if doc.requires_signature %}
+                                                <br><span class="badge bg-light text-dark border">Requiere Firma</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if doc.status == 'draft' %}
+                                        <span class="badge bg-secondary">Borrador</span>
+                                    {% elif doc.status == 'signed' %}
+                                        <span class="badge bg-success">Firmado</span>
+                                    {% elif doc.status == 'sent' %}
+                                        <span class="badge bg-primary">Enviado</span>
+                                    {% else %}
+                                        <span class="badge bg-light text-dark">{{ doc.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-muted small">
+                                    {{ doc.created_at.strftime('%d/%m/%Y') }}
+                                </td>
+                                <td>
+                                    {% if doc.collect_signatures_from_residents %}
+                                        <span class="badge bg-info text-dark">
+                                            <i class="fas fa-users me-1"></i> {{ doc.signature_count or 0 }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-4" style="position: relative; z-index: 2;">
+                                    <div class="btn-group">
+                                        <a href="{{ url_for('document.download_unsigned', doc_id=doc.id) }}" class="btn btn-sm btn-outline-secondary" title="Descargar PDF">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                        {% if has_premium_access %}
+                                            <a href="{{ url_for('document.edit', doc_id=doc.id) }}" class="btn btn-sm btn-outline-primary" title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <div class="text-muted mb-3">
+                        <i class="fas fa-folder-open fa-3x opacity-50"></i>
+                    </div>
+                    <h5>No hay documentos públicos aún.</h5>
+                    {% if has_premium_access %}
+                        <p class="text-muted">Comienza creando el primer documento oficial para tu condominio.</p>
+                        <a href="{{ url_for('document.create') }}" class="btn btn-primary btn-sm mt-2">
+                            Crear Documento
+                        </a>
+                    {% else %}
+                        <p class="text-muted">Tu administración aún no ha subido ningún documento.</p>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

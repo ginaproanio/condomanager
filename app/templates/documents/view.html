@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}{{ doc.title }} - Vista Previa{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <!-- Columna Principal: Documento -->
+        <div class="col-lg-8">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('document.index') }}">Documentos</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ doc.title }}</li>
+                </ol>
+            </nav>
+
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <h2 class="card-title text-primary mb-3">{{ doc.title }}</h2>
+                    <div class="mb-3">
+                        <span class="badge bg-light text-dark border me-2">
+                            <i class="far fa-calendar me-1"></i> {{ doc.created_at.strftime('%d/%m/%Y') }}
+                        </span>
+                        {% if doc.status == 'signed' %}
+                            <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i> Firmado Oficialmente</span>
+                        {% elif doc.status == 'draft' %}
+                            <span class="badge bg-secondary">Borrador</span>
+                        {% endif %}
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- Vista Previa del Contenido HTML -->
+                    <div class="document-content p-3 bg-light rounded border">
+                        {{ doc.content|safe }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección de Firmas Públicas (Si aplica) -->
+            {% if doc.collect_signatures_from_residents %}
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-users me-2"></i>Firmas de Apoyo Recolectadas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <p class="mb-0">Este documento está abierto para recolección de firmas públicas.</p>
+                            <h3 class="mt-2 mb-0">{{ doc.signature_count }} <small class="text-muted fs-6">firmas hasta ahora</small></h3>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <a href="{{ url_for('document.download_signatures', doc_id=doc.id) }}" class="btn btn-outline-dark">
+                                <i class="fas fa-file-excel me-2"></i>Descargar CSV
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3 p-3 bg-light rounded">
+                        <label class="form-label small fw-bold text-uppercase text-muted">Enlace Público para Compartir:</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" value="{{ url_for('document.public_signature', public_link=doc.public_signature_link, _external=True) }}" readonly id="publicLink">
+                            <button class="btn btn-primary" onclick="navigator.clipboard.writeText(document.getElementById('publicLink').value); alert('Enlace copiado!');">
+                                <i class="fas fa-copy"></i> Copiar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Columna Lateral: Acciones -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Acciones</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <!-- 1. Descargar -->
+                    <a href="{{ url_for('document.download_unsigned', doc_id=doc.id) }}" class="list-group-item list-group-item-action py-3">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1"><i class="fas fa-file-pdf me-2 text-danger"></i>Descargar PDF</h6>
+                        </div>
+                        <small class="text-muted">Versión actual del documento.</small>
+                    </a>
+
+                    <!-- 2. Gestionar Firma (Solo si requiere y no está firmado) -->
+                    {% if doc.requires_signature and doc.status != 'signed' and doc.status != 'sent' %}
+                    <a href="{{ url_for('document.sign', doc_id=doc.id) }}" class="list-group-item list-group-item-action py-3 list-group-item-warning">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1 text-warning-emphasis"><i class="fas fa-file-signature me-2"></i>Gestionar Firma</h6>
+                        </div>
+                        <small class="text-muted">Firmar física o digitalmente.</small>
+                    </a>
+                    {% endif %}
+
+                    <!-- 3. Editar (Solo si es borrador) -->
+                    <a href="{{ url_for('document.edit', doc_id=doc.id) }}" class="list-group-item list-group-item-action py-3">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1"><i class="fas fa-edit me-2 text-primary"></i>Editar Contenido</h6>
+                        </div>
+                        <small class="text-muted">Modificar texto o título.</small>
+                    </a>
+
+                    <!-- 4. Enviar (Solo si está firmado) -->
+                    {% if doc.status == 'signed' %}
+                    <form action="{{ url_for('document.send', doc_id=doc.id) }}" method="POST" class="d-inline">
+                        <button type="submit" class="list-group-item list-group-item-action py-3 list-group-item-success text-start w-100">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1 text-success-emphasis"><i class="fas fa-paper-plane me-2"></i>Enviar / Publicar</h6>
+                            </div>
+                            <small class="text-muted">Notificar a los residentes.</small>
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

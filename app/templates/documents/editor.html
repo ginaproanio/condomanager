@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if doc %}Editar Documento{% else %}Nuevo Documento{% endif %} - CondoManager
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card border-0 shadow-lg">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-file-contract me-2"></i>
+                        {% if doc %}Editar Documento{% else %}Crear Nuevo Documento{% endif %}
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    {% include '_messages.html' %}
+
+                    <form method="POST">
+                        <!-- Título -->
+                        <div class="mb-4">
+                            <label for="title" class="form-label fw-bold">Título del Documento</label>
+                            <input type="text" class="form-control form-control-lg" id="title" name="title" 
+                                   placeholder="Ej: Acta de Asamblea Extraordinaria - Nov 2025" 
+                                   value="{{ doc.title if doc else '' }}" required>
+                        </div>
+
+                        <!-- Editor de Contenido -->
+                        <div class="mb-4">
+                            <label for="content" class="form-label fw-bold">Contenido</label>
+                            <p class="text-muted small">Escribe aquí el contenido del documento. Se generará un PDF con este texto.</p>
+                            <textarea id="content" name="content" class="form-control" rows="15">{{ doc.content if doc else '' }}</textarea>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Opciones Avanzadas (Solo si tiene módulo Premium, aunque la ruta ya lo filtra) -->
+                        <h5 class="mb-3 text-primary"><i class="fas fa-cogs me-2"></i>Configuración de Firmas</h5>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check form-switch mb-3 p-3 border rounded bg-light">
+                                    <input class="form-check-input" type="checkbox" id="requires_signature" name="requires_signature" 
+                                           {% if not doc or doc.requires_signature %}checked{% endif %}>
+                                    <label class="form-check-label fw-bold" for="requires_signature">
+                                        Requiere Firma Oficial
+                                    </label>
+                                    <div class="form-text small mt-1">
+                                        Si se activa, el documento pasará a estado "Pendiente de Firma" y no podrá enviarse hasta ser firmado por la administración.
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-check form-switch mb-3 p-3 border rounded bg-light">
+                                    <input class="form-check-input" type="checkbox" id="collect_signatures" name="collect_signatures"
+                                           {% if doc and doc.collect_signatures_from_residents %}checked{% endif %}>
+                                    <label class="form-check-label fw-bold" for="collect_signatures">
+                                        Recolección de Firmas Públicas
+                                    </label>
+                                    <div class="form-text small mt-1">
+                                        Genera un enlace público para que los residentes apoyen una petición con su firma digital simple.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mt-4">
+                            <a href="{{ url_for('document.index') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success btn-lg px-5">
+                                <i class="fas fa-save me-2"></i>Guardar Documento
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Integración TinyMCE (Editor Rico) -->
+<script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+<script>
+    tinymce.init({
+        selector: '#content',
+        height: 500,
+        menubar: false,
+        plugins: [
+            'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+            'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+            'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
+        ],
+        toolbar: 'undo redo | blocks | ' +
+            'bold italic backcolor | alignleft aligncenter ' +
+            'alignright alignjustify | bullist numlist outdent indent | ' +
+            'removeformat | help',
+        content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
+    });
+</script>
+{% endblock %}
