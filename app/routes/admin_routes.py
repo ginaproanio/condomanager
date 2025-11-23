@@ -44,8 +44,11 @@ def aprobar_usuario(user_id):
 
     user_to_approve = User.query.get_or_404(user_id)
 
-    # Security Check: MASTER can approve anyone. ADMIN can only approve users from their own tenant.
-    if current_user.role == 'ADMIN' and current_user.tenant != user_to_approve.tenant:
+    # --- LÓGICA DE SEGURIDAD UNIFICADA ---
+    # Un ADMIN solo puede aprobar usuarios de su propio tenant.
+    is_authorized = (current_user.role == 'MASTER' or 
+                     (current_user.role == 'ADMIN' and user_to_approve.tenant and current_user.tenant.strip().lower() == user_to_approve.tenant.strip().lower()))
+    if not is_authorized:
         flash("No tiene permiso para aprobar a este usuario.", "error")
         return redirect('/admin')
 
@@ -64,8 +67,12 @@ def rechazar_usuario(user_id):
 
     user_to_reject = User.query.get_or_404(user_id)
 
-    # Security Check: MASTER can reject anyone. ADMIN can only reject users from their own tenant.
-    if current_user.role == 'ADMIN' and current_user.tenant != user_to_reject.tenant:
+    # --- LÓGICA DE SEGURIDAD UNIFICADA ---
+    # Un ADMIN solo puede rechazar usuarios de su propio tenant.
+    is_authorized = (current_user.role == 'MASTER' or 
+                     (current_user.role == 'ADMIN' and user_to_reject.tenant and current_user.tenant.strip().lower() == user_to_reject.tenant.strip().lower()))
+
+    if not is_authorized:
         flash("No tiene permiso para rechazar a este usuario.", "error")
         return redirect('/admin')
 
@@ -88,15 +95,14 @@ def admin_condominio_panel(condominium_id):
     # O debe ser un MASTER suplantando a ese condominio.
     is_impersonating = user.role == 'MASTER' and session.get('impersonating_condominium_id') == condominium_id
 
-    # --- LÓGICA DE AUTORIZACIÓN DEFINITIVA ---
-    # Un ADMIN tiene acceso si su 'tenant' coincide con el 'subdomain' del condominio.
-    # Esta lógica permite múltiples administradores por condominio.
-    # Se usa .strip() y .lower() para hacer la comparación robusta contra errores de datos.
+    # --- LÓGICA DE AUTORIZACIÓN CORRECTA Y DEFINITIVA ---
+    # Un usuario es un administrador correcto si tiene el rol ADMIN y su 'tenant'
+    # coincide con el 'subdomain' del condominio. Esto permite múltiples administradores.
     is_correct_admin = (user.role == 'ADMIN' and 
-                        user.tenant and condominium.subdomain and 
-                        user.tenant.strip().lower() == condominium.subdomain.strip().lower())
+                          user.tenant and condominium.subdomain and 
+                          user.tenant.strip().lower() == condominium.subdomain.strip().lower())
 
-    if not (is_impersonating or is_correct_admin):
+    if not (is_impersonating or is_correct_admin): # CORRECCIÓN: Usar la variable correcta
         flash("No tienes acceso a este panel de administración de condominio o no estás asignado a este condominio. Por favor, inicia sesión como un Administrador autorizado.", "error")
         return redirect(url_for('public.login'))
 
