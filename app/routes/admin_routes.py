@@ -18,9 +18,12 @@ def is_authorized_admin_for_condo(user, condominium):
     if not user or not condominium:
         return False
 
-    # CORRECCIÓN: Un ADMIN tiene acceso si su ID está en el campo `admin_user_id` del condominio.
-    # Esta es la relación directa y correcta.
-    return user.role == 'ADMIN' and condominium.admin_user_id == user.id and condominium.subdomain == user.tenant
+    # --- LÓGICA DE AUTORIZACIÓN ROBUSTA ---
+    # Un usuario es un administrador autorizado si cumple AMBAS condiciones:
+    # 1. Su rol es ADMIN.
+    # 2. El subdominio del condominio al que intenta acceder coincide con su propio tenant.
+    # Esto elimina la dependencia frágil del campo 'admin_user_id' como única barrera.
+    return user.role == 'ADMIN' and condominium.subdomain.lower() == user.tenant.lower()
 
 @admin_bp.route('/admin')
 @jwt_required()
@@ -36,12 +39,12 @@ def admin_panel(): # Esta función ahora es solo un despachador (dispatcher)
 
     # SOLUCIÓN: Buscar el condominio donde este usuario es el administrador designado.
     # Esta es la única fuente de verdad para la autoridad de un ADMIN.
-    admin_condo = Condominium.query.filter_by(admin_user_id=user.id, subdomain=user.tenant).first()
+    admin_condo = Condominium.query.filter(func.lower(Condominium.subdomain) == func.lower(user.tenant)).first()
 
     if admin_condo:
         return redirect(url_for('admin.admin_condominio_panel', condominium_id=admin_condo.id))
 
-    flash("No estás asignado como administrador a este condominio o tus datos son inconsistentes.", "error")
+    flash("No se encontró un condominio que coincida con tu asignación de tenant.", "error")
     return redirect(url_for('user.dashboard'))
 
 @admin_bp.route('/aprobar/<int:user_id>')
