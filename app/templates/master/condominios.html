@@ -80,6 +80,7 @@
                                                         <tr>
                                                             <th>Nombre</th>
                                                             <th>Dirección</th>
+                                                            <th>Módulos Activos</th>
                                                             <th>Ciudad</th>
                                                             <th>Email</th>
                                                             <th>RUC</th>
@@ -97,6 +98,15 @@
                                                                 </a>
                                                             </td>
                                                             <td>{{ condo.get_full_address() }}</td>
+                                                            <td>
+                                                                {% if condo.has_documents_module %}
+                                                                    <span class="badge bg-primary" title="Firmas & Comunicados">Firmas</span>
+                                                                {% endif %}
+                                                                {% if condo.has_billing_module %}
+                                                                    <span class="badge bg-success" title="Facturación">Fact.</span>
+                                                                {% endif %}
+                                                                <!-- Añadir más módulos aquí en el futuro -->
+                                                            </td>
                                                             <td>{{ condo.city }}</td>
                                                             <td>{{ condo.email or 'N/A' }}</td>
                                                             <td>{{ condo.ruc or 'N/A' }}</td>

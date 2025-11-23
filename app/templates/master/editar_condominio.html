@@ -99,6 +99,29 @@
                             </div>
                         </div>
 
+                        <hr class="my-4">
+                        <h5><i class="fas fa-puzzle-piece me-2"></i>Módulos Contratados</h5>
+                        <p class="text-muted small">Activa o desactiva los módulos para este condominio.</p>
+
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" role="switch" id="has_documents_module" name="has_documents_module" {% if condo.has_documents_module %}checked{% endif %}>
+                            <label class="form-check-label" for="has_documents_module">
+                                <strong>Módulo "Firmas & Comunicados"</strong> (Estado: ✅ Implementado)
+                            </label>
+                        </div>
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" role="switch" id="has_billing_module" name="has_billing_module" {% if condo.has_billing_module %}checked{% endif %}>
+                            <label class="form-check-label" for="has_billing_module">
+                                <strong>Módulo "Facturación"</strong> (Estado: ❌ No Implementado)
+                            </label>
+                        </div>
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" role="switch" id="has_requests_module" name="has_requests_module" {% if condo.has_requests_module %}checked{% endif %}>
+                            <label class="form-check-label" for="has_requests_module">
+                                <strong>Módulo "Requerimientos"</strong> (Estado: ❌ No Implementado)
+                            </label>
+                        </div>
+
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
                             <a href="{{ url_for('master.master_condominios') }}" class="btn btn-secondary">
                                 <i class="fas fa-times me-2"></i>Cancelar

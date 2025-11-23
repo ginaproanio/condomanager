@@ -29,7 +29,7 @@ def api_login():
     tenant = get_tenant()
 
     # 2. La autenticación AHORA exige que el email, password Y tenant coincidan.
-    # EXCEPCIÓN: El MASTER puede loguearse desde cualquier tenant.
+    # EXCEPCIÓN: El MASTER puede loguearse desde cualquier subdominio.
     user_query = User.query.filter_by(email=email, password_hash=pwd_hash)
     if tenant: # Si hay un subdominio, filtramos por tenant para todos excepto el MASTER
         user_query = user_query.filter( (User.tenant == tenant) | (User.role == 'MASTER') )
@@ -57,8 +57,8 @@ def api_login():
             # Si se encuentra, construir la URL final y específica.
             redirect_url = url_for('admin.admin_condominio_panel', condominium_id=admin_condo.id)
         else:
-            # Si es un ADMIN no asignado, la API devuelve un estado de 'warning' para que el frontend lo maneje.
-            # No se usa flash() en una API.
+            # Si es un ADMIN no asignado, la API devuelve un estado de 'warning'.
+            # El frontend será responsable de mostrar este mensaje al usuario.
             response = jsonify({"status": "warning", "message": "Rol de Administrador detectado, pero no estás asignado a ningún condominio.", "user_role": user.role, "redirect_url": redirect_url})
             set_access_cookies(response, access_token)
             return response

@@ -39,6 +39,30 @@ def create_app():
     cors.init_app(app, supports_credentials=True)
 
     from app import models
+    
+    # --- NUEVA LÓGICA: INYECCIÓN GLOBAL DE USUARIO ---
+    from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
+
+    @app.context_processor
+    def inject_user():
+        """
+        Inyecta la variable 'user' en todos los templates automáticamente.
+        Verifica si existe un token JWT válido (cookie) sin romper la página si no lo hay.
+        """
+        try:
+            # Verifica el token de forma opcional (no lanza error si falta)
+            verify_jwt_in_request(optional=True)
+            
+            # Si hay token, buscamos el usuario
+            user_id = get_jwt_identity()
+            if user_id:
+                current_user = models.User.query.get(int(user_id))
+                return {'user': current_user}
+        except Exception:
+            # Si el token es inválido o expiró, simplemente no inyectamos usuario
+            pass
+            
+        return {'user': None}
 
     @jwt.user_identity_loader
     def user_identity_lookup(user):

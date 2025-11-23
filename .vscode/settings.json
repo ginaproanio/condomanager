@@ -1,3 +1,4 @@
 {
-    "CodeGPT.apiKey": "grok"
+    "CodeGPT.apiKey": "grok",
+    "postman.settings.dotenv-detection-notification-visibility": false
 }

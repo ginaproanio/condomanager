@@ -543,6 +543,12 @@ def editar_condominio(condo_id):
             condo_to_edit.subdomain = request.form.get('subdomain')
             condo_to_edit.status = request.form.get('status')
             condo_to_edit.admin_user_id = int(request.form.get('admin_user_id')) if request.form.get('admin_user_id') else None
+
+            # --- LÓGICA PARA ACTUALIZAR MÓDULOS ---
+            # Un checkbox enviado en un formulario tiene valor "on" si está marcado, y no existe si no está marcado.
+            condo_to_edit.has_documents_module = 'has_documents_module' in request.form
+            condo_to_edit.has_billing_module = 'has_billing_module' in request.form
+            condo_to_edit.has_requests_module = 'has_requests_module' in request.form
             
             db.session.commit()
             flash('Condominio actualizado exitosamente.', 'success')
