@@ -94,11 +94,11 @@ def admin_condominio_panel(condominium_id):
     # Verificación de seguridad: El ADMIN debe pertenecer al tenant del condominio
     # O debe ser un MASTER suplantando a ese condominio.
     is_impersonating = user.role == 'MASTER' and session.get('impersonating_condominium_id') == condominium_id
-    
+
     # --- LÓGICA DE AUTORIZACIÓN DEFINITIVA ---
     # Un usuario es un administrador correcto si tiene el rol ADMIN y su 'tenant'
     # coincide con el 'subdomain' del condominio. Esto permite múltiples administradores.
-    is_correct_admin = (user.role == 'ADMIN' and
+    is_correct_admin = (user and user.role == 'ADMIN' and
                           user.tenant and condominium.subdomain and 
                           user.tenant.strip().lower() == condominium.subdomain.strip().lower())
 
@@ -116,8 +116,8 @@ def crear_unidad(condominium_id):
     condominium = Condominium.query.get_or_404(condominium_id)
 
     # --- LÓGICA DE SEGURIDAD UNIFICADA Y CORREGIDA ---
-    is_impersonating = user.role == 'MASTER' and session.get('impersonating_condominium_id') == condominium_id
-    is_correct_admin = (user.role == 'ADMIN' and 
+    is_impersonating = user and user.role == 'MASTER' and session.get('impersonating_condominium_id') == condominium_id
+    is_correct_admin = (user and user.role == 'ADMIN' and 
                         user.tenant and condominium.subdomain and 
                         user.tenant.strip().lower() == condominium.subdomain.strip().lower())
 
@@ -154,8 +154,8 @@ def editar_unidad(unit_id):
     condominium = unit_to_edit.condominium
 
     # --- LÓGICA DE SEGURIDAD UNIFICADA Y CORREGIDA ---
-    is_impersonating = user.role == 'MASTER' and session.get('impersonating_condominium_id') == condominium.id
-    is_correct_admin = (user.role == 'ADMIN' and 
+    is_impersonating = user and user.role == 'MASTER' and session.get('impersonating_condominium_id') == condominium.id
+    is_correct_admin = (user and user.role == 'ADMIN' and 
                         user.tenant and condominium.subdomain and 
                         user.tenant.strip().lower() == condominium.subdomain.strip().lower())
 
