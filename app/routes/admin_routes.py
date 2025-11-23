@@ -37,7 +37,7 @@ def admin_panel(): # Esta función ahora es solo un despachador (dispatcher)
     # --- LÓGICA DE REDIRECCIÓN INTELIGENTE ---
     # Si es un ADMIN, siempre debe ir a su propio panel de condominio.
     if user.role == 'ADMIN':
-        admin_condo = Condominium.query.filter_by(subdomain=user.tenant).first()
+        admin_condo = Condominium.query.filter(func.lower(Condominium.subdomain) == func.lower(user.tenant)).first()
         if admin_condo:
             return redirect(url_for('admin.admin_condominio_panel', condominium_id=admin_condo.id))
 

@@ -29,8 +29,8 @@
                     </p>
 
                     <div class="mt-4">
-                        <a href="{{ url_for('user.dashboard') if user.role == 'USER' else url_for('admin.admin_panel') if user.role == 'ADMIN' else url_for('master.master_panel') }}" class="btn btn-primary">
-                            <i class="fas fa-arrow-left me-2"></i>Volver a mi Panel Principal
+                        <a href="{{ url_for('user.dashboard') }}" class="btn btn-primary">
+                            <i class="fas fa-arrow-left me-2"></i>Volver a mi Panel
                         </a>
                     </div>
                 </div>
