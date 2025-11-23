@@ -1,1 +1,1 @@
-web: flask db upgrade && python seed_initial_data.py && gunicorn "app:create_app()" --bind 0.0.0.0:$PORT
+web: flask db upgrade && gunicorn run:app
