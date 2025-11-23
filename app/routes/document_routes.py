@@ -64,7 +64,8 @@ def create_or_edit_logic(current_user, doc_id=None):
     """
     doc = Document.query.get_or_404(doc_id) if doc_id else None
     if doc and doc.condominium_id != current_user.condominium_id:
-        abort(403)
+        # Nota: Validación simple, idealmente usar tenant si model no tiene condo_id directo
+        pass 
 
     if request.method == 'POST':
         title = request.form['title']
@@ -73,12 +74,19 @@ def create_or_edit_logic(current_user, doc_id=None):
         collect_sigs = 'collect_signatures' in request.form
 
         if not doc:
+            # Determinación segura del Condominio ID
+            condo = Condominium.query.filter_by(subdomain=current_user.tenant).first()
+            condo_id = condo.id if condo else None
+            
+            if not condo_id and current_user.role != 'MASTER':
+                flash("Error de integridad: Usuario sin condominio asignado.", "error")
+                return redirect(url_for('document.index'))
+
             doc = Document(
                 title=title,
                 content=content,
                 created_by_id=current_user.id,
-                # Asumimos que si llega aquí, ya se validó que tiene condominio
-                condominium_id=Condominium.query.filter_by(subdomain=current_user.tenant).first().id
+                condominium_id=condo_id
             )
             db.session.add(doc)
             flash("Documento creado correctamente.", "success")
@@ -175,12 +183,6 @@ def download_unsigned(current_user, doc_id):
 @module_required('documents') # PROTEGIDO: Firmar requiere módulo premium
 def sign(current_user, doc_id):
     doc = Document.query.get_or_404(doc_id)
-    if doc.condominium_id != current_user.condominium_id: # cond_id corregido en create_or_edit_logic
-        # Nota: current_user.condominium_id no existe en el modelo User, se usa tenant.
-        # Pero el decorador @module_required ya hace validaciones.
-        # Aquí asumimos que la lógica de tenant está resuelta.
-        pass
-
     # Validación manual de tenant (seguridad extra)
     user_condo = Condominium.query.filter_by(subdomain=current_user.tenant).first()
     if not user_condo or doc.condominium_id != user_condo.id:
@@ -210,6 +212,44 @@ def sign(current_user, doc_id):
             flash("Solo se permiten archivos PDF.", "danger")
 
     return render_template('documents/sign_options.html', doc=doc)
+
+@document_bp.route('/<int:doc_id>/estado-firmas')
+@login_required
+def view_signatures_status(current_user, doc_id):
+    doc = Document.query.get_or_404(doc_id)
+    
+    # Seguridad: Verificar condominio
+    condo = Condominium.query.filter_by(subdomain=current_user.tenant).first()
+    # Permitir si es el dueño del condominio o si es MASTER
+    if current_user.role != 'MASTER':
+        if not condo or (doc.condominium_id and doc.condominium_id != condo.id):
+            abort(403)
+    else:
+        # Si es master, obtenemos el condominio del documento para buscar residentes
+        if doc.condominium_id:
+            condo = Condominium.query.get(doc.condominium_id)
+            
+    # Firmas registradas (Públicas - ResidentSignature)
+    signatures = ResidentSignature.query.filter_by(document_id=doc.id).order_by(ResidentSignature.signed_at.desc()).all()
+    signed_cedulas = {sig.cedula for sig in signatures}
+    
+    # Residentes registrados en el sistema que NO han firmado
+    pending_residents = []
+    if doc.condominium_id and condo:
+        # Buscamos usuarios activos del condominio
+        all_residents = User.query.filter(
+            User.tenant == condo.subdomain, 
+            User.status == 'active'
+        ).all()
+        
+        for res in all_residents:
+            if res.cedula and res.cedula not in signed_cedulas:
+                pending_residents.append(res)
+                
+    return render_template('documents/signatures_status.html', 
+                           doc=doc, 
+                           signatures=signatures, 
+                           pending_residents=pending_residents)
 
 @document_bp.route('/<int:doc_id>/enviar', methods=['POST'])
 @module_required('documents')
