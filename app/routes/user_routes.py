@@ -23,23 +23,29 @@ def dashboard():
 @user_bp.route('/unidades')
 @jwt_required()
 def unidades():
+    user = get_current_user()
     from app.tenant import get_tenant
     tenant = get_tenant()
     config = current_app.get_tenant_config(tenant)
-    return render_template('services/unidades.html', mensaje="Gestión de Unidades", config=config)
+    # CORRECCIÓN: Pasar el objeto 'user' a la plantilla
+    return render_template('services/unidades.html', mensaje="Gestión de Unidades", config=config, user=user)
 
 @user_bp.route('/pagos')
 @jwt_required()
 def pagos():
+    user = get_current_user()
     from app.tenant import get_tenant
     tenant = get_tenant()
     config = current_app.get_tenant_config(tenant)
-    return render_template('services/pagos.html', mensaje="Sistema de Pagos", config=config)
+    # CORRECCIÓN: Pasar el objeto 'user' a la plantilla
+    return render_template('services/pagos.html', mensaje="Sistema de Pagos", config=config, user=user)
 
 @user_bp.route('/reportes')
 @jwt_required()
 def reportes():
+    user = get_current_user()
     from app.tenant import get_tenant
     tenant = get_tenant()
     config = current_app.get_tenant_config(tenant)
-    return render_template('services/reportes.html', mensaje="Reportes", config=config)
+    # CORRECCIÓN: Pasar el objeto 'user' a la plantilla
+    return render_template('services/reportes.html', mensaje="Reportes", config=config, user=user)

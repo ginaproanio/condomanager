@@ -96,7 +96,7 @@
                             <select class="form-select" id="condominium_id" name="condominium_id">
                                 <option value="">-- Ninguno --</option>
                                 {% for condo in all_condominiums %}
-                                    <option value="{{ condo.id }}" {% if user_to_edit.condominium_id == condo.id %}selected{% endif %}>
+                                    <option value="{{ condo.id }}" {% if user_to_edit.tenant == condo.subdomain %}selected{% endif %}>
                                         {{ condo.name }} ({{ condo.subdomain }})
                                     </option>
                                 {% endfor %}

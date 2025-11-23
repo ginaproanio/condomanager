@@ -1,0 +1,350 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Usuarios (Maestro){% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card border-0 shadow-lg">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <h2 class="text-primary mb-3"><i class="fas fa-users-cog me-2"></i>Gestión de Usuarios</h2>
+                        <p class="lead text-muted">Panel de control global para usuarios del sistema.</p>
+                    </div>
+
+                    <!-- Botones de Acción Principales -->
+                    <div class="text-end mb-4">
+                        <a href="{{ url_for('master.master_usuarios_crear') }}" class="btn btn-success">
+                            <i class="fas fa-user-plus me-2"></i>Crear Nuevo Usuario
+                        </a>
+                    </div>
+
+                    <!-- Formulario de Búsqueda -->
+                    <div class="mb-4">
+                        <form method="GET" action="{{ url_for('master.master_usuarios') }}">
+                            <div class="input-group">
+                                <input type="search" name="q" class="form-control" placeholder="Buscar por nombre, apellido, email o cédula..." value="{{ search_query or '' }}" aria-label="Buscar usuario">
+                                <button class="btn btn-outline-primary" type="submit" aria-label="Buscar usuario">
+                                    <i class="fas fa-search"></i> Buscar
+                                </button>
+                                {% if search_query %}
+                                <a href="{{ url_for('master.master_usuarios') }}" class="btn btn-outline-secondary" title="Limpiar búsqueda">
+                                    <i class="fas fa-times"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </form>
+                    </div>
+
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    <i class="fas fa-info-circle me-2"></i>{{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    {% if user and user.role == 'MASTER' %}
+                        <p>Bienvenido, <strong>{{ user.name }}</strong>. Aquí puedes gestionar todos los usuarios.</p>
+
+                        <!-- Navegación por Pestañas -->
+                        <ul class="nav nav-tabs mb-4" id="userTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" type="button" role="tab" aria-controls="pending" aria-selected="true">
+                                    Pendientes <span class="badge bg-warning text-dark ms-2">{{ pending_users|length }}</span>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="active-tab" data-bs-toggle="tab" data-bs-target="#active" type="button" role="tab" aria-controls="active" aria-selected="false">
+                                    Activos <span class="badge bg-success ms-2">{{ active_users|length }}</span>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="rejected-tab" data-bs-toggle="tab" data-bs-target="#rejected" type="button" role="tab" aria-controls="rejected" aria-selected="false">
+                                    Rechazados <span class="badge bg-danger ms-2">{{ rejected_users|length }}</span>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab" aria-controls="all" aria-selected="false">
+                                    Todos <span class="badge bg-secondary ms-2">{{ all_users|length }}</span>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="import-admins-tab" data-bs-toggle="tab" data-bs-target="#import-admins" type="button" role="tab" aria-controls="import-admins" aria-selected="false">
+                                    <i class="fas fa-file-csv me-2"></i>Importar Admins
+                                </button>
+                            </li>
+                        </ul>
+
+                        <!-- Contenido de las Pestañas -->
+                        <div class="tab-content" id="userTabsContent">
+                            <!-- Pestaña de Usuarios Pendientes -->
+                            <div class="tab-pane fade show active" id="pending" role="tabpanel" aria-labelledby="pending-tab">
+                                <div class="card border-0 shadow-sm mb-4">
+                                    <div class="card-header bg-light">
+                                        <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Usuarios Pendientes de Aprobación</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        {% if pending_users %}
+                                            <div class="table-responsive">
+                                                <table class="table table-hover">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Nombre</th>
+                                                            <th>Email</th>
+                                                            <th>Rol</th>
+                                                            <th>Condominio</th>
+                                                            <th>Fecha Registro</th>
+                                                            <th>Acciones</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for u in pending_users %}
+                                                        <tr>
+                                                            <td>{{ u.name }}</td>
+                                                            <td>{{ u.email }}</td>
+                                                            <td>{{ u.role }}</td>
+                                                            <td><span class="badge bg-info text-dark">{{ u.tenant or 'N/A' }}</span></td>
+                                                            <td>{{ u.created_at.strftime('%d/%m/%Y %H:%M') if u.created_at else 'N/A' }}</td>
+                                                            <td>
+                                                                <div class="btn-group btn-group-sm">
+                                                                    <!-- Botón para abrir el modal de gestión -->
+                                                                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#manageUserModal" 
+                                                                            data-user-id="{{ u.id }}" data-user-name="{{ u.name }}" data-user-email="{{ u.email }}" 
+                                                                            data-user-tenant="{{ u.tenant or '' }}" data-user-role="{{ u.role }}">
+                                                                        <i class="fas fa-tasks me-2"></i>Gestionar
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        {% else %}
+                                            <div class="text-center py-4">
+                                                <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                                                <h5 class="text-muted">No hay usuarios pendientes de aprobación.</h5>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Pestaña de Usuarios Activos -->
+                            <div class="tab-pane fade" id="active" role="tabpanel" aria-labelledby="active-tab">
+                                <div class="card border-0 shadow-sm mb-4">
+                                    <div class="card-header bg-light">
+                                        <h5 class="mb-0"><i class="fas fa-check-circle me-2"></i>Usuarios Activos</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        {% if active_users %}
+                                            <div class="table-responsive">
+                                                <table class="table table-hover">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Nombre</th>
+                                                            <th>Email</th>
+                                                            <th>Rol</th>
+                                                            <th>Condominio</th>
+                                                            <th>Acciones</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for u in active_users %}
+                                                        <tr>
+                                                            <td>{{ u.name }}</td>
+                                                            <td>{{ u.email }}</td>
+                                                            <td>{{ u.role }}</td>
+                                                            <td><span class="badge bg-info text-dark">{{ u.tenant or 'N/A' }}</span></td>
+                                                            <td>
+                                                                <a href="{{ url_for('master.master_usuarios_editar', user_id=u.id) }}" class="btn btn-sm btn-info" title="Editar Usuario">
+                                                                    <i class="fas fa-edit"></i> Editar
+                                                                </a>
+                                                            </td>
+                                                        </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        {% else %}
+                                            <p class="text-center text-muted">No hay usuarios activos.</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Pestaña de Usuarios Rechazados -->
+                            <div class="tab-pane fade" id="rejected" role="tabpanel" aria-labelledby="rejected-tab">
+                                <!-- Contenido similar a las otras pestañas -->
+                            </div>
+
+                            <!-- Pestaña de Todos los Usuarios -->
+                            <div class="tab-pane fade" id="all" role="tabpanel" aria-labelledby="all-tab">
+                                <div class="card border-0 shadow-sm mb-4">
+                                    <div class="card-header bg-light">
+                                        <h5 class="mb-0"><i class="fas fa-globe-americas me-2"></i>Todos los Usuarios</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        {% if all_users %}
+                                            <div class="table-responsive">
+                                                <table class="table table-hover">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Nombre</th>
+                                                            <th>Email</th>
+                                                            <th>Rol</th>
+                                                            <th>Condominio</th>
+                                                            <th>Estado</th>
+                                                            <th>Acciones</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for u in all_users %}
+                                                        <tr>
+                                                            <td>{{ u.name }}</td>
+                                                            <td>{{ u.email }}</td>
+                                                            <td>{{ u.role }}</td>
+                                                            <td><span class="badge bg-info text-dark">{{ u.tenant or 'N/A' }}</span></td>
+                                                            <td>
+                                                                {% if u.status == 'active' %}<span class="badge bg-success">Activo</span>
+                                                                {% elif u.status == 'pending' %}<span class="badge bg-warning text-dark">Pendiente</span>
+                                                                {% else %}<span class="badge bg-danger">Rechazado</span>{% endif %}
+                                                            </td>
+                                                            <td>
+                                                                <a href="{{ url_for('master.master_usuarios_editar', user_id=u.id) }}" class="btn btn-sm btn-info" title="Editar Usuario">
+                                                                    <i class="fas fa-edit"></i>
+                                                                </a>
+                                                            </td>
+                                                        </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Pestaña: Importar Administradores -->
+                            <div class="tab-pane fade" id="import-admins" role="tabpanel" aria-labelledby="import-admins-tab">
+                                <!-- Contenido del formulario de importación -->
+                            </div>
+
+                        </div>
+
+                        <div class="text-center mt-5">
+                            <a href="{{ url_for('master.master_panel') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Volver al Panel Maestro
+                            </a>
+                        </div>
+
+                    {% else %}
+                        <div class="alert alert-warning text-center" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            No tienes acceso a la Gestión de Usuarios. Por favor, <a href="{{ url_for('public.login') }}" class="alert-link">inicia sesión</a> con una cuenta MASTER.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Gestionar Usuario Pendiente -->
+<div class="modal fade" id="manageUserModal" tabindex="-1" aria-labelledby="manageUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="manageUserModalLabel">Gestionar Usuario: <span id="modalUserName"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="manageUserForm" method="POST" data-action-url="{{ url_for('master.master_manage_user') }}">
+                <div class="modal-body">
+                    <input type="hidden" name="user_id" id="modalUserId">
+                    <p><strong>Email:</strong> <span id="modalUserEmail"></span></p>
+                    <p><strong>Rol Solicitado:</strong> <span id="modalUserRole"></span></p>
+
+                    <!-- Opciones para usuarios SIN condominio asignado -->
+                    <div id="noTenantOptions">
+                        <p class="text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Este usuario no tiene un condominio asignado.</p>
+                        <div class="mb-3">
+                            <label for="assignCondominiumSelect" class="form-label">Asignar a un Condominio:</label>
+                            <select class="form-select" name="condominium_id" id="assignCondominiumSelect">
+                                <option value="" selected>-- Seleccionar un Condominio --</option>
+                                {% for condo in all_condominiums %}
+                                    <option value="{{ condo.id }}">{{ condo.name }} ({{ condo.subdomain }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" name="action" value="assign_and_approve" class="btn btn-success"><i class="fas fa-check-circle me-2"></i>Asignar y Aprobar</button>
+                            <button type="submit" name="action" value="activate_demo" class="btn btn-info"><i class="fas fa-rocket me-2"></i>Activar Demo (15 días)</button>
+                        </div>
+                    </div>
+
+                    <!-- Opciones para usuarios CON condominio asignado -->
+                    <div id="hasTenantOptions" style="display: none;">
+                        <p><strong>Condominio:</strong> <span id="modalUserTenant" class="badge bg-primary"></span></p>
+                        <div class="d-grid gap-2">
+                           <button type="submit" name="action" value="simple_approve" class="btn btn-success"><i class="fas fa-check me-2"></i>Aprobar Usuario</button>
+                        </div>
+                    </div>
+
+                    <hr>
+                    <!-- Acción de Rechazar (común para ambos casos) -->
+                    <div class="d-grid">
+                        <button type="submit" name="action" value="reject" class="btn btn-danger"><i class="fas fa-times-circle me-2"></i>Rechazar Usuario</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    const manageUserModal = document.getElementById('manageUserModal');
+    manageUserModal.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        const userId = button.getAttribute('data-user-id');
+        const userName = button.getAttribute('data-user-name');
+        const userEmail = button.getAttribute('data-user-email');
+        const userTenant = button.getAttribute('data-user-tenant');
+        const userRole = button.getAttribute('data-user-role');
+
+        const modalTitle = manageUserModal.querySelector('.modal-title #modalUserName');
+        const modalBodyUserId = manageUserModal.querySelector('.modal-body #modalUserId');
+        const modalBodyEmail = manageUserModal.querySelector('.modal-body #modalUserEmail');
+        const modalBodyRole = manageUserModal.querySelector('.modal-body #modalUserRole');
+        const modalBodyTenant = manageUserModal.querySelector('.modal-body #modalUserTenant');
+
+        modalTitle.textContent = userName;
+        modalBodyUserId.value = userId;
+        modalBodyEmail.textContent = userEmail;
+        modalBodyRole.textContent = userRole;
+        
+        document.getElementById('manageUserForm').action = document.getElementById('manageUserForm').getAttribute('data-action-url');
+
+        const noTenantDiv = document.getElementById('noTenantOptions');
+        const hasTenantDiv = document.getElementById('hasTenantOptions');
+
+        // --- LÓGICA DE VISIBILIDAD CORREGIDA Y ROBUSTA ---
+        // Comparamos contra una cadena vacía, que es lo que el atributo
+        // data-user-tenant contendrá si el valor es None o una cadena vacía en el backend.
+        if (userTenant && userTenant !== '') {
+            hasTenantDiv.style.display = 'block';
+            noTenantDiv.style.display = 'none';
+        } else {
+            hasTenantDiv.style.display = 'none';
+            noTenantDiv.style.display = 'block';
+        }
+        if (userTenant) modalBodyTenant.textContent = userTenant;
+    });
+</script>
+{% endblock %}
+
+```
