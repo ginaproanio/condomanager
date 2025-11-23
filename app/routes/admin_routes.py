@@ -6,7 +6,7 @@ from flask_jwt_extended import jwt_required
 from sqlalchemy import func
 from sqlalchemy.orm.attributes import flag_modified
 from app import db
-from app.models import User, Condominium, Unit, UserSpecialRole
+from app.models import User, Condominium, Unit, UserSpecialRole, Payment
 from app.auth import get_current_user
 from app.decorators import condominium_admin_required
 from datetime import date, datetime
@@ -273,4 +273,7 @@ def configuracion_pagos(condominium_id):
             
         return redirect(url_for('admin.configuracion_pagos', condominium_id=condo.id))
         
-    return render_template('admin/config_pagos.html', condominium=condo)
+    # Obtener historial de pagos recibidos para este condominio
+    transactions = Payment.query.filter_by(condominium_id=condominium_id).order_by(Payment.created_at.desc()).all()
+        
+    return render_template('admin/config_pagos.html', condominium=condo, transactions=transactions)

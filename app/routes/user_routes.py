@@ -4,7 +4,7 @@ from flask import (
 )
 from flask_jwt_extended import jwt_required
 from app.auth import get_current_user
-from app.models import db, User, Document, Condominium, Unit, DocumentSignature # Importar DocumentSignature
+from app.models import db, User, Document, Condominium, Unit, DocumentSignature, Payment # Importar DocumentSignature
 import hashlib
 from datetime import datetime, timedelta
 
@@ -140,7 +140,19 @@ def pagos():
     from app.tenant import get_tenant
     tenant = get_tenant()
     config = current_app.get_tenant_config(tenant)
-    return render_template('services/pagos.html', mensaje="Sistema de Pagos", config=config, user=user)
+    
+    # Obtener el condominio para verificar config de pagos
+    condominium = None
+    if user.unit and user.unit.condominium_id:
+        condominium = Condominium.query.get(user.unit.condominium_id)
+    elif user.tenant:
+        condominium = Condominium.query.filter_by(subdomain=user.tenant).first()
+        
+    return render_template('services/pagos.html', 
+                           mensaje="Sistema de Pagos", 
+                           config=config, 
+                           condominium=condominium,
+                           user=user)
 
 @user_bp.route('/reportes')
 @jwt_required()
@@ -154,10 +166,12 @@ def reportes():
     # Buscar documentos firmados por el usuario
     signed_docs = DocumentSignature.query.filter_by(user_id=user.id).order_by(DocumentSignature.signed_at.desc()).all()
     
-    # Si tuviera pagos, los buscaríamos aquí también
+    # Buscar pagos del usuario
+    payments = Payment.query.filter_by(user_id=user.id).order_by(Payment.created_at.desc()).all()
     
     return render_template('services/reportes.html', 
                            mensaje="Mi Historial", 
                            config=config, 
                            user=user,
-                           signed_docs=signed_docs)
+                           signed_docs=signed_docs,
+                           payments=payments)

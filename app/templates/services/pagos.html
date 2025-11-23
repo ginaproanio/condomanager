@@ -1,49 +1,60 @@
 {% extends "base.html" %}
 
-{% block title %}Sistema de Pagos - CondoManager{% endblock %}
+{% block title %}Pagos - CondoManager{% endblock %}
 
 {% block content %}
 <div class="container py-5">
-    <div class="row">
-        <div class="col">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body text-center py-5">
-                    <div class="text-primary mb-4">
-                        <i class="fas fa-credit-card fa-4x"></i>
-                    </div>
-                    <h2 class="text-primary mb-3">Sistema de Pagos</h2>
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-0 shadow-lg">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-credit-card me-2"></i>Realizar Pago</h4>
+                </div>
+                <div class="card-body p-5">
                     
-                    {% if mensaje %}
-                    <div class="alert alert-info alert-dismissible fade show w-75 mx-auto" role="alert">
-                        <i class="fas fa-info-circle me-2"></i>{{ mensaje }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
+                    {% include '_messages.html' %}
+
+                    {% if condominium and condominium.payment_config and condominium.payment_config.get('token') %}
+                        <div class="text-center mb-4">
+                            <h5 class="text-primary fw-bold mb-3">Pasarela de Pagos Segura</h5>
+                            <p class="text-muted">Paga tus alícuotas de forma segura con tu tarjeta de crédito o débito favorita.</p>
+                        </div>
+
+                        <form action="{{ url_for('payment.iniciar_pago') }}" method="POST">
+                            <div class="mb-4">
+                                <label for="amount" class="form-label fw-bold">Monto a Pagar (USD)</label>
+                                <div class="input-group input-group-lg">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="amount" name="amount" step="0.01" min="0.01" placeholder="0.00" required>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="description" class="form-label">Concepto / Descripción</label>
+                                <input type="text" class="form-control" id="description" name="description" placeholder="Ej: Alícuota Marzo 2024 - Casa 5" required>
+                            </div>
+
+                            <div class="alert alert-light border small">
+                                <i class="fas fa-lock me-2 text-success"></i>
+                                Tu transacción será procesada de forma segura por <strong>PayPhone</strong>. CondoManager no almacena los datos de tu tarjeta.
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-warning btn-lg text-dark fw-bold">
+                                    <i class="fas fa-check-circle me-2"></i>Pagar con PayPhone
+                                </button>
+                                <a href="{{ url_for('user.dashboard') }}" class="btn btn-outline-secondary">Cancelar</a>
+                            </div>
+                        </form>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-exclamation-triangle fa-4x text-warning mb-3"></i>
+                            <h4>Pagos No Configurados</h4>
+                            <p class="text-muted">La administración de tu condominio aún no ha activado la pasarela de pagos.</p>
+                            <p class="small text-muted">Si eres administrador, ve al panel de gestión > Finanzas para configurarlo.</p>
+                            <a href="{{ url_for('user.dashboard') }}" class="btn btn-primary mt-3">Volver al Inicio</a>
+                        </div>
                     {% endif %}
-
-                    <p class="lead text-muted mb-4">
-                        Módulo en desarrollo. Próximamente podrás realizar pagos seguros mediante PayPhone y llevar el control de tus transacciones.
-                    </p>
-
-                    <div class="row text-start w-75 mx-auto mb-4">
-                        <div class="col-md-6 mb-3">
-                            <i class="fas fa-mobile-alt text-primary me-2"></i>Pagos con PayPhone
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <i class="fas fa-exchange-alt text-primary me-2"></i>Registro de transferencias
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <i class="fas fa-file-invoice-dollar text-primary me-2"></i>Estados de cuenta
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <i class="fas fa-receipt text-primary me-2"></i>Comprobantes digitales
-                        </div>
-                    </div>
-
-                    <div class="mt-4">
-                        <a href="{{ url_for('user.dashboard') }}" class="btn btn-primary">
-                            <i class="fas fa-arrow-left me-2"></i>Volver a mi Panel
-                        </a>
-                    </div>
                 </div>
             </div>
         </div>
