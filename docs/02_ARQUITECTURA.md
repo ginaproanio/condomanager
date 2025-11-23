@@ -70,6 +70,20 @@ La implementación actual utiliza una estrategia de **multi-tenancy de esquema c
 - **Separación Lógica:** La separación de datos entre condominios se logra mediante un campo `tenant` (o `condominium_id` para usuarios/unidades) en los modelos de la base de datos.
 - **Determinación del Tenant:** La lógica en `app/tenant.py` determina el inquilino (tenant) basándose en el subdominio de la solicitud HTTP. Por defecto, si no se encuentra un subdominio válido, se utiliza 'puntablanca'.
 
+### ⚠️ NOTA CRÍTICA: Configuración de Multi-Tenancy en Testing vs. Producción
+
+**Estado Actual (Testing en Railway / Localhost):**
+Debido a que el entorno de pruebas en Railway no tiene configurados los subdominios wildcard (ej: `*.railway.app`), se ha implementado una **relajación intencional** en la lógica de detección de inquilinos (`app/tenant.py`).
+
+*   **Comportamiento:** Si el host contiene `railway.app` o `localhost`, la función `get_tenant()` devuelve `None` (Modo Global) en lugar de forzar un tenant específico o fallar.
+*   **Efecto:** Permite que usuarios de *cualquier* condominio (ej: `algarrobos`) se logueen desde la URL principal sin ser bloqueados por "Acceso desde subdominio incorrecto".
+
+**🚨 PARA PRODUCCIÓN (Dominio Real):**
+Cuando se despliegue en un dominio real (ej: `condomanager.com`) con certificados SSL Wildcard:
+1.  Esta excepción en `app/tenant.py` **debe ser revisada**.
+2.  La lógica actual `if 'localhost' in host or 'railway.app' in host` dejará de aplicar automáticamente (lo cual es correcto), activando la validación estricta de subdominios.
+3.  **Verificación:** Asegurarse de que los usuarios finales accedan EXCLUSIVAMENTE a través de su subdominio asignado (ej: `algarrobos.condomanager.com`) para garantizar la seguridad del aislamiento de datos.
+
 ## 5. Modelos Principales (definidos en `app/models.py`)
 
 ### 5.1 User

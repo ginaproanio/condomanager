@@ -78,6 +78,8 @@ def create_app():
         routes.init_app(app)
 
     def get_tenant_config(tenant):
+        if not tenant:
+            return None
         config = models.CondominiumConfig.query.get(tenant)
         if not config:
             return None

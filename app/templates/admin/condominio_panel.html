@@ -79,6 +79,12 @@
                                 <i class="fas fa-chart-pie me-2"></i>Reportes
                             </button>
                         </li>
+                        <!-- NUEVA PESTAÑA FINANZAS -->
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="finance-tab" data-bs-toggle="tab" data-bs-target="#finance" type="button" role="tab" aria-controls="finance" aria-selected="false">
+                                <i class="fas fa-wallet me-2 text-dark"></i>Finanzas
+                            </button>
+                        </li>
                     </ul>
 
                     <!-- Contenido de las Pestañas -->
@@ -449,6 +455,31 @@
                                     <a href="{{ url_for('admin.reportes_condominio', condominium_id=condominium.id) }}" class="btn btn-primary btn-lg mt-4 shadow-sm">
                                         <i class="fas fa-external-link-alt me-2"></i>Abrir Panel de Reportes
                                     </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- PESTAÑA FINANZAS -->
+                        <div class="tab-pane fade" id="finance" role="tabpanel" aria-labelledby="finance-tab">
+                            <div class="card border-0 shadow-sm mb-4">
+                                <div class="card-header bg-dark text-white">
+                                    <h5 class="mb-0"><i class="fas fa-wallet me-2"></i>Gestión Financiera</h5>
+                                </div>
+                                <div class="card-body text-center py-5">
+                                    <div class="row justify-content-center">
+                                        <div class="col-md-6">
+                                            <div class="card border-primary h-100">
+                                                <div class="card-body">
+                                                    <i class="fas fa-credit-card fa-3x text-primary mb-3"></i>
+                                                    <h4>Pasarela de Pagos</h4>
+                                                    <p class="text-muted">Configura PayPhone para recibir pagos de alícuotas directamente.</p>
+                                                    <a href="{{ url_for('admin.configuracion_pagos', condominium_id=condominium.id) }}" class="btn btn-primary">
+                                                        <i class="fas fa-cogs me-2"></i>Configurar PayPhone
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

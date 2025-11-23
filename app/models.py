@@ -90,6 +90,11 @@ class Condominium(db.Model):
     whatsapp_provider = db.Column(db.String(20), default='GATEWAY_QR') # Opciones: 'GATEWAY_QR', 'META_API'
     whatsapp_config = db.Column(db.JSON, default={}) # Almacena credenciales flexibles (tokens, session_ids)
 
+    # --- Configuración de Pagos (Recaudación) ---
+    # Cada condominio actúa como su propio comercio
+    payment_provider = db.Column(db.String(20), default='PAYPHONE') # Por defecto Ecuador
+    payment_config = db.Column(db.JSON, default={}) # Almacena token, id, secret propios del condominio
+
     # FK corregidas a 'users.id'
     admin_user_id = db.Column(db.Integer, db.ForeignKey('users.id', name='fk_condominium_admin_user'))
     legal_representative_id = db.Column(db.Integer, db.ForeignKey('users.id', name='fk_condominium_legal_rep')) # Representante Legal
@@ -252,4 +257,34 @@ class Module(db.Model):
     status = db.Column(db.String(30), default='COMING_SOON') # 'ACTIVE', 'MAINTENANCE', 'ARCHIVED'
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-# Aquí irían CondominiumModuleActivation y ModuleActivationHistory en el futuro.
+# --- MÓDULO DE PAGOS (PAYPHONE) ---
+class Payment(db.Model):
+    __tablename__ = 'payments'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    amount = db.Column(db.Numeric(10, 2), nullable=False) # Decimal exacto
+    amount_with_tax = db.Column(db.Numeric(10, 2), nullable=False) # Monto con impuestos
+    tax = db.Column(db.Numeric(10, 2), default=0.00)
+    currency = db.Column(db.String(3), default='USD')
+    
+    description = db.Column(db.String(255))
+    reference = db.Column(db.String(100)) # Referencia del cliente (ej. Mes-Unidad)
+    
+    # PayPhone Data
+    payphone_transaction_id = db.Column(db.String(100)) # ID de PayPhone
+    client_transaction_id = db.Column(db.String(100), unique=True) # Nuestro ID único
+    status = db.Column(db.String(20), default='PENDING') # PENDING, APPROVED, CANCELED, REJECTED
+    response_json = db.Column(db.JSON) # Guardar respuesta completa para auditoría
+    
+    # Relaciones
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    unit_id = db.Column(db.Integer, db.ForeignKey('units.id'), nullable=True)
+    condominium_id = db.Column(db.Integer, db.ForeignKey('condominiums.id'), nullable=False)
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relaciones ORM
+    user = db.relationship('User', backref='payments')
+    unit = db.relationship('Unit', backref='payments')
+    condominium = db.relationship('Condominium', backref='payments')

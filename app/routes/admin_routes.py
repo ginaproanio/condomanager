@@ -237,3 +237,40 @@ def reportes_condominio(condominium_id):
     return render_template('admin/reportes.html', 
                            condominium=condominium,
                            stats={'unidades': total_unidades, 'residentes': total_residentes})
+
+@admin_bp.route('/admin/condominio/<int:condominium_id>/configuracion-pagos', methods=['GET', 'POST'])
+@condominium_admin_required
+def configuracion_pagos(condominium_id):
+    """
+    Configuración de la Pasarela de Pagos (PayPhone) para el Condominio.
+    """
+    condo = Condominium.query.get_or_404(condominium_id)
+    
+    if request.method == 'POST':
+        token = request.form.get('payphone_token')
+        identifier = request.form.get('payphone_id')
+        
+        # Guardar en JSON
+        config = condo.payment_config or {}
+        # Asegurarnos de que sea un dict mutable
+        config = dict(config)
+        
+        config['token'] = token.strip() if token else ''
+        config['id'] = identifier.strip() if identifier else ''
+        
+        condo.payment_config = config
+        condo.payment_provider = 'PAYPHONE'
+        
+        # Flag para SQLAlchemy
+        flag_modified(condo, "payment_config")
+        
+        try:
+            db.session.commit()
+            flash("Credenciales de PayPhone guardadas correctamente.", "success")
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Error al guardar: {str(e)}", "error")
+            
+        return redirect(url_for('admin.configuracion_pagos', condominium_id=condo.id))
+        
+    return render_template('admin/config_pagos.html', condominium=condo)

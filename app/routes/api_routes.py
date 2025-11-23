@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request, make_response, url_for
+from flask import Blueprint, jsonify, request, make_response, url_for, current_app
 from flask_jwt_extended import jwt_required, create_access_token, set_access_cookies, current_user
 from app.auth import get_current_user
 from app.models import Condominium, User, Unit
@@ -6,6 +6,7 @@ from app.tenant import get_tenant
 from app import db, models
 import hashlib
 from datetime import timedelta
+import traceback
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
 
@@ -16,56 +17,77 @@ def api_login():
     Recibe un JSON con email y password, y si son válidos,
     devuelve un token JWT en una cookie HTTP-Only.
     """
-    data = request.get_json()
-    if not data or not data.get('email') or not data.get('password'):
-        return jsonify({"error": "Email y contraseña requeridos"}), 400
+    try:
+        data = request.get_json()
+        if not data or not data.get('email') or not data.get('password'):
+            return jsonify({"error": "Email y contraseña requeridos"}), 400
 
-    email = data['email'].strip()
-    password = data['password']
-    pwd_hash = hashlib.sha256(password.encode()).hexdigest()
+        email = data['email'].strip()
+        password = data['password']
+        pwd_hash = hashlib.sha256(password.encode()).hexdigest()
 
-    # --- SOLUCIÓN DE INGENIERÍA: AUTENTICACIÓN POR TENANT ---
-    # 1. Obtener el tenant del subdominio actual.
-    tenant = get_tenant()
+        # --- SOLUCIÓN DE INGENIERÍA: AUTENTICACIÓN POR TENANT ---
+        # 1. Obtener el tenant del subdominio actual.
+        tenant = get_tenant()
+        current_app.logger.info(f"Login attempt for {email} on tenant: {tenant}")
 
-    # 2. La autenticación AHORA exige que el email, password Y tenant coincidan.
-    # EXCEPCIÓN: El MASTER puede loguearse desde cualquier subdominio.
-    user_query = User.query.filter_by(email=email, password_hash=pwd_hash)
-    if tenant: # Si hay un subdominio, filtramos por tenant para todos excepto el MASTER
-        user_query = user_query.filter( (User.tenant == tenant) | (User.role == 'MASTER') )
-    user = user_query.first()
+        # 2. La autenticación AHORA exige que el email, password Y tenant coincidan.
+        # EXCEPCIÓN: El MASTER puede loguearse desde cualquier subdominio.
+        user_query = User.query.filter_by(email=email, password_hash=pwd_hash)
+        
+        if tenant: # Si hay un subdominio, filtramos por tenant para todos excepto el MASTER
+            user_query = user_query.filter( (User.tenant == tenant) | (User.role == 'MASTER') )
+        
+        user = user_query.first()
 
-    if not user:
-        # Si no se encuentra, es porque las credenciales son incorrectas O porque intenta loguearse en el subdominio equivocado.
-        return jsonify({"error": "Credenciales incorrectas o acceso desde un subdominio no autorizado."}), 401
+        if not user:
+            # Si no se encuentra, es porque las credenciales son incorrectas O porque intenta loguearse en el subdominio equivocado.
+            current_app.logger.warning(f"Login failed for {email}. Tenant: {tenant}")
+            return jsonify({"error": "Credenciales incorrectas o acceso desde un subdominio no autorizado."}), 401
 
-    if user.status != 'active':
-        return jsonify({"error": f"Tu cuenta está en estado '{user.status}'"}), 403
+        if user.status != 'active':
+            return jsonify({"error": f"Tu cuenta está en estado '{user.status}'"}), 403
 
-    # Crear token y establecerlo en una cookie
-    access_token = create_access_token(identity=user.id, expires_delta=timedelta(hours=12)) # 12 horas
-    
-    # --- SOLUCIÓN DE INGENIERÍA DEFINITIVA Y ROBUSTA ---
-    # La API de login es responsable de determinar la URL final y correcta.
-    redirect_url = url_for('user.dashboard') # Por defecto
-    if user.role == 'MASTER':
-        redirect_url = url_for('master.master_panel')
-    elif user.role == 'ADMIN':
-        # Si es ADMIN, buscar el condominio donde está explícitamente asignado.
-        admin_condo = Condominium.query.filter_by(admin_user_id=user.id).first()
-        if admin_condo:
-            # Si se encuentra, construir la URL final y específica.
-            redirect_url = url_for('admin.admin_condominio_panel', condominium_id=admin_condo.id)
-        else:
-            # Si es un ADMIN no asignado, la API devuelve un estado de 'warning'.
-            # El frontend será responsable de mostrar este mensaje al usuario.
-            response = jsonify({"status": "warning", "message": "Rol de Administrador detectado, pero no estás asignado a ningún condominio.", "user_role": user.role, "redirect_url": redirect_url})
-            set_access_cookies(response, access_token)
-            return response
+        # Crear token y establecerlo en una cookie
+        access_token = create_access_token(identity=user.id, expires_delta=timedelta(hours=12)) # 12 horas
+        
+        # --- SOLUCIÓN DE INGENIERÍA DEFINITIVA Y ROBUSTA ---
+        # La API de login es responsable de determinar la URL final y correcta.
+        redirect_url = url_for('user.dashboard') # Por defecto
+        
+        if user.role == 'MASTER':
+            redirect_url = url_for('master.master_panel')
+        elif user.role == 'ADMIN':
+            # Si es ADMIN, buscar el condominio donde está explícitamente asignado.
+            admin_condo = Condominium.query.filter_by(admin_user_id=user.id).first()
+            if admin_condo:
+                # Si se encuentra, construir la URL final y específica.
+                redirect_url = url_for('admin.admin_condominio_panel', condominium_id=admin_condo.id)
+            else:
+                # Si es un ADMIN no asignado, la API devuelve un estado de 'warning'.
+                # El frontend será responsable de mostrar este mensaje al usuario.
+                response = jsonify({
+                    "status": "warning", 
+                    "message": "Rol de Administrador detectado, pero no estás asignado a ningún condominio.", 
+                    "user_role": user.role, 
+                    "redirect_url": redirect_url
+                })
+                set_access_cookies(response, access_token)
+                return response
 
-    response = jsonify({"status": "success", "message": "Login exitoso", "user_role": user.role, "redirect_url": redirect_url})
-    set_access_cookies(response, access_token)
-    return response
+        response = jsonify({
+            "status": "success", 
+            "message": "Login exitoso", 
+            "user_role": user.role, 
+            "redirect_url": redirect_url
+        })
+        set_access_cookies(response, access_token)
+        return response
+
+    except Exception as e:
+        current_app.logger.error(f"LOGIN INTERNAL ERROR: {str(e)}")
+        traceback.print_exc()
+        return jsonify({"error": f"Error interno del servidor: {str(e)}"}), 500
 
 @api_bp.route('/auth/me')
 @jwt_required()

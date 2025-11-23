@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Configuración de Pagos - {{ condominium.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <a href="{{ url_for('admin.admin_condominio_panel', condominium_id=condominium.id) }}" class="btn btn-outline-secondary mb-2">
+                <i class="fas fa-arrow-left me-2"></i>Volver al Panel
+            </a>
+            <h2 class="text-primary mb-0"><i class="fas fa-credit-card me-2"></i>Pasarela de Pagos</h2>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-lg">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Configuración de PayPhone (Ecuador)</h5>
+                </div>
+                <div class="card-body p-5">
+                    
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Modo Multi-Comercio:</strong>
+                        Los pagos realizados por los residentes irán directamente a la cuenta de PayPhone que configures aquí. La plataforma no retiene comisiones.
+                    </div>
+
+                    {% include '_messages.html' %}
+
+                    <form method="POST">
+                        <div class="mb-4">
+                            <label for="payphone_token" class="form-label fw-bold">Token de Autenticación (Bearer Token)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="fas fa-key"></i></span>
+                                <textarea class="form-control font-monospace" id="payphone_token" name="payphone_token" rows="3" required placeholder="Copia aquí el token largo que empieza con IBI...">{{ condominium.payment_config.get('token', '') if condominium.payment_config else '' }}</textarea>
+                            </div>
+                            <div class="form-text">Obtenido desde la Consola de Desarrollador de PayPhone (Usuarios).</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="payphone_id" class="form-label fw-bold">Identificador de Comercio (Opcional)</label>
+                            <input type="text" class="form-control" id="payphone_id" name="payphone_id" 
+                                   value="{{ condominium.payment_config.get('id', '') if condominium.payment_config else '' }}"
+                                   placeholder="Ej: HBrJIUDT...">
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="alert alert-warning">
+                            <h6 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>Requisito de Dominio</h6>
+                            <p class="mb-0 small">
+                                Para que los pagos funcionen, debes agregar el dominio actual de la aplicación a la lista de <strong>"Dominios Web"</strong> en tu perfil de PayPhone.
+                                <br><br>
+                                <strong>Dominio Actual:</strong> <code>{{ request.host_url }}</code>
+                            </p>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-save me-2"></i>Guardar Credenciales
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
