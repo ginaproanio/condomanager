@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Catálogo de Módulos{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-cubes text-primary"></i> Catálogo Global de Módulos</h2>
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#moduleModal">
+            <i class="fas fa-plus me-2"></i>Crear Nuevo Módulo
+        </button>
+    </div>
+
+    <p class="text-muted">Desde aquí gestionas los productos (módulos) que ofreces a todos los condominios. Puedes ponerlos en mantenimiento o cambiar sus precios base.</p>
+
+    {% include '_messages.html' %}
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Nombre del Módulo</th>
+                            <th>Código (ID Técnico)</th>
+                            <th>Precio Base</th>
+                            <th>Ciclo Fact.</th>
+                            <th>Estado Global</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for module in all_modules %}
+                        <tr>
+                            <td><strong>{{ module.name }}</strong><br><small class="text-muted">{{ module.description }}</small></td>
+                            <td><code>{{ module.code }}</code></td>
+                            <td>${{ "%.2f"|format(module.base_price) }}</td>
+                            <td>{{ module.billing_cycle|title }}</td>
+                            <td>
+                                {% if module.status == 'ACTIVE' %}
+                                    <span class="badge bg-success">Activo</span>
+                                {% elif module.status == 'MAINTENANCE' %}
+                                    <span class="badge bg-warning text-dark">Mantenimiento</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ module.status|title }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#moduleModal"
+                                        data-module-id="{{ module.id }}"
+                                        data-module-code="{{ module.code }}"
+                                        data-module-name="{{ module.name }}"
+                                        data-module-description="{{ module.description }}"
+                                        data-module-price="{{ module.base_price }}"
+                                        data-module-cycle="{{ module.billing_cycle }}"
+                                        data-module-status="{{ module.status }}">
+                                    <i class="fas fa-edit"></i> Editar
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Crear/Editar Módulo -->
+<div class="modal fade" id="moduleModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="moduleModalLabel">Gestionar Módulo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="module_id" id="modalModuleId">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Nombre del Módulo</label>
+                            <input type="text" name="name" id="modalModuleName" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Código (ID Técnico, sin espacios)</label>
+                            <input type="text" name="code" id="modalModuleCode" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descripción</label>
+                        <textarea name="description" id="modalModuleDescription" class="form-control" rows="2"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Precio Base ($)</label>
+                            <input type="number" step="0.01" name="base_price" id="modalModulePrice" class="form-control" value="0.00">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Ciclo de Facturación</label>
+                            <select name="billing_cycle" id="modalModuleCycle" class="form-select">
+                                <option value="monthly">Mensual</option>
+                                <option value="yearly">Anual</option>
+                                <option value="one_time">Pago Único</option>
+                                <option value="free">Gratuito</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Estado Global</label>
+                            <select name="status" id="modalModuleStatus" class="form-select">
+                                <option value="ACTIVE">Activo</option>
+                                <option value="MAINTENANCE">En Mantenimiento</option>
+                                <option value="ARCHIVED">Archivado</option>
+                                <option value="COMING_SOON">Próximamente</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Módulo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Script para llenar el modal al editar
+    const moduleModal = document.getElementById('moduleModal');
+    moduleModal.addEventListener('show.bs.modal', event => {
+        const button = event.relatedTarget;
+        const modalTitle = moduleModal.querySelector('.modal-title');
+        
+        const moduleId = button.getAttribute('data-module-id');
+        if (moduleId) { // Modo Edición
+            modalTitle.textContent = 'Editar Módulo';
+            document.getElementById('modalModuleId').value = moduleId;
+            document.getElementById('modalModuleName').value = button.getAttribute('data-module-name');
+            document.getElementById('modalModuleCode').value = button.getAttribute('data-module-code');
+            document.getElementById('modalModuleDescription').value = button.getAttribute('data-module-description');
+            document.getElementById('modalModulePrice').value = button.getAttribute('data-module-price');
+            document.getElementById('modalModuleCycle').value = button.getAttribute('data-module-cycle');
+            document.getElementById('modalModuleStatus').value = button.getAttribute('data-module-status');
+        } else { // Modo Creación
+            modalTitle.textContent = 'Crear Nuevo Módulo';
+            document.getElementById('moduleModal').querySelector('form').reset();
+            document.getElementById('modalModuleId').value = '';
+        }
+    });
+</script>
+{% endblock %}

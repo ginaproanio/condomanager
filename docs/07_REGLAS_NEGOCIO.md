@@ -89,28 +89,34 @@ Roles con permisos específicos dentro de un condominio (Presidente, Tesorero, e
 - ❌ **Toda la lógica de validación está ausente.**
 
 ---
-## 5. Módulo "Firmas & Comunicados"
+## 5. Módulo "Firmas & Comunicados" (Implementado)
 
 ### 5.1 Activación del Módulo
 - ✅ **Activación por Condominio:** El rol `MASTER` puede activar o desactivar el módulo para cada condominio a través del flag `has_documents_module`. Si está desactivado, ninguna de sus funcionalidades es accesible para ese condominio.
 
 ### 5.2 Permisos de Acceso y Uso
 - ✅ **Acceso al Módulo (Crear, Firmar, Enviar):**
-  - **Rol `MASTER`:** Acceso total a todos los documentos de todos los condominios.
-  - **Rol `ADMIN`:** Acceso total a los documentos de su condominio asignado.
-  - **Roles Especiales (`UserSpecialRole`):** Usuarios con un rol especial activo (ej. "PRESIDENTE", "SECRETARIO") tienen acceso total a los documentos de su condominio.
+    - **Rol `MASTER`:** Acceso total a todos los documentos de todos los condominios.
+    - **Rol `ADMIN`:** Acceso total a los documentos de su condominio asignado.
+    - **Roles Especiales (`UserSpecialRole`):** Usuarios con un rol especial activo (ej. "PRESIDENTE", "SECRETARIO") tienen acceso total a los documentos de su condominio.
 - ✅ **Recepción de Documentos:**
-  - **Rol `USER` (Propietarios/Residentes):** No pueden acceder al módulo de gestión. Solo reciben los comunicados enviados por Email/WhatsApp y pueden ver los documentos que les han sido enviados en un portal de consulta.
+    - **Rol `USER` (Propietarios/Residentes):** No pueden acceder al módulo de gestión. Solo reciben los comunicados enviados por Email/WhatsApp y pueden ver los documentos que les han sido enviados en un portal de consulta.
 
 ### 5.3 Flujos de Firma
 - ✅ **Firma Física:** El usuario autorizado puede descargar un PDF, firmarlo a mano, escanearlo y subirlo para registrar la firma.
 - ✅ **Firma Electrónica:** Usuarios autorizados que hayan configurado su certificado digital (.p12/.pfx) en su perfil pueden firmar documentos digitalmente.
 - ✅ **Recolección de Firmas Públicas:** Un usuario autorizado puede crear un documento y habilitar un enlace público para que cualquier persona (residente o no) pueda registrar su firma (nombre y cédula) para apoyar una causa (ej. petición al municipio). El sistema permite luego descargar estas firmas en formato Excel.
 
+### 5.4 Flujo de Envío
+- ✅ **Envío Inteligente:** El sistema permite enviar los documentos firmados a través de Email y WhatsApp.
+- ✅ **Filtros de Destinatarios:** El administrador puede segmentar el envío a grupos específicos como "Todos", "Solo Propietarios", "Solo Inquilinos" o "Solo Morosos".
+- ✅ **Envío de Prueba:** Antes del envío masivo, el administrador puede enviar una prueba a su propio número de WhatsApp para verificar el contenido.
+
 ---
 
-## 6. Auditoría y Trazabilidad (Visión a Futuro)
+## 6. Auditoría y Trazabilidad (Visión a Futuro para este Módulo)
 - ❌ **Módulo no implementado.** No existe ninguna tabla o lógica para registrar las acciones de los usuarios.
+- ❌ **Acciones a auditar:** `DOCUMENT_CREATED`, `DOCUMENT_SIGNED_PHYSICAL`, `DOCUMENT_SIGNED_ELECTRONIC`, `DOCUMENT_SENT`, `PUBLIC_SIGNATURE_COLLECTED`.
 
 ---
 

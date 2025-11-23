@@ -43,6 +43,7 @@ Sistema multi-condominio implementado inicialmente para "Punta Blanca", diseñad
 │   │   │   # - /admin/condominio/<id>/unidad/nueva (GET, POST): Formulario para crear unidad.
 │   │   ├── master_routes.py # Rutas para el super-administrador (rol MASTER).
 │   │   │   # Endpoints clave:
+│   │   ├── document_routes.py # Rutas para el módulo "Firmas & Comunicados".
 │   │   │   # - /master/condominios (GET, POST para importar)
 │   │   │   # - /master/usuarios (GET, POST para crear/importar)
 │   │   │   # - /master/supervise/<id> (GET) - Panel de supervisión de solo lectura.
@@ -74,8 +75,12 @@ La implementación actual utiliza una estrategia de **multi-tenancy de esquema c
 ## 5. Modelos Principales (definidos en `app/models.py`)
 
 ### 5.1 User
-- **Atributos:** `id`, `cedula`, `email`, `first_name`, `last_name`, `birth_date`, `cellphone`, `city`, `country`, `password_hash`, `tenant`, `role`, `status`, `created_at`, `unit_id`.
+- **Atributos Clave:** `id`, `cedula`, `email`, `first_name`, `last_name`, `password_hash`, `tenant`, `role`, `status`, `unit_id`.
 - Roles base: `MASTER`, `ADMIN`, `USER`.
+- **Atributos para Firma Electrónica:**
+    - `has_electronic_signature`: Booleano que indica si el usuario ha configurado su certificado.
+    - `signature_certificate`: Campo binario que almacena el certificado `.p12` o `.pfx`.
+    - `signature_cert_password_hash`: Hash de la contraseña del certificado para su uso seguro.
 - Relaciones: Un usuario puede ser administrador de `Condominium` o creador de `Unit`.
 
 ### 5.2 Condominium
@@ -108,15 +113,43 @@ Para dar soporte a las reglas de negocio futuras, se proponen los siguientes mod
     - `created_at`: Timestamp de creación.
 
 #### 5.5.2 Módulo "Firmas & Comunicados"
-- **Estado:** ✅ Implementado (Fases 1, 2 y 4).
-- **Propósito:** Gestionar el ciclo de vida completo de documentos oficiales, incluyendo creación, firma (física y electrónica), envío masivo y recolección de firmas públicas.
+- **Estado:** ✅ Implementado.
+- **Propósito:** Gestionar el ciclo de vida completo de documentos oficiales.
 - **Modelos Clave:**
-    - `Document`: Almacena el contenido del documento, sus estados (`draft`, `signed`, `sent`), los PDFs generados y la configuración de recolección de firmas.
-    - `DocumentSignature`: Registra cada firma realizada por un usuario del sistema (`ADMIN`, `MASTER`, etc.), incluyendo el tipo (`physical`, `electronic`) y la fecha.
-    - `ResidentSignature`: Almacena las firmas recolectadas a través de un enlace público para peticiones (ej. al municipio), registrando nombre, cédula y fecha, desvinculado de los usuarios del sistema.
+    - **`Document`**: Entidad central. Almacena:
+        - Contenido del documento (HTML desde el editor).
+        - Estados: `draft`, `pending_signature`, `signed`, `sent`.
+        - Rutas a los PDFs generados (`pdf_unsigned_path`, `pdf_signed_path`).
+        - Configuración para recolección de firmas públicas (`collect_signatures_from_residents`, `public_signature_link`).
+    - **`DocumentSignature`**: Registra cada firma realizada por un usuario del sistema (`MASTER`, `ADMIN`, etc.). Almacena:
+        - El `user_id` del firmante.
+        - El tipo de firma: `physical` o `electronic`.
+        - Timestamp e IP de la firma.
+    - **`ResidentSignature`**: Almacena las firmas recolectadas a través de un enlace público para peticiones (ej. al municipio). Registra `full_name`, `cedula`, `phone` y está desvinculado de los usuarios del sistema.
 - **Control de Acceso:**
-    - **Nivel Condominio:** Protegido por el flag `has_documents_module` en el modelo `Condominium`.
-    - **Nivel Usuario:** El acceso a la gestión del módulo está controlado por el decorador `@module_required('documents')` y la lógica de roles (`MASTER`, `ADMIN`, o `UserSpecialRole` activo).
+    - **Nivel Condominio (Implementación Actual):** Protegido por el flag booleano `has_documents_module` en el modelo `Condominium`.
+    - **Nivel Usuario:** El decorador `@module_required('documents')` centraliza la lógica de permisos, asegurando que solo usuarios autorizados (`MASTER`, `ADMIN`, `UserSpecialRole`) de un condominio con el módulo activo puedan acceder.
+
+#### 5.5.3 Arquitectura Escalable de Módulos (Visión a Futuro)
+- **Estado:** 🏛️ **Diseño Arquitectónico.** Esta es la evolución para soportar N módulos.
+- **Propósito:** Crear un sistema dinámico para añadir, activar y facturar módulos.
+- **Modelos Clave:**
+    - **`Module` (Catálogo de Módulos):**
+        - **Propósito:** Tabla que contiene todos los módulos que la plataforma puede ofrecer.
+        - **Atributos:** `id`, `code` (ej: 'documents'), `name`, `description`, `base_price`, `billing_cycle`, `status` ('ACTIVE', 'MAINTENANCE', 'ARCHIVED', 'COMING_SOON').
+    - **`CondominiumModuleActivation` (Activaciones por Condominio):**
+        - **Propósito:** Tabla que registra qué condominio tiene qué módulo activado, cuándo y a qué precio. Es el historial de contrataciones.
+        - **Atributos:** `id`, `condominium_id` (FK), `module_id` (FK), `activation_date`, `deactivation_date`, `price_at_activation`, `status` ('active', 'inactive', 'trial').
+    - **`ModuleActivationHistory` (Historial de Estados):**
+        - **Propósito:** Registra cada cambio de estado de una activación de módulo, especialmente para mantenimientos específicos.
+        - **Atributos:** `id`, `activation_id` (FK a `CondominiumModuleActivation`), `status` ('maintenance_start', 'maintenance_end', 'reactivated'), `timestamp`, `notes` (ej: "Reparación de datos de facturas"), `changed_by_id` (FK a `User`, para saber qué `MASTER` hizo el cambio).
+- **Lógica de Negocio a Futuro:**
+    1.  **Crear un Módulo Nuevo:** Como desarrollador, solo se añade una nueva fila a la tabla `Module`. No se modifica el modelo `Condominium`.
+    2.  **Activar un Módulo:** El `MASTER`, desde la interfaz de edición de un condominio, selecciona un módulo del catálogo. El sistema crea un nuevo registro en `CondominiumModuleActivation`.
+    3.  **Verificar Permiso:** El decorador `@module_required` se modifica para que revise dos cosas:
+        a. Que el estado global del módulo en `Module` no sea `MAINTENANCE`.
+        b. Que exista un registro `active` en `CondominiumModuleActivation` para ese condominio y módulo.
+    4.  **Facturación:** Un proceso mensual/anual puede leer la tabla `CondominiumModuleActivation` para generar facturas. La tabla `ModuleActivationHistory` puede usarse para calcular créditos o descuentos por tiempo de inactividad.
 
 #### 5.5.2 AuditLog
 - **Propósito:** Registrar acciones clave en el sistema para trazabilidad y seguridad.

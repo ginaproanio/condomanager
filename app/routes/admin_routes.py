@@ -2,8 +2,8 @@ from flask import (
     Blueprint, render_template, redirect, url_for,
     current_app, flash, request, session
 )
-from sqlalchemy import func
 from flask_jwt_extended import jwt_required
+from sqlalchemy import func
 from app import db
 from app.models import User, Condominium, Unit
 from app.auth import get_current_user
@@ -22,10 +22,9 @@ def is_authorized_admin_for_condo(user, condominium):
     if user.role == 'MASTER' and session.get('impersonating_condominium_id') == condominium.id:
         return True
     
-    # Un ADMIN tiene acceso si su tenant coincide con el subdomain del condominio.
-    return (user.role == 'ADMIN' and 
-            user.tenant and condominium.subdomain and 
-            user.tenant.strip().lower() == condominium.subdomain.strip().lower())
+    # CORRECCIÓN: Un ADMIN tiene acceso si su ID está en el campo `admin_user_id` del condominio.
+    # Esta es la relación directa y correcta.
+    return user.role == 'ADMIN' and condominium.admin_user_id == user.id
 
 @admin_bp.route('/admin')
 @jwt_required()
@@ -94,19 +93,29 @@ def rechazar_usuario(user_id):
     flash(f"Usuario {user_to_reject.email} rechazado.", "info")
     return redirect('/admin')
 
-@admin_bp.route('/admin/condominio/<int:condominium_id>')
+@admin_bp.route('/admin/condominio/<int:condominium_id>', methods=['GET', 'POST'])
 @jwt_required()
 def admin_condominio_panel(condominium_id):
     """
     Panel de gestión específico para un condominio.
     Muestra las unidades y opciones de gestión.
     """
-    user = get_current_user()
+    current_user = get_current_user()
     condominium = Condominium.query.get_or_404(condominium_id)
 
-    if not is_authorized_admin_for_condo(user, condominium):
+    # --- LÓGICA DE SEGURIDAD REFORZADA ---
+    if not is_authorized_admin_for_condo(current_user, condominium):
         flash("No tienes acceso a este panel de administración de condominio o no estás asignado a este condominio. Por favor, inicia sesión como un Administrador autorizado.", "error")
         return redirect(url_for('public.login'))
 
-    unidades = Unit.query.filter_by(condominium_id=condominium_id).order_by(Unit.name).all()
-    return render_template('admin/condominio_panel.html', user=user, condominium=condominium, unidades=unidades)
+    # Lógica para obtener usuarios pendientes solo de este condominio
+    pending_users_in_condo = User.query.filter_by(tenant=condominium.subdomain, status='pending').all()
+    users_in_condo = User.query.filter(User.tenant == condominium.subdomain, User.status != 'pending').all()
+    units = Unit.query.filter_by(condominium_id=condominium_id).order_by(Unit.name).all()
+
+    return render_template('admin/condominio_panel.html', 
+                           user=current_user, 
+                           condominium=condominium, 
+                           units=units,
+                           pending_users_in_condo=pending_users_in_condo,
+                           users_in_condo=users_in_condo)

@@ -3,7 +3,7 @@ from flask import (
     current_app, flash, Response, jsonify, request, url_for, session
 )
 from flask_jwt_extended import jwt_required
-from sqlalchemy import or_, func
+from sqlalchemy import or_
 from app.auth import get_current_user
 from app.models import Condominium, User, CondominiumConfig, Unit # get_current_user_data no existe
 from app import db, models
@@ -199,6 +199,36 @@ def master_manage_user():
 
     return redirect(url_for('master.master_usuarios'))
 
+@master_bp.route('/master/condominios/editar/<int:condo_id>', methods=['GET', 'POST'])
+@jwt_required()
+def editar_condominio(condo_id):
+    user = get_current_user()
+    if not user or user.role != 'MASTER':
+        flash("Acceso denegado.", "error")
+        return redirect(url_for('public.login'))
+
+    condo_to_edit = Condominium.query.get_or_404(condo_id)
+    administradores = User.query.filter(User.role.in_(['ADMIN', 'MASTER'])).all()
+
+    if request.method == 'POST':
+        try:
+            condo_to_edit.name = request.form.get('name')
+            condo_to_edit.legal_name = request.form.get('legal_name')
+            # ... (puedes añadir más campos para editar)
+            
+            # --- LÓGICA PARA ACTIVAR MÓDULOS ---
+            condo_to_edit.has_documents_module = 'has_documents_module' in request.form
+            condo_to_edit.has_billing_module = 'has_billing_module' in request.form
+            condo_to_edit.has_requests_module = 'has_requests_module' in request.form
+            
+            db.session.commit()
+            flash('Condominio actualizado exitosamente.', 'success')
+            return redirect(url_for('master.master_condominios'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error al editar el condominio: {e}', 'error')
+
+    return render_template('master/editar_condominio.html', user=user, condo=condo_to_edit, administradores=administradores)
 
 @master_bp.route('/master/usuarios/editar/<int:user_id>', methods=['GET', 'POST'])
 @jwt_required()
@@ -445,6 +475,47 @@ def crear_condominio():
     administradores = User.query.filter(User.role.in_(['ADMIN', 'MASTER'])).order_by(User.first_name).all()
     legal_representatives = User.query.order_by(User.first_name).all()
     return render_template('master/crear_condominio.html', user=user, administradores=administradores, legal_representatives=legal_representatives)
+
+@master_bp.route('/master/modules', methods=['GET', 'POST'])
+@jwt_required()
+def manage_module_catalog():
+    """
+    Panel para que el MASTER gestione el catálogo global de módulos.
+    Aquí se crean, editan y se pone en mantenimiento los módulos.
+    """
+    user = get_current_user()
+    if not user or user.role != 'MASTER':
+        flash("Acceso denegado.", "error")
+        return redirect(url_for('public.login'))
+
+    if request.method == 'POST':
+        # Lógica para crear o editar un módulo del catálogo
+        module_id = request.form.get('module_id')
+        
+        try:
+            if module_id: # Editar
+                module = models.Module.query.get(module_id)
+                flash('Módulo actualizado correctamente.', 'success')
+            else: # Crear
+                module = models.Module()
+                db.session.add(module)
+                flash('Módulo creado correctamente.', 'success')
+
+            module.code = request.form.get('code')
+            module.name = request.form.get('name')
+            module.description = request.form.get('description')
+            module.base_price = float(request.form.get('base_price', 0))
+            module.billing_cycle = request.form.get('billing_cycle')
+            module.status = request.form.get('status')
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error al guardar el módulo: {e}', 'danger')
+        
+        return redirect(url_for('master.manage_module_catalog'))
+
+    all_modules = models.Module.query.order_by(models.Module.name).all()
+    return render_template('master/module_catalog.html', user=user, all_modules=all_modules)
 
 @master_bp.route('/master/condominios/editar/<int:condo_id>', methods=['GET', 'POST'])
 @jwt_required()

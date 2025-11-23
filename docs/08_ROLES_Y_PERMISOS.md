@@ -7,8 +7,11 @@ Versión: 1.0.0
 - Gestión global de condominios
 - Gestión global de usuarios (creación, asignación, aprobación)
 - Supervisión de condominios en modo **solo lectura** (`/supervise/<id>`).
-- Acceso de emergencia a paneles de administrador mediante **suplantación explícita** (`/impersonate/admin/<id>`).
-- Activación/Desactivación de módulos contratables por condominio (ej. "Firmas & Comunicados").
+- Acceso de emergencia a paneles de administrador mediante **suplantación explícita**.
+- **Gestión del Catálogo de Módulos:**
+    - **Exclusividad:** Solo el `MASTER` puede crear, editar y definir los precios de los módulos en el catálogo global del sistema (tabla `modules`).
+    - **Gestión de Estado Global:** Pone un módulo en estado `MAINTENANCE` para toda la plataforma.
+    - **Gestión de Estado Específico:** Registra períodos de mantenimiento para un módulo en un condominio específico, dejando un historial auditable.
 - Configuración global del sistema.
 
 ### 1.2 ADMINISTRADOR
