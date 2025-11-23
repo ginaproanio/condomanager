@@ -47,7 +47,12 @@ async function handleLogin(e) {
         // 4. Procesar la respuesta
         const responseData = await response.json();
 
-        if (response.ok && responseData.status === 'success') {
+        // Aceptamos 'success' y 'warning' como logins válidos (warning = admin sin condominio asignado)
+        if (response.ok && (responseData.status === 'success' || responseData.status === 'warning')) {
+            if (responseData.status === 'warning') {
+                alert(`⚠️ Aviso: ${responseData.message}`);
+            }
+            
             // ÉXITO: El backend validó las credenciales
             console.log('FLOW: handleLogin() - Login exitoso. Redirigiendo a:', responseData.redirect_url);
             // El backend ya estableció la cookie JWT, ahora solo redirigimos.

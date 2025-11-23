@@ -51,28 +51,36 @@
                         <h5>Ubicación</h5>
 
                         <div class="row">
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-5 mb-3">
                                 <label for="main_street" class="form-label">Calle Principal</label>
                                 <input type="text" class="form-control" id="main_street" name="main_street" value="{{ condo.main_street }}" required>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-2 mb-3">
+                                <label for="house_number" class="form-label">Número</label>
+                                <input type="text" class="form-control" id="house_number" name="house_number" value="{{ condo.house_number or '' }}" placeholder="S/N">
+                            </div>
+                            <div class="col-md-5 mb-3">
                                 <label for="cross_street" class="form-label">Calle Transversal</label>
                                 <input type="text" class="form-control" id="cross_street" name="cross_street" value="{{ condo.cross_street }}" required>
                             </div>
                         </div>
 
                         <div class="row">
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label for="latitude" class="form-label">Latitud</label>
                                 <input type="number" step="any" class="form-control" id="latitude" name="latitude" value="{{ condo.latitude or '' }}">
                             </div>
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label for="longitude" class="form-label">Longitud</label>
                                 <input type="number" step="any" class="form-control" id="longitude" name="longitude" value="{{ condo.longitude or '' }}">
                             </div>
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label for="city" class="form-label">Ciudad</label>
                                 <input type="text" class="form-control" id="city" name="city" value="{{ condo.city }}" required>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="country" class="form-label">País</label>
+                                <input type="text" class="form-control" id="country" name="country" value="{{ condo.country or 'Ecuador' }}" required>
                             </div>
                         </div>
 
@@ -89,6 +97,17 @@
                                     {% endfor %}
                                 </select>
                             </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="subdomain" class="form-label">Subdominio (Tenant)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">https://</span>
+                                    <input type="text" class="form-control" id="subdomain" name="subdomain" value="{{ condo.subdomain }}" required>
+                                    <span class="input-group-text">.condomanager.com</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="status" class="form-label">Estado</label>
                                 <select class="form-select" id="status" name="status">

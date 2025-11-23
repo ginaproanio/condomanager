@@ -617,20 +617,38 @@ def editar_condominio(condo_id):
 
     if request.method == 'POST':
         try:
-            condo_to_edit.name = request.form.get('name')
-            condo_to_edit.legal_name = request.form.get('legal_name')
-            condo_to_edit.email = request.form.get('email')
-            condo_to_edit.ruc = request.form.get('ruc')
-            condo_to_edit.main_street = request.form.get('main_street')
-            condo_to_edit.cross_street = request.form.get('cross_street')
-            condo_to_edit.house_number = request.form.get('house_number')
-            condo_to_edit.city = request.form.get('city')
-            condo_to_edit.country = request.form.get('country')
-            condo_to_edit.latitude = float(request.form.get('latitude')) if request.form.get('latitude') else None
-            condo_to_edit.longitude = float(request.form.get('longitude')) if request.form.get('longitude') else None
-            condo_to_edit.subdomain = request.form.get('subdomain')
-            condo_to_edit.status = request.form.get('status')
-            condo_to_edit.admin_user_id = int(request.form.get('admin_user_id')) if request.form.get('admin_user_id') else None
+            # Actualización robusta de campos
+            if request.form.get('name'): condo_to_edit.name = request.form.get('name')
+            if request.form.get('legal_name') is not None: condo_to_edit.legal_name = request.form.get('legal_name')
+            if request.form.get('email') is not None: condo_to_edit.email = request.form.get('email')
+            if request.form.get('ruc') is not None: condo_to_edit.ruc = request.form.get('ruc')
+            if request.form.get('main_street'): condo_to_edit.main_street = request.form.get('main_street')
+            if request.form.get('cross_street'): condo_to_edit.cross_street = request.form.get('cross_street')
+            if request.form.get('house_number') is not None: condo_to_edit.house_number = request.form.get('house_number')
+            if request.form.get('city'): condo_to_edit.city = request.form.get('city')
+            
+            country_input = request.form.get('country')
+            if country_input:
+                condo_to_edit.country = country_input
+            elif not condo_to_edit.country:
+                condo_to_edit.country = 'Ecuador'
+
+            if request.form.get('latitude'): 
+                condo_to_edit.latitude = float(request.form.get('latitude'))
+            
+            if request.form.get('longitude'):
+                condo_to_edit.longitude = float(request.form.get('longitude'))
+
+            subdomain_input = request.form.get('subdomain')
+            if subdomain_input:
+                condo_to_edit.subdomain = subdomain_input
+            
+            if request.form.get('status'):
+                condo_to_edit.status = request.form.get('status')
+                
+            admin_id_input = request.form.get('admin_user_id')
+            if admin_id_input:
+                condo_to_edit.admin_user_id = int(admin_id_input)
 
             # --- LÓGICA PARA ACTUALIZAR MÓDULOS ---
             # Un checkbox enviado en un formulario tiene valor "on" si está marcado, y no existe si no está marcado.
