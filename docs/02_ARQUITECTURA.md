@@ -34,17 +34,17 @@ Sistema multi-condominio implementado inicialmente para "Punta Blanca", diseñad
 │   │   ├── __init__.py # Inicializa y registra los blueprints de rutas.
 │   │   ├── public_routes.py # Rutas públicas (home, registro, login).
 │   │   ├── user_routes.py   # Rutas para usuarios autenticados (dashboard).
-│   │   ├── admin_routes.py  # Rutas para administradores de condominio.
+│   │   ├── admin_routes.py  # Rutas para administradores de condominio (rol ADMIN).
 │   │   │   # Endpoints clave:
-│   │   │   # - /admin (GET) - Despachador (dispatcher) que redirige según el rol.
-│   │   │   # - /admin/condominio/<id> (GET): Panel de gestión del condominio.
-│   │   │   # - /aprobar/<id> (GET) - Aprueba un usuario.
+│   │   │   # - /admin (GET): Despachador (dispatcher) que redirige al panel correcto.
+│   │   │   # - /admin/condominio/<id> (GET): Panel de gestión específico del condominio.
+│   │   │   # - /aprobar/<id> (GET): Aprueba un usuario pendiente.
 │   │   │   # - /rechazar/<id> (GET): Rechaza un usuario pendiente.
 │   │   │   # - /admin/condominio/<id>/unidad/nueva (GET, POST): Formulario para crear unidad.
 │   │   ├── master_routes.py # Rutas para el super-administrador (rol MASTER).
 │   │   │   # Endpoints clave:
 │   │   │   # - /master/condominios (GET, POST para importar)
-│   │   │   # - /master/usuarios (GET, POST para importar)
+│   │   │   # - /master/usuarios (GET, POST para crear/importar)
 │   │   │   # - /master/supervise/<id> (GET) - Panel de supervisión de solo lectura.
 │   │   │   # - /master/impersonate/admin/<id> (GET) - Acceso de emergencia (suplantación).
 │   │   ├── api_routes.py    # Endpoints de la API REST.

@@ -1,12 +1,9 @@
-> ⚠️ **DOCUMENTO DESACTUALIZADO** ⚠️
-> ---
-> El contenido de este archivo no refleja el estado actual del proyecto (el uso de Flask-Migrate y el script `seed_initial_data.py`).
-> **Por favor, no lo utilices como referencia.** Consulta `docs/02_ARQUITECTURA.md` para obtener la información más reciente.
-
 # Guía de Instalación
-Versión: 2.0.0 (Alineado con Arquitectura de Esquema Compartido)
+Versión: 2.1.0 (Alineado con el despliegue en Railway)
 
 > **Objetivo**: Esta guía describe cómo configurar un entorno de desarrollo en una PC local con el único fin de **modificar el código y subirlo a GitHub**. No es necesario ejecutar la aplicación ni una base de datos localmente, ya que todas las pruebas se realizan en el ambiente de Railway.
+
+> **Importante**: El proyecto está diseñado para ser ejecutado en un entorno tipo Unix (como el que provee Railway). La ejecución en Windows no está soportada y los scripts `.bat` están obsoletos.
 
 ## 1. Requisitos del Sistema
 
@@ -37,117 +34,29 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 2.4 Base de Datos
-```bash
-# Crear base de datos
-mysql -u root -p
-CREATE DATABASE condominio CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+### 2.4 Configuración del Editor (VS Code)
+Se recomienda instalar las siguientes extensiones para una mejor experiencia de desarrollo:
+- `Python` (de Microsoft)
+- `Pylance` (de Microsoft)
+- `Jinja` (de wholroyd)
 
-# Ejecutar migraciones
-flask db upgrade
-```
-
-### 2.5 Redis
-```bash
-# Windows: Iniciar servicio Redis
-net start Redis
-
-# Linux/Mac
-systemctl start redis
-```
-
-## 3. Variables de Entorno
-Crear archivo `.env` en la raíz del proyecto:
-
-```env
-# Base de datos
-DB_HOST=localhost
-DB_USER=root
-DB_PASS=tu_contraseña
-DB_NAME=condominio
-
-# Redis
-REDIS_URL=redis://localhost:6379
-
-# Seguridad
-SECRET_KEY=tu_clave_secreta
-JWT_SECRET_KEY=tu_clave_jwt
-
-# APIs Externas
-WHATSAPP_API_KEY=tu_clave_whatsapp
-PAYPHONE_API_KEY=tu_clave_payphone
-
-# Entorno
-FLASK_ENV=development
-FLASK_APP=run.py
-```
-
-## 4. Pruebas Iniciales
-
-### 4.1 Scripts de Ejecución
-El sistema incluye scripts `.bat` para facilitar la ejecución de servicios:
-
-#### 4.1.1 Desarrollo
-```batch
-# start_dev.bat
-@echo off
-start "Redis Server" redis-server
-start "Celery Worker" celery -A app.celery worker --pool=solo -l info
-start "Flask Development" python run.py
-```
-
-#### 4.1.2 Producción
-```batch
-# start_prod.bat
-@echo off
-start "Redis Server" redis-server
-start "Celery Worker" celery -A app.celery worker --pool=solo -l info
-start "Gunicorn Server" gunicorn -w 4 -b 0.0.0.0:8000 run:app
-```
-
-#### 4.1.3 Monitoreo
-```batch
-# monitor.bat
-@echo off
-start "Redis Monitor" redis-cli monitor
-start "Celery Monitor" celery -A app.celery flower
-```
-
-### 4.2 Verificación de Servicios
-```bash
-# Iniciar servidor de desarrollo
-flask run
-
-# Iniciar worker Celery
-celery -A app.celery worker --pool=solo -l info
-
-# Verificar Redis
-redis-cli ping
-```
-
-### 4.3 Pruebas Automatizadas
-```bash
-# Ejecutar suite de pruebas
-pytest
-
-# Con cobertura
-coverage run -m pytest
-coverage report
-```
-
-## 5. Problemas Comunes
-
-### 5.1 Base de Datos
-- Error de conexión: Verificar credenciales en `.env`
-- Error de migraciones: Eliminar carpeta `migrations` y reiniciar desde cero
-
-### 5.2 Redis
-- Error de conexión: Verificar que el servicio esté corriendo
-- Error de permisos: Verificar configuración de firewall
-
-### 5.3 Python
-- Conflictos de dependencias: Crear nuevo entorno virtual
-- Errores de importación: Verificar PYTHONPATH
+## 3. Flujo de Trabajo de Desarrollo
+1. **Crear una Rama:** Antes de hacer cualquier cambio, crea una nueva rama desde `main`.
+   ```bash
+   git checkout -b feature/nombre-de-tu-funcionalidad
+   ```
+2. **Realizar Cambios:** Modifica el código según sea necesario.
+3. **Confirmar Cambios:** Haz commits atómicos y descriptivos.
+   ```bash
+   git add .
+   git commit -m "feat: Añade la funcionalidad X al módulo Y"
+   ```
+4. **Subir Cambios:** Empuja tu rama a GitHub.
+   ```bash
+   git push origin feature/nombre-de-tu-funcionalidad
+   ```
+5. **Crear Pull Request:** En GitHub, abre un Pull Request de tu rama hacia `main`.
+6. **Despliegue Automático:** Al hacer merge del Pull Request, Railway desplegará automáticamente los cambios en el entorno de pruebas.
 
 ## 6. Errores Comunes y Qué No Hacer
 

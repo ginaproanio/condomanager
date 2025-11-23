@@ -1,10 +1,9 @@
 # Manual de Usuario
-Sistema de Gestión de Condominios - v1.0.0-beta
+Sistema de Gestión de Condominios - v2.1.0
 
 ## 1. Acceso al Sistema (MVP)
 
-> **Implementación Inicial**: Este sistema inicia operaciones con el condominio "Punta Blanca" 
-> (gestion.puntablancaecuador.com) como primer caso de uso, validando la arquitectura multi-condominio.
+> **Arquitectura Multi-Condominio**: El sistema está diseñado para dar servicio a múltiples condominios, cada uno con su propio subdominio de gestión.
 
 ### 1.1 Registro y Aprobación
 #### Auto-registro de Usuario de Unidad
@@ -12,18 +11,13 @@ Sistema de Gestión de Condominios - v1.0.0-beta
    ```
    Ejemplo actual en producción:
    https://gestion.puntablancaecuador.com/registro
+   https://gestion.[subdominio-del-condominio].com/registro
    ```
 
 2. Completa formulario básico:
    - Email
    - Nombre completo
-   - Teléfono
    - Contraseña
-   - Selección de condominio (lista desplegable)
-     ```
-     MVP inicial: Solo "Punta Blanca" disponible
-     Preparado para: Múltiples condominios
-     ```
 
 #### Aprobación por Administrador
 1. Administrador ingresa a panel de solicitudes pendientes
@@ -39,18 +33,6 @@ Sistema de Gestión de Condominios - v1.0.0-beta
 - Activo: Aprobado con unidad(es) asignada(s)
 - Rechazado: Solicitud denegada
 - Inactivo: Acceso suspendido
-
-### 1.3 Pruebas Iniciales
-Para validar el sistema multi-condominio, se utilizará:
-1. Punta Blanca (Producción)
-   - URL: gestion.puntablancaecuador.com
-   - Tipo: Lotes/Terrenos
-   - Estado: Activo
-
-2. Condominio de Prueba (Desarrollo)
-   - URL: gestion.testcondominio.com
-   - Tipo: Por definir
-   - Estado: En implementación
 
 ### 1.4 Recuperación de Contraseña
 1. Opción "Olvidé mi contraseña"

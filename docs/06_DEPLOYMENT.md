@@ -1,32 +1,20 @@
-> ⚠️ **DOCUMENTO DESACTUALIZADO** ⚠️
-> ---
-> El contenido de este archivo no refleja el estado actual del proyecto (el uso de `Procfile` con `flask db upgrade` y `seed_initial_data.py`).
-> **Por favor, no lo utilices como referencia.** Consulta `docs/02_ARQUITECTURA.md` para obtener la información más reciente.
-
-# Guía de Deployment
-Versión: 2.0.0 (Alineado con Arquitectura de Esquema Compartido)
-
-> Esta guía describe el despliegue de la aplicación en una plataforma como **Railway**, siguiendo una arquitectura de **esquema compartido** y un flujo de trabajo **GitOps**, donde los cambios en el repositorio de GitHub disparan los despliegues.
-
-## 1. Requisitos Previos
-
+## 1. Requisitos 
 - **Plataforma**: Una cuenta en Railway.
-- **Repositorio**: El código del proyecto alojado en GitHub y conectado a tu proyecto de Railway.
+- **Repositorio**: El código del proyecto alojado en GitHub.
+- **Conexión**: El repositorio de GitHub debe estar conectado a un proyecto en Railway.
 
 ## 2. Configuración en Railway
  
-### 2.1 Servicios
-Dentro de tu proyecto de Railway, necesitas dos servicios principales:
+### 2.1 Serviciosiserp
 1.  **Aplicación Web (Web App)**: Conectada a tu repositorio de GitHub. Railway detectará el `Procfile` y sabrá cómo ejecutar la aplicación.
 2.  **Base de Datos (PostgreSQL)**: Un servicio de base de datos de PostgreSQL. Railway proporcionará automáticamente la URL de conexión (`DATABASE_URL`).
-
+ 
 ### 2.2 Variables de Entorno
 En la configuración de tu servicio de aplicación en Railway, define las siguientes variables:
 ```env
 FLASK_ENV=production
 SQLALCHEMY_DATABASE_URI=${{PostgreSQL.DATABASE_URL}} # Railway inyecta esta variable automáticamente
-SECRET_KEY= # Usar el generador de secretos de Railway
-JWT_SECRET_KEY= # Usar el generador de secretos de Railway
+SECRET_KEY= # Usar el generador de secretos de RailwayJWT_SECRET_KEY= # Usar el generador de secretos de Railway
 MASTER_EMAIL=maestro@condomanager.com # O el email que desees para el super-admin
 MASTER_PASSWORD= # Contraseña fuerte para el super-admin
 ```

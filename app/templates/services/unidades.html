@@ -21,12 +21,16 @@
                     {% endif %}
 
                     <p class="lead text-muted mb-4">
-                        Módulo en desarrollo. Próximamente podrás gestionar todas las unidades de tu condominio.
+                        {% if user and user.role == 'ADMIN' %}
+                            La gestión de unidades se realiza desde tu panel de administración de condominio.
+                        {% else %}
+                            Módulo en desarrollo para usuarios. Próximamente podrás ver la información de tus unidades asignadas.
+                        {% endif %}
                     </p>
 
                     <div class="mt-4">
-                        <a href="/master" class="btn btn-primary">
-                            <i class="fas fa-arrow-left me-2"></i>Volver al Panel Maestro
+                        <a href="{{ url_for('user.dashboard') if user.role == 'USER' else url_for('admin.admin_panel') if user.role == 'ADMIN' else url_for('master.master_panel') }}" class="btn btn-primary">
+                            <i class="fas fa-arrow-left me-2"></i>Volver a mi Panel Principal
                         </a>
                     </div>
                 </div>

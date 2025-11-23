@@ -63,11 +63,9 @@ def aprobar_usuario(user_id):
 
     # --- LÓGICA DE SEGURIDAD UNIFICADA ---
     # Un ADMIN solo puede aprobar usuarios de su propio tenant.
-    user_condo = Condominium.query.filter_by(subdomain=current_user.tenant).first()
-    if not (current_user.role == 'MASTER' or (user_condo and is_authorized_admin_for_condo(current_user, user_condo))):
+    if current_user.role == 'ADMIN' and (not user_to_approve.tenant or user_to_approve.tenant.strip().lower() != current_user.tenant.strip().lower()):
         flash("No tiene permiso para aprobar a este usuario.", "error")
         return redirect('/admin')
-
 
     user_to_approve.status = 'active'
     db.session.commit()
@@ -86,8 +84,7 @@ def rechazar_usuario(user_id):
 
     # --- LÓGICA DE SEGURIDAD UNIFICADA ---
     # Un ADMIN solo puede rechazar usuarios de su propio tenant.
-    user_condo = Condominium.query.filter_by(subdomain=current_user.tenant).first()
-    if not (current_user.role == 'MASTER' or (user_condo and is_authorized_admin_for_condo(current_user, user_condo))):
+    if current_user.role == 'ADMIN' and (not user_to_reject.tenant or user_to_reject.tenant.strip().lower() != current_user.tenant.strip().lower()):
         flash("No tiene permiso para rechazar a este usuario.", "error")
         return redirect('/admin')
 
@@ -112,69 +109,3 @@ def admin_condominio_panel(condominium_id):
 
     unidades = Unit.query.filter_by(condominium_id=condominium_id).order_by(Unit.name).all()
     return render_template('admin/condominio_panel.html', user=user, condominium=condominium, unidades=unidades)
-
-@admin_bp.route('/admin/condominio/<int:condominium_id>/unidad/nueva', methods=['GET', 'POST'])
-@jwt_required()
-def crear_unidad(condominium_id):
-    user = get_current_user()
-    condominium = Condominium.query.get_or_404(condominium_id)
-
-    if not is_authorized_admin_for_condo(user, condominium):
-        flash("Acceso no autorizado.", "error")
-        return redirect(url_for('public.login')) # Redirigir al login en caso de fallo de seguridad
-
-    if request.method == 'POST':
-        new_unit = Unit(
-            condominium_id=condominium.id,
-            property_number=request.form.get('property_number'),
-            name=request.form.get('name'),
-            property_type=request.form.get('property_type'),
-            building=request.form.get('building'),
-            floor=request.form.get('floor'),
-            area_m2=float(request.form.get('area_m2')) if request.form.get('area_m2') else None,
-            sector=request.form.get('sector'),
-            bedrooms=int(request.form.get('bedrooms')) if request.form.get('bedrooms') else None,
-            bathrooms=int(request.form.get('bathrooms')) if request.form.get('bathrooms') else None,
-            created_by=user.id
-        )
-        db.session.add(new_unit)
-        db.session.commit()
-        flash(f'Unidad "{new_unit.name}" creada exitosamente.', 'success')
-        return redirect(url_for('admin.admin_condominio_panel', condominium_id=condominium.id))
-
-    return render_template('admin/crear_editar_unidad.html', user=user, condominium=condominium)
-
-@admin_bp.route('/admin/condominio/unidad/editar/<int:unit_id>', methods=['GET', 'POST'])
-@jwt_required()
-def editar_unidad(unit_id):
-    user = get_current_user()
-    unit_to_edit = Unit.query.get_or_404(unit_id)
-    condominium = unit_to_edit.condominium
-
-    if not is_authorized_admin_for_condo(user, condominium):
-        flash("Acceso no autorizado.", "error")
-        return redirect(url_for('public.login')) # Redirigir al login en caso de fallo de seguridad
-
-    if request.method == 'POST':
-        unit_to_edit.property_number = request.form.get('property_number')
-        unit_to_edit.name = request.form.get('name')
-        unit_to_edit.property_type = request.form.get('property_type')
-        unit_to_edit.building = request.form.get('building')
-        unit_to_edit.floor = request.form.get('floor')
-        unit_to_edit.area_m2 = float(request.form.get('area_m2')) if request.form.get('area_m2') else None
-        unit_to_edit.sector = request.form.get('sector')
-        unit_to_edit.bedrooms = int(request.form.get('bedrooms')) if request.form.get('bedrooms') else None
-        unit_to_edit.bathrooms = int(request.form.get('bathrooms')) if request.form.get('bathrooms') else None
-        db.session.commit()
-        flash(f'Unidad "{unit_to_edit.name}" actualizada exitosamente.', 'success')
-        return redirect(url_for('admin.admin_condominio_panel', condominium_id=condominium.id))
-
-    return render_template('admin/crear_editar_unidad.html', user=user, condominium=condominium, unit=unit_to_edit)
-
-@admin_bp.route('/admin/condominio/unidad/eliminar/<int:unit_id>', methods=['POST'])
-@jwt_required()
-def eliminar_unidad(unit_id):
-    # Placeholder para la lógica de eliminación
-    flash(f"Funcionalidad para eliminar unidad {unit_id} no implementada.", "info")
-    unit = Unit.query.get_or_404(unit_id)
-    return redirect(url_for('admin.admin_condominio_panel', condominium_id=unit.condominium_id))

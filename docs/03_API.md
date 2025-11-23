@@ -1,5 +1,5 @@
 # Documentación de Endpoints y API
-Versión: 2.0.0 (Sincronizado con el código base a fecha 2025-11-18)
+Versión: 2.1.0 (Sincronizado con el código base a fecha 2025-11-22)
 
 > **Nota**: El proyecto actualmente no cuenta con una API RESTful pública y separada. Esta documentación describe los endpoints web principales (rutas servidas con plantillas HTML) y sienta las bases para una futura API REST.
 
@@ -10,27 +10,28 @@ Estos endpoints son accedidos a través de un navegador y renderizan plantillas 
 ### 1.1 Rutas Públicas (`public_routes.py`)
 - **`GET /`**: Página de inicio o landing page.
 - **`GET /login`**: Muestra el formulario de inicio de sesión.
-- **`POST /login`**: Procesa el inicio de sesión del usuario.
 - **`GET /registro`**: Muestra el formulario de registro de nuevos usuarios.
-- **`POST /registro`**: Procesa el registro de un nuevo usuario, dejándolo en estado `pending`.
-- **`POST /logout`**: Cierra la sesión del usuario.
+- **`GET /logout`**: Cierra la sesión del usuario.
 
 ### 1.2 Rutas de Usuario (`user_routes.py`)
-- **`GET /dashboard`**: Panel principal para usuarios autenticados. Protegido por `@login_required`.
+- **`GET /dashboard`**: Panel principal para usuarios con rol `USER`.
 
 ### 1.3 Rutas de Administrador (`admin_routes.py`)
 Estas rutas están protegidas por el rol `ADMIN` (o `MASTER`).
 - **`GET /admin`**: **(Despachador)** Redirige al panel de gestión correcto. No renderiza una vista.
-- **`GET /admin/condominio/<int:id>`**: **(NUEVO)** Panel de gestión principal para un condominio específico.
+- **`GET /admin/condominio/<int:id>`**: Panel de gestión principal para un condominio específico.
 - **`GET /aprobar/<int:user_id>`**: Aprueba a un usuario pendiente, cambiando su estado a `active`.
 - **`GET /rechazar/<int:user_id>`**: Rechaza a un usuario pendiente.
-- **`GET /admin/dashboard`**: **(OBSOLETO)** Esta ruta ya no existe.
 
 ### 1.4 Rutas Maestras (`master_routes.py`)
 Estas rutas están protegidas por el rol `MASTER`.
-- **`GET /master/dashboard`**: Panel de control global para el super-administrador.
-- **`GET /master/condominiums`**: Muestra la lista de todos los condominios en el sistema.
-- **`GET /master/download-units-template`**: Permite descargar la plantilla CSV para la carga masiva de unidades.
+- **`GET /master`**: Panel de control global para el super-administrador.
+- **`GET /master/condominios`**: Muestra y busca condominios.
+- **`POST /master/condominios/importar`**: Procesa la carga masiva de condominios.
+- **`GET /master/usuarios`**: Muestra y busca usuarios.
+- **`POST /master/usuarios/manage`**: Gestiona usuarios pendientes (aprobar, rechazar, etc.).
+- **`GET /supervise/<int:id>`**: Vista de supervisión de solo lectura de un condominio.
+- **`GET /impersonate/admin/<int:id>`**: Inicia la suplantación de un `ADMIN`.
 
 ---
 
@@ -44,6 +45,7 @@ Cuando se implemente una API REST, deberá seguir las siguientes convenciones:
 
 ### 2.2 Autenticación
 - **Método**: Tokens JWT enviados como `Bearer Token` en el header `Authorization`.
+- **Endpoint de Login**: `POST /api/auth/login`
 
 ### 2.3 Endpoints Propuestos
 - **Condominios**: `GET /api/v1/condominiums`, `GET /api/v1/condominiums/<int:id>`

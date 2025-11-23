@@ -5,15 +5,16 @@ Versión: 1.0.0
 
 ### 1.1 MAESTRO
 - Gestión global de condominios
-- Asignación de administradores
-- Configuración de sistema global
-- Supervisión de condominios (solo lectura)
-- Acceso de emergencia a paneles de administrador (suplantación explícita)
+- Gestión global de usuarios (creación, asignación, aprobación)
+- Supervisión de condominios en modo **solo lectura** (`/supervise/<id>`).
+- Acceso de emergencia a paneles de administrador mediante **suplantación explícita** (`/impersonate/admin/<id>`).
+- Configuración global del sistema.
 
 ### 1.2 ADMINISTRADOR
-- Gestión completa de un condominio específico
-- Asignación de roles especiales
-- Gestión de unidades y usuarios
+- Gestión completa de **un único condominio específico** al que está asignado (vía `tenant`).
+- Acceso a su panel de gestión a través de `/admin/condominio/<id>`.
+- Aprobación y rechazo de usuarios para su `tenant`.
+- Creación y gestión de unidades para su condominio.
 
 ### 1.3 USUARIO
 - Acceso básico a unidades asignadas

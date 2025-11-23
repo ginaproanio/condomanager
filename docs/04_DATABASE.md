@@ -1,5 +1,5 @@
 # Documentación de la Base de Datos
-Versión: 2.0.0 (Sincronizado con `app/models.py` a fecha 2025-11-18)
+Versión: 2.1.0 (Sincronizado con `app/models.py` a fecha 2025-11-22)
 
 ## 1. Visión General
 La base de datos utiliza una estrategia de **esquema compartido (shared-schema)**. Todos los datos de todos los condominios residen en las mismas tablas, y la separación lógica se logra mediante columnas de identificación como `tenant` o `condominium_id`.
@@ -11,18 +11,23 @@ A continuación se describen las tablas principales del sistema, basadas en los 
 ### 2.1 Tabla `users`
 Almacena la información de todos los usuarios del sistema, sin importar el condominio al que pertenezcan.
 ```sql
+-- Basado en el modelo User en app/models.py
 CREATE TABLE users (
-    id INTEGER PRIMARY KEY AUTO_INCREMENT,
+    id SERIAL PRIMARY KEY,
+    cedula VARCHAR(20) UNIQUE,
     email VARCHAR(255) UNIQUE NOT NULL,
-    name VARCHAR(100),
-    phone VARCHAR(20),
+    first_name VARCHAR(100),
+    last_name VARCHAR(100),
+    birth_date DATE,
+    cellphone VARCHAR(20),
     city VARCHAR(50),
     country VARCHAR(50),
     password_hash VARCHAR(255),
-    tenant VARCHAR(50),
-    role VARCHAR(20) DEFAULT 'user', -- Roles base: 'MASTER', 'ADMIN', 'USER'
-    status VARCHAR(20) DEFAULT 'pending', -- Estados: 'pending', 'active', 'rejected'
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    tenant VARCHAR(100), -- Coincide con el subdomain del condominio
+    role VARCHAR(20) NOT NULL, -- 'MASTER', 'ADMIN', 'USER'
+    status VARCHAR(20) NOT NULL, -- 'pending', 'active', 'rejected'
+    created_at TIMESTAMP WITHOUT TIME ZONE,
+    unit_id INTEGER -- Foreign Key a la tabla 'units'
 );
 ```
 
