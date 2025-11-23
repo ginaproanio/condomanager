@@ -176,37 +176,6 @@ def master_manage_user():
 
     return redirect(url_for('master.master_usuarios'))
 
-@master_bp.route('/master/condominios/editar/<int:condo_id>', methods=['GET', 'POST'])
-@jwt_required()
-def editar_condominio(condo_id):
-    user = get_current_user()
-    if not user or user.role != 'MASTER':
-        flash("Acceso denegado.", "error")
-        return redirect(url_for('public.login'))
-
-    condo_to_edit = Condominium.query.get_or_404(condo_id)
-    administradores = User.query.filter(User.role.in_(['ADMIN', 'MASTER'])).all()
-
-    if request.method == 'POST':
-        try:
-            condo_to_edit.name = request.form.get('name')
-            condo_to_edit.legal_name = request.form.get('legal_name')
-            # ... (puedes añadir más campos para editar)
-            
-            # --- LÓGICA PARA ACTIVAR MÓDULOS ---
-            condo_to_edit.has_documents_module = 'has_documents_module' in request.form
-            condo_to_edit.has_billing_module = 'has_billing_module' in request.form
-            condo_to_edit.has_requests_module = 'has_requests_module' in request.form
-            
-            db.session.commit()
-            flash('Condominio actualizado exitosamente.', 'success')
-            return redirect(url_for('master.master_condominios'))
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Error al editar el condominio: {e}', 'error')
-
-    return render_template('master/editar_condominio.html', user=user, condo=condo_to_edit, administradores=administradores)
-
 @master_bp.route('/master/usuarios/editar/<int:user_id>', methods=['GET', 'POST'])
 @jwt_required()
 def master_usuarios_editar(user_id):
@@ -494,6 +463,59 @@ def manage_module_catalog():
     all_modules = models.Module.query.order_by(models.Module.name).all()
     return render_template('master/module_catalog.html', user=user, all_modules=all_modules)
 
+@master_bp.route('/master/condominios/importar', methods=['POST'])
+@jwt_required()
+def master_importar_condos_csv():
+    user = get_current_user()
+    if not user or user.role != 'MASTER':
+        flash("Acceso denegado.", "error")
+        return redirect(url_for('master.master_condominios'))
+
+    if 'csv_file' not in request.files:
+        flash('No se encontró el archivo en la solicitud.', 'error')
+        return redirect(url_for('master.master_condominios'))
+
+    file = request.files['csv_file']
+    if file.filename == '':
+        flash('No se seleccionó ningún archivo.', 'error')
+        return redirect(url_for('master.master_condominios'))
+
+    if file and file.filename.endswith('.csv'):
+        try:
+            stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
+            csv_reader = csv.DictReader(stream)
+            created_count = 0
+            errors = []
+
+            for row in csv_reader:
+                if Condominium.query.filter_by(subdomain=row['subdomain']).first() or Condominium.query.filter_by(ruc=row['ruc']).first():
+                    errors.append(f"Condominio con subdominio {row['subdomain']} o RUC {row['ruc']} ya existe.")
+                    continue
+
+                admin = User.query.filter_by(email=row['admin_email']).first()
+                if not admin:
+                    errors.append(f"El administrador con email {row['admin_email']} no fue encontrado.")
+                    continue
+
+                new_condo = Condominium(
+                    name=row['name'], legal_name=row.get('legal_name'), email=row.get('email'), ruc=row['ruc'],
+                    main_street=row['main_street'], cross_street=row['cross_street'], city=row['city'], country=row.get('country', 'Ecuador'),
+                    subdomain=row['subdomain'], status='ACTIVO', admin_user_id=admin.id, created_by=user.id
+                )
+                db.session.add(new_condo)
+                created_count += 1
+            db.session.commit()
+            flash(f'{created_count} condominios creados exitosamente. Errores: {len(errors)}', 'success')
+            if errors:
+                flash(f"Detalles de errores: {'; '.join(errors)}", 'warning')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error al procesar el archivo CSV: {e}', 'error')
+        return redirect(url_for('master.master_condominios'))
+
+    flash('Formato de archivo inválido. Por favor, sube un archivo .csv', 'error')
+    return redirect(url_for('master.master_condominios'))
+
 @master_bp.route('/master/condominios/editar/<int:condo_id>', methods=['GET', 'POST'])
 @jwt_required()
 def editar_condominio(condo_id):
@@ -575,56 +597,4 @@ def inactivar_condominio(condo_id):
     condo_to_inactivate.status = 'INACTIVO'
     db.session.commit()
     flash(f'El condominio "{condo_to_inactivate.name}" ha sido inactivado.', 'success')
-    return redirect(url_for('master.master_condominios'))
-@master_bp.route('/master/condominios/importar', methods=['POST'])
-@jwt_required()
-def master_importar_condos_csv():
-    user = get_current_user()
-    if not user or user.role != 'MASTER':
-        flash("Acceso denegado.", "error")
-        return redirect(url_for('master.master_condominios'))
-
-    if 'csv_file' not in request.files:
-        flash('No se encontró el archivo en la solicitud.', 'error')
-        return redirect(url_for('master.master_condominios'))
-
-    file = request.files['csv_file']
-    if file.filename == '':
-        flash('No se seleccionó ningún archivo.', 'error')
-        return redirect(url_for('master.master_condominios'))
-
-    if file and file.filename.endswith('.csv'):
-        try:
-            stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
-            csv_reader = csv.DictReader(stream)
-            created_count = 0
-            errors = []
-
-            for row in csv_reader:
-                if Condominium.query.filter_by(subdomain=row['subdomain']).first() or Condominium.query.filter_by(ruc=row['ruc']).first():
-                    errors.append(f"Condominio con subdominio {row['subdomain']} o RUC {row['ruc']} ya existe.")
-                    continue
-
-                admin = User.query.filter_by(email=row['admin_email']).first()
-                if not admin:
-                    errors.append(f"El administrador con email {row['admin_email']} no fue encontrado.")
-                    continue
-
-                new_condo = Condominium(
-                    name=row['name'], legal_name=row.get('legal_name'), email=row.get('email'), ruc=row['ruc'],
-                    main_street=row['main_street'], cross_street=row['cross_street'], city=row['city'], country=row.get('country', 'Ecuador'),
-                    subdomain=row['subdomain'], status='ACTIVO', admin_user_id=admin.id, created_by=user.id
-                )
-                db.session.add(new_condo)
-                created_count += 1
-            db.session.commit()
-            flash(f'{created_count} condominios creados exitosamente. Errores: {len(errors)}', 'success')
-            if errors:
-                flash(f"Detalles de errores: {'; '.join(errors)}", 'warning')
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Error al procesar el archivo CSV: {e}', 'error')
-        return redirect(url_for('master.master_condominios'))
-
-    flash('Formato de archivo inválido. Por favor, sube un archivo .csv', 'error')
     return redirect(url_for('master.master_condominios'))
