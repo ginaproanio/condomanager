@@ -57,14 +57,15 @@ El Administrador verá una pantalla de selección clara:
 *   Interfaz de gestión creada en el Panel Admin.
 *   Estructura visual lista para el método QR.
 
-### 🚧 Fase 2: Backend Multi-Driver (Pendiente)
-*   Modificar modelos de BD para soportar la configuración JSON.
-*   Crear la clase abstracta `WhatsAppService`.
-*   Implementar la lógica de "Cola de Mensajes" (Queue) en la base de datos para el modo Gateway.
+### ✅ Fase 2: Backend Multi-Driver (Completado)
+*   Campos `whatsapp_provider` y `whatsapp_config` (JSON) creados y migrados en DB.
+*   Ruta de configuración `/configurar-whatsapp` implementada y funcional.
+*   Interfaz de Admin actualizada para guardar preferencias y tokens de Meta.
 
 ### ❌ Fase 3: Integración de Proveedores (Futuro)
 *   Desplegar motor Waha (Gateway).
-*   Desarrollar integración con Meta Business API.
+*   Desarrollar integración real con Meta Business API.
+*   Implementar la lógica de "Cola de Mensajes" (Queue) en la base de datos para el modo Gateway.
 
 ---
 

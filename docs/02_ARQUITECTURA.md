@@ -84,6 +84,7 @@ La implementación actual utiliza una estrategia de **multi-tenancy de esquema c
 ### 5.2 Condominium
 - **Atributos:** `id`, `name`, `legal_name`, `email`, `ruc`, `main_street`, `cross_street`, `house_number`, `city`, `country`, `latitude`, `longitude`, `subdomain`, `status`, `billing_day`, `grace_days`, `trial_start_date`, `trial_end_date`, `notes`, `admin_user_id`, `legal_representative_id`, `created_by`, `created_at`, `updated_at`.
 - **Flags de Módulos:** `has_documents_module`, `has_billing_module`.
+- **Configuración WhatsApp:** `whatsapp_provider` ('GATEWAY_QR' o 'META_API'), `whatsapp_config` (JSON).
 - Relaciones: Contiene múltiples `Unit`s y `User`s (ADMINs asignados).
 
 ### 5.3 Unit
@@ -127,7 +128,12 @@ La implementación actual utiliza una estrategia de **multi-tenancy de esquema c
         - **Gestión:** El MASTER gestiona este catálogo desde `/master/modules`.
 - **Lógica de Seguridad Global:** El decorador `@module_required` verifica primero el estado en `Module`. Si está en `MAINTENANCE`, bloquea el acceso globalmente, independientemente de si el condominio pagó.
 
-#### 5.5.4 AuditLog (Propuesto)
+#### 5.5.4 Módulo Comunicaciones (Híbrido)
+- **Estado:** ✅ UI y Backend de Configuración listos.
+- **Estrategia:** Multi-Driver (Gateway QR / Meta API).
+- **Modelos:** Uso de campos JSON en `Condominium` para flexibilidad de credenciales.
+
+#### 5.5.5 AuditLog (Propuesto)
 - **Propósito:** Registrar acciones clave en el sistema para trazabilidad y seguridad.
 - **Estado:** ❌ Faltante.
 

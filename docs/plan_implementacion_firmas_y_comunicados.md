@@ -12,8 +12,9 @@ Este documento detalla el estado de implementación del módulo **"Firmas & Comu
 | **Directiva (Roles Especiales)**| ✅ **Implementado** | Admin puede asignar Presidente/Secretario, quienes heredan permisos de firma. |
 | **Recolección de Firmas** | ✅ **Implementado** | Enlaces públicos para peticiones. Descarga de Excel no implementada en UI pero modelo listo. |
 | **Firma Física** | ✅ **Implementado** | Flujo completo: Descargar PDF -> Firmar manual -> Escanear -> Subir evidencia. |
-| **Firma Electrónica (.p12)** | 🚧 **Base Lista** | Base de datos lista. Falta interfaz de carga de certificado y lógica de firma criptográfica. |
-| **Envíos Inteligentes** | ❌ **Pendiente** | No hay integración con WhatsApp/Email masivo. |
+| **Firma Electrónica (.p12)** | ✅ **Configurada** | Interfaz de usuario para subir certificado y validación criptográfica de contraseña implementada. |
+| **Notificaciones UI** | ✅ **Implementado** | Alerta visual (Badge Rojo) en el Dashboard del usuario cuando hay documentos nuevos. |
+| **Envíos WhatsApp** | 🚧 **En Progreso** | Interfaz de gestión e integración híbrida (Gateway/Meta) diseñada y codificada. Falta motor de envío. |
 
 ---
 
@@ -33,20 +34,24 @@ Este documento detalla el estado de implementación del módulo **"Firmas & Comu
     - **Premium:** Solo Admin/Directiva crean y firman.
 - ✅ **Gestión de Directiva:** Interfaz para que el Administrador asigne roles como Presidente o Secretario, otorgando permisos automáticamente.
 
-### **Fase 3: Firma Electrónica Avanzada (🚧 En Progreso)**
+### **Fase 3: Firma Electrónica Avanzada (✅ Implementado - Configuración)**
 **Objetivo:** Permitir firma legal con certificado digital.
 - ✅ **Backend:** Campos en tabla `User` para almacenar `.p12`.
-- ❌ **Frontend:** Interfaz para subir certificado y contraseña.
-- ❌ **Lógica:** Integración con librería `endesive` para firma criptográfica de PDFs.
+- ✅ **Frontend:** Nueva pantalla "Mi Perfil" donde el usuario sube su archivo `.p12` y contraseña.
+- ✅ **Seguridad:** Validación criptográfica estricta al subir el archivo (verifica que la clave abra el certificado y que no esté corrupto).
+- 🚧 **Uso:** Falta la integración final para estampar esta firma digitalmente en el PDF (usando `endesive`).
 
-### **Fase 4: Comunicaciones y Notificaciones (❌ Pendiente)**
+### **Fase 4: Comunicaciones y Notificaciones (🚧 En Progreso)**
 **Objetivo:** Convertir documentos en comunicados masivos.
-- ❌ **Envíos:** Integración con Twilio (WhatsApp) y SMTP (Email).
-- ❌ **Filtros:** Lógica para seleccionar destinatarios (Solo Morosos, Solo Propietarios).
+- ✅ **Estrategia:** Modelo Híbrido definido (Gateway QR vs Meta API).
+- ✅ **Base de Datos:** Campos `whatsapp_provider` y `whatsapp_config` añadidos a `Condominium`.
+- ✅ **Interfaz Admin:** Consola de "Comunicaciones" creada con selector de proveedor y configuración.
+- ✅ **Interfaz Usuario:** Badge de notificación en tarjeta de documentos.
+- ❌ **Motor de Envío:** Falta conectar con el servicio de mensajería real (Waha/Meta).
 
 ---
 
 ## Deuda Técnica y Mejoras Futuras
 1.  **Auditoría:** Implementar tabla `AuditLog` para registrar quién borró o editó un documento.
 2.  **Tests:** Crear pruebas unitarias para la lógica de permisos acumulativos (Admin + Presidente).
-3.  **Validación de Archivos:** Mejorar seguridad en la subida de PDFs firmados (validar mime-types estrictamente).
+3.  **Motor de Firma PDF:** Completar la función que toma el `.p12` validado y firma el PDF criptográficamente.
