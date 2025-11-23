@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request, make_response, url_for, flash
+from flask import Blueprint, jsonify, request, make_response, url_for
 from flask_jwt_extended import jwt_required, create_access_token, set_access_cookies, current_user
 from app.auth import get_current_user
 from app.models import Condominium, User, Unit
@@ -34,23 +34,22 @@ def api_login():
     # Crear token y establecerlo en una cookie
     access_token = create_access_token(identity=user.id, expires_delta=timedelta(hours=12)) # 12 horas
     
-    # --- SOLUCIÓN DE INGENIERÍA DEFINITIVA ---
+    # --- SOLUCIÓN DE INGENIERÍA FINAL Y ROBUSTA ---
     # La API de login es responsable de determinar la URL final y correcta.
     # No habrá más redirecciones intermedias.
     redirect_url = url_for('user.dashboard') # Por defecto
     if user.role == 'MASTER':
         redirect_url = url_for('master.master_panel')
     elif user.role == 'ADMIN':
-        # Si es ADMIN, buscar el condominio al que está asignado.
+        # Si es ADMIN, buscar el condominio donde está explícitamente asignado.
         admin_condo = Condominium.query.filter_by(admin_user_id=user.id).first()
         if admin_condo:
             # Si se encuentra, construir la URL final y específica.
             redirect_url = url_for('admin.admin_condominio_panel', condominium_id=admin_condo.id)
         else:
-            # SOLUCIÓN DE INGENIERÍA: Si es un ADMIN no asignado, la API debe informar de esto
-            # en la respuesta JSON para que el frontend pueda actuar (mostrar un modal, etc.).
-            # No se usa flash. Se añade un mensaje específico en la respuesta.
-            response = jsonify({"status": "warning", "message": "Eres Administrador, pero no estás asignado a ningún condominio.", "user_role": user.role, "redirect_url": redirect_url})
+            # Si es un ADMIN no asignado, la API devuelve un estado de 'warning'.
+            # El frontend será responsable de mostrar este mensaje al usuario.
+            response = jsonify({"status": "warning", "message": "Rol de Administrador detectado, pero no estás asignado a ningún condominio.", "user_role": user.role, "redirect_url": redirect_url})
             set_access_cookies(response, access_token)
             return response
 
