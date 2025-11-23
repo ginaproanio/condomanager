@@ -48,27 +48,43 @@
 </head>
 <body>
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
         <div class="container-fluid">
-            <a class="navbar-brand" href="/">CondoManager</a>
+            <a class="navbar-brand me-4" href="/">CondoManager</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
+            
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
+                <!-- Menú Principal (Izquierda) -->
+                <ul class="navbar-nav me-auto">
                     {% if user %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('document.index') }}"><i class="fas fa-file-alt me-1"></i>Documentos</a>
+                            <a class="nav-link" href="{{ url_for('document.index') }}">
+                                <i class="fas fa-file-alt me-1"></i>Documentos
+                            </a>
                         </li>
+                        <!-- Aquí irán otros módulos futuros (Pagos, Reservas) -->
+                    {% endif %}
+                </ul>
+
+                <!-- Menú de Usuario (Derecha) -->
+                <ul class="navbar-nav ms-auto align-items-center">
+                    {% if user %}
                         <li class="nav-item">
-                            <span class="navbar-text me-3">Bienvenido, <strong>{{ user.name }}</strong> ({{ user.role }})</span>
+                            <span class="navbar-text me-3">
+                                Bienvenido, <strong>{{ user.name }}</strong> 
+                                <span class="badge bg-secondary ms-1">{{ user.role }}</span>
+                            </span>
                         </li>
                         <li class="nav-item">
                             <a class="btn btn-outline-danger btn-sm" href="{{ url_for('public.logout') }}">Cerrar sesión</a>
                         </li>
                     {% else %}
                         <li class="nav-item">
-                            <a class="btn btn-primary" href="{{ url_for('public.login') }}">Iniciar sesión</a>
+                            <a class="btn btn-primary" href="{{ url_for('public.login') }}">
+                                <i class="fas fa-sign-in-alt me-2"></i>Iniciar sesión
+                            </a>
                         </li>
                     {% endif %}
                 </ul>

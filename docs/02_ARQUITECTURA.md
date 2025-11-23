@@ -15,6 +15,7 @@ Sistema multi-condominio implementado inicialmente para "Punta Blanca", diseñad
 ### 2.2 Frontend
 - Bootstrap 5 (CSS y JS)
 - JavaScript vanilla (para lógica de autenticación, peticiones a la API y UI dinámica)
+- TinyMCE (Editor de texto enriquecido para documentos)
 
 ### 2.3 Base de Datos
 - PostgreSQL (en producción)
@@ -27,6 +28,7 @@ Sistema multi-condominio implementado inicialmente para "Punta Blanca", diseñad
 ├── app/
 │   ├── __init__.py     # Inicialización de la aplicación Flask y registro de componentes.
 │   ├── auth.py         # Funciones auxiliares de autenticación (ej. obtener usuario actual).
+│   ├── decorators.py   # Decoradores de seguridad y roles (@module_required, @admin_required).
 │   ├── extensions.py   # Instancia de SQLAlchemy (db) para evitar dependencias circulares.
 │   ├── models.py       # Definición de todos los modelos de la base de datos.
 │   ├── tenant.py       # Lógica para determinar el tenant (inquilino) de la solicitud.
@@ -36,16 +38,13 @@ Sistema multi-condominio implementado inicialmente para "Punta Blanca", diseñad
 │   │   ├── user_routes.py   # Rutas para usuarios autenticados (dashboard).
 │   │   ├── admin_routes.py  # Rutas para administradores de condominio (rol ADMIN).
 │   │   │   # Endpoints clave:
-│   │   │   # - /admin (GET): Despachador (dispatcher) que redirige al panel correcto.
-│   │   │   # - /admin/condominio/<id>: Panel de gestión específico del condominio.
-│   │   │   # - /aprobar/<id>: Aprueba un usuario pendiente.
-│   │   │   # - /rechazar/<id>: Rechaza un usuario pendiente.
+│   │   │   # - /admin/condominio/<id>: Panel de gestión (Unidades, Usuarios, Directiva).
+│   │   │   # - /admin/usuarios/roles_especiales: Asignación de roles de directiva.
 │   │   ├── master_routes.py # Rutas para el super-administrador (rol MASTER).
 │   │   │   # Endpoints clave:
-│   │   ├── document_routes.py # Rutas para el módulo "Firmas & Comunicados".
-│   │   │   # - /master/condominios: Gestión global de condominios.
-│   │   │   # - /master/usuarios: Gestión global de usuarios.
-│   │   │   # - /master/supervise/<id>: Panel de supervisión de solo lectura con métricas.
+│   │   │   # - /master: Panel global con tarjetas de gestión.
+│   │   │   # - /master/modules: Catálogo global de módulos.
+│   │   ├── document_routes.py # Rutas para el módulo "Firmas & Comunicados" (Freemium).
 │   │   ├── api_routes.py    # Endpoints de la API REST.
 │   │   └── dev_routes.py    # Rutas para desarrollo y depuración.
 │   ├── static/         # Archivos estáticos (CSS, JS, imágenes).
@@ -55,6 +54,7 @@ Sistema multi-condominio implementado inicialmente para "Punta Blanca", diseñad
 │   └── templates/      # Plantillas HTML (vistas).
 │       ├── admin/
 │       ├── auth/
+│       ├── documents/  # Plantillas del módulo de documentos (index, editor, view, sign).
 │       ├── master/
 │       ├── services/
 │       └── user/
@@ -83,6 +83,7 @@ La implementación actual utiliza una estrategia de **multi-tenancy de esquema c
 
 ### 5.2 Condominium
 - **Atributos:** `id`, `name`, `legal_name`, `email`, `ruc`, `main_street`, `cross_street`, `house_number`, `city`, `country`, `latitude`, `longitude`, `subdomain`, `status`, `billing_day`, `grace_days`, `trial_start_date`, `trial_end_date`, `notes`, `admin_user_id`, `legal_representative_id`, `created_by`, `created_at`, `updated_at`.
+- **Flags de Módulos:** `has_documents_module`, `has_billing_module`.
 - Relaciones: Contiene múltiples `Unit`s y `User`s (ADMINs asignados).
 
 ### 5.3 Unit
@@ -93,25 +94,16 @@ La implementación actual utiliza una estrategia de **multi-tenancy de esquema c
 - **Atributos:** `tenant`, `primary_color`, `logo_url`, `commercial_name`, `created_at`.
 - Propósito: Configuración de personalización para cada tenant.
 
-### 5.5 Modelos Propuestos (No Implementados)
-Para dar soporte a las reglas de negocio futuras, se proponen los siguientes modelos:
+### 5.5 Modelos de Negocio
 
 #### 5.5.1 UserSpecialRole
-- **Estado:** 🚧 Implementado (Modelo de datos). Lógica de negocio pendiente.
-- **Propósito:** Asignar roles temporales y específicos (Presidente, Tesorero, etc.) a usuarios dentro de un condominio.
-- **Atributos Implementados:**
-    - `id`: Clave primaria.
-    - `user_id`: Foreign Key a `User`.
-    - `condominium_id`: Foreign Key a `Condominium`.
-    - `role`: String (ej. "PRESIDENT", "TREASURER").
-    - `assigned_by`: Foreign Key al `User` que asigna el rol.
-    - `start_date`: Fecha de inicio de vigencia del rol.
-    - `end_date`: Fecha de fin de vigencia.
-    - `is_active`: Booleano para indicar si el rol está activo.
-    - `created_at`: Timestamp de creación.
+- **Estado:** ✅ Implementado y en uso.
+- **Propósito:** Asignar roles de directiva (Presidente, Tesorero, etc.) a usuarios dentro de un condominio.
+- **Atributos:** `id`, `user_id`, `condominium_id`, `role`, `assigned_by`, `start_date`, `end_date`, `is_active`.
+- **Gestión:** Se gestiona desde el Panel de Administrador (`admin_routes.py`), pestaña "Directiva".
 
 #### 5.5.2 Módulo "Firmas & Comunicados"
-- **Estado:** ✅ Implementado.
+- **Estado:** ✅ Implementado (Fase 1 y 4). Estrategia Freemium activa.
 - **Propósito:** Gestionar el ciclo de vida completo de documentos oficiales.
 - **Modelos Clave:**
     - **`Document`**: Entidad central. Almacena:
@@ -119,82 +111,47 @@ Para dar soporte a las reglas de negocio futuras, se proponen los siguientes mod
         - Estados: `draft`, `pending_signature`, `signed`, `sent`.
         - Rutas a los PDFs generados (`pdf_unsigned_path`, `pdf_signed_path`).
         - Configuración para recolección de firmas públicas (`collect_signatures_from_residents`, `public_signature_link`).
-    - **`DocumentSignature`**: Registra cada firma realizada por un usuario del sistema (`MASTER`, `ADMIN`, etc.). Almacena:
-        - El `user_id` del firmante.
-        - El tipo de firma: `physical` o `electronic`.
-        - Timestamp e IP de la firma.
-    - **`ResidentSignature`**: Almacena las firmas recolectadas a través de un enlace público para peticiones (ej. al municipio). Registra `full_name`, `cedula`, `phone` y está desvinculado de los usuarios del sistema.
+    - **`DocumentSignature`**: Registra firmas de usuarios del sistema (`MASTER`, `ADMIN`, Directiva).
+    - **`ResidentSignature`**: Registra firmas públicas externas.
 - **Control de Acceso:**
-    - **Nivel Condominio (Implementación Actual):** Protegido por el flag booleano `has_documents_module` en el modelo `Condominium`.
-    - **Nivel Usuario:** El decorador `@module_required('documents')` centraliza la lógica de permisos, asegurando que solo usuarios autorizados (`MASTER`, `ADMIN`, `UserSpecialRole`) de un condominio con el módulo activo puedan acceder.
-        - **Lógica del Decorador:**
-            1. Concede acceso inmediato al rol `MASTER`.
-            2. Verifica que el módulo esté activo para el condominio del usuario.
-            3. Si está activo, concede acceso si el usuario es `ADMIN`.
-            4. Si no es `ADMIN`, verifica si el usuario tiene un **Rol Especial vigente y activo** (`PRESIDENTE`, `SECRETARIO`) que le otorgue permiso para ese módulo.
-            5. Si ninguna condición se cumple, deniega el acceso.
+    - **Nivel Básico:** Accesible para todos (repositorio).
+    - **Nivel Premium (Crear/Firmar):** Protegido por el decorador `@module_required`. Requiere que el condominio tenga el módulo contratado Y que el usuario sea ADMIN o Directiva.
 
-#### 5.5.3 Arquitectura Escalable de Módulos (Visión a Futuro)
-- **Estado:** 🏛️ **Diseño Arquitectónico.** Esta es la evolución para soportar N módulos.
+#### 5.5.3 Arquitectura Escalable de Módulos
+- **Estado:** ✅ Implementado (Catálogo Global).
 - **Propósito:** Crear un sistema dinámico para añadir, activar y facturar módulos.
 - **Modelos Clave:**
     - **`Module` (Catálogo de Módulos):**
         - **Propósito:** Tabla que contiene todos los módulos que la plataforma puede ofrecer.
         - **Atributos:** `id`, `code` (ej: 'documents'), `name`, `description`, `base_price`, `billing_cycle`, `status` ('ACTIVE', 'MAINTENANCE', 'ARCHIVED', 'COMING_SOON').
-    - **`CondominiumModuleActivation` (Activaciones por Condominio):**
-        - **Propósito:** Tabla que registra qué condominio tiene qué módulo activado, cuándo y a qué precio. Es el historial de contrataciones.
-        - **Atributos:** `id`, `condominium_id` (FK), `module_id` (FK), `activation_date`, `deactivation_date`, `price_at_activation`, `status` ('active', 'inactive', 'trial').
-    - **`ModuleActivationHistory` (Historial de Estados):**
-        - **Propósito:** Registra cada cambio de estado de una activación de módulo, especialmente para mantenimientos específicos.
-        - **Atributos:** `id`, `activation_id` (FK a `CondominiumModuleActivation`), `status` ('maintenance_start', 'maintenance_end', 'reactivated'), `timestamp`, `notes` (ej: "Reparación de datos de facturas"), `changed_by_id` (FK a `User`, para saber qué `MASTER` hizo el cambio).
-- **Lógica de Negocio a Futuro:**
-    1.  **Crear un Módulo Nuevo:** Como desarrollador, solo se añade una nueva fila a la tabla `Module`. No se modifica el modelo `Condominium`.
-    2.  **Activar un Módulo:** El `MASTER`, desde la interfaz de edición de un condominio, selecciona un módulo del catálogo. El sistema crea un nuevo registro en `CondominiumModuleActivation`.
-    3.  **Verificar Permiso:** El decorador `@module_required` se modifica para que revise dos cosas:
-        a. Que el estado global del módulo en `Module` no sea `MAINTENANCE`.
-        b. Que exista un registro `active` en `CondominiumModuleActivation` para ese condominio y módulo.
-    4.  **Facturación:** Un proceso mensual/anual puede leer la tabla `CondominiumModuleActivation` para generar facturas. La tabla `ModuleActivationHistory` puede usarse para calcular créditos o descuentos por tiempo de inactividad.
+        - **Gestión:** El MASTER gestiona este catálogo desde `/master/modules`.
+- **Lógica de Seguridad Global:** El decorador `@module_required` verifica primero el estado en `Module`. Si está en `MAINTENANCE`, bloquea el acceso globalmente, independientemente de si el condominio pagó.
 
-#### 5.5.2 AuditLog
+#### 5.5.4 AuditLog (Propuesto)
 - **Propósito:** Registrar acciones clave en el sistema para trazabilidad y seguridad.
-- **Atributos Sugeridos:**
-    - `id`: Clave primaria.
-    - `user_id`: Foreign Key al `User` que realiza la acción.
-    - `tenant`: El tenant (`subdomain`) donde ocurrió la acción.
-    - `action`: String describiendo la acción (ej. "USER_LOGIN", "CREATE_CONDOMINIUM").
-    - `details`: Campo de texto (JSON o similar) con detalles relevantes.
-    - `timestamp`: Fecha y hora de la acción.
+- **Estado:** ❌ Faltante.
 
 ## 6. Seguridad
 - **Autenticación:** JWT con cookies HTTP-Only (gestionado por Flask-JWT-Extended).
-- **Autorización:** Verificación de roles y permisos en cada ruta protegida.
+- **Autorización:** Verificación de roles y permisos en cada ruta protegida. Decoradores personalizados (`@master_required`, `@module_required`, `@condominium_admin_required`).
 - **Hashing de Contraseñas:** SHA256.
-- HTTPS obligatorio en producción.
+- **Protección CSRF:** Implícita por diseño en cookies SameSite.
+- **HTTPS:** Obligatorio en producción.
 
 ## 7. Próximas Funcionalidades y Mejoras
 Esta sección documenta funcionalidades identificadas en las reglas de negocio (`07_REGLAS_NEGOCIO.md`) que no están completamente implementadas.
 
-### 7.1 Implementación de Roles Especiales
-- **Objetivo:** Implementar el modelo `UserSpecialRole` (ver 5.5.1) y la lógica de negocio para que los `ADMIN` puedan asignar y gestionar la directiva del condominio con períodos de vigencia.
-- **Estado:** ❌ Faltante.
+### 7.1 Implementación de Firma Electrónica Real
+- **Objetivo:** Integrar librerías criptográficas (`endesive`) para firmar digitalmente los PDFs con certificados .p12 subidos por el usuario.
+- **Estado:** 🚧 Parcial (Base de datos lista).
 
-### 7.2 Completar Gestión del Administrador (`ADMIN`)
-- **Objetivo:** Desarrollar las interfaces y la lógica para que un `ADMIN` pueda gestionar su condominio de forma individual.
-- **Tareas Pendientes:**
-    - ✅ **Creación y edición individual de `Unit`:** Implementado.
-    - ✅ **Aprobación y gestión individual de `User` para su condominio:** Implementado.
-    - ❌ **Asignación individual de `Unit` a `User`:** Faltante.
-    - 🚧 Interfaz para gestionar la configuración del condominio (`CondominioConfig`).
+### 7.2 Envíos Inteligentes
+- **Objetivo:** Módulo de notificaciones masivas por WhatsApp/Email.
+- **Estado:** ❌ Faltante.
 
 ### 7.3 Implementación de Auditoría
-- **Objetivo:** Crear un sistema de trazabilidad de acciones críticas implementando el modelo `AuditLog` (ver 5.5.2).
+- **Objetivo:** Crear un sistema de trazabilidad de acciones críticas implementando el modelo `AuditLog`.
 - **Estado:** ❌ Faltante.
-
-### 7.4 Componentes de Escalabilidad (Visión a Largo Plazo)
-- **Celery:** Para tareas asíncronas (ej. envío de correos, procesamiento de reportes).
-- **Redis:** Para caché y gestión de sesiones.
-- **Nginx:** Como servidor web/proxy inverso en producción.
-- **Mejoras Frontend:** Uso de DataTables y Chart.js para visualización de datos.
 
 ## 8. Consideraciones para Futuras Mejoras
 - **Modularización:** La estructura actual es adecuada, pero a medida que el proyecto crezca, se puede evaluar una mayor modularización (ej. `app/api/v1/`, `app/core/`) para desacoplar componentes.

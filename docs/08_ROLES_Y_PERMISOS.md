@@ -1,5 +1,5 @@
 # Roles y Permisos del Sistema
-Versión: 1.0.0
+Versión: 1.1.0 (Actualizado: Noviembre 2025)
 
 ## Filosofía de Permisos
 El sistema opera bajo un modelo de permisos acumulativos. Si un usuario tiene múltiples roles (ej. `ADMIN` y `PRESIDENTE`), sus permisos son la suma de todos sus roles. El acceso a funcionalidades específicas, como los módulos, se concede si CUALQUIERA de sus roles activos se lo permite.
@@ -16,22 +16,25 @@ La directiva del condominio (compuesta por roles especiales) elige a un `ADMINIS
 - **Limitación Crítica de Seguridad:** El rol `MASTER` **NUNCA** puede operar, navegar o ejecutar acciones dentro del panel de un `ADMIN`. El sistema está diseñado para que la suplantación de roles sea imposible. El acceso del `MASTER` a los datos de un condominio se limita estrictamente a los datos agregados y métricas del panel de supervisión.
 - **Gestión del Catálogo de Módulos:**
     - **Exclusividad:** Solo el `MASTER` puede crear, editar y definir los precios de los módulos en el catálogo global del sistema (tabla `modules`).
-    - **Gestión de Estado Global:** Pone un módulo en estado `MAINTENANCE` para toda la plataforma.
+    - **Gestión de Estado Global:** Pone un módulo en estado `MAINTENANCE` para toda la plataforma. Esto bloquea el acceso incluso si el condominio lo ha pagado.
     - **Gestión de Estado Específico:** Registra períodos de mantenimiento para un módulo en un condominio específico, dejando un historial auditable.
-- Configuración global del sistema.
+- **Documentos Propios:** El MASTER tiene su propio módulo de "Documentos" para gestionar contratos, términos de servicio y comunicados de la plataforma, independiente de los condominios.
 
 ### 1.2 ADMINISTRADOR
 - Gestión completa de **un único condominio específico** al que está asignado (vía `tenant`).
 - Acceso a su panel de gestión a través de `/admin/condominio/<id>`.
 - Aprobación y rechazo de usuarios para su `tenant`.
 - Creación y gestión de unidades para su condominio.
+- **Gestión de Directiva:** Es el único rol autorizado para asignar y revocar Roles Especiales (`UserSpecialRole`) a los vecinos.
 - **Módulo "Firmas & Comunicados"**: Si está activado, puede crear, firmar y enviar documentos oficiales.
 
 ### 1.3 USUARIO
 - Acceso básico a unidades asignadas
 - Visualización de información personal
 - Interacción con servicios básicos del condominio
-- **Módulo "Firmas & Comunicados"**: No tiene acceso a la gestión. Solo recibe y visualiza los documentos que le son enviados.
+- **Módulo "Firmas & Comunicados"**:
+    - **Nivel Básico (Gratis):** Acceso de solo lectura al repositorio de documentos públicos.
+    - **Nivel Premium:** No tiene acceso a la gestión/creación. Solo recibe y visualiza los documentos que le son enviados o firma peticiones públicas.
 
 ## 2. Roles Especiales del Condominio
 
@@ -39,7 +42,7 @@ La directiva del condominio (compuesta por roles especiales) elige a un `ADMINIS
 **Descripción**: Representante legal principal del condominio
 **Permisos**:
 - Acceso a reportes de gestión
-- **Módulo "Firmas & Comunicados"**: Si está activado, puede crear, firmar y enviar documentos en nombre del condominio.
+- **Módulo "Firmas & Comunicados"**: Si está activado (Premium), puede crear, firmar y enviar documentos en nombre del condominio.
 - Visualización de indicadores administrativos
 - Supervisión de decisiones administrativas
 
@@ -48,7 +51,7 @@ La directiva del condominio (compuesta por roles especiales) elige a un `ADMINIS
 **Permisos**:
 - Generación y gestión de actas
 - Manejo de documentos oficiales
-- **Módulo "Firmas & Comunicados"**: Si está activado, tiene permisos completos para gestionar documentos.
+- **Módulo "Firmas & Comunicados"**: Si está activado (Premium), tiene permisos completos para gestionar documentos.
 - Gestión de sesiones de asamblea
 
 > **Nota Importante:** El acceso de un rol especial a un módulo específico (ej. `PRESIDENTE` al módulo de firmas) está condicionado a la **vigencia de su cargo**. El sistema debe validar que la fecha actual esté dentro del `start_date` y `end_date` del rol, y que el rol esté marcado como `is_active`. Si el cargo ha expirado, el acceso al módulo se revoca automáticamente.
@@ -76,14 +79,14 @@ La directiva del condominio (compuesta por roles especiales) elige a un `ADMINIS
 ## 3. Gestión de Roles Especiales
 
 ### 3.1 Asignación
-- Solo el ADMINISTRADOR puede asignar roles especiales
+- **Solo el ADMINISTRADOR puede asignar roles especiales** desde su panel de gestión.
 - Un usuario puede tener múltiples roles especiales (ej. ser `VOCAL` y `TESORERO` simultáneamente).
-- Los roles tienen período de vigencia definido
+- Los roles tienen período de vigencia definido.
 
 ### 3.2 Restricciones
-- Un usuario solo puede tener un rol especial activo de cada tipo por condominio
-- Los roles especiales no son transferibles entre condominios
-- Debe mantenerse registro histórico de asignaciones
+- Un usuario solo puede tener un rol especial activo de cada tipo por condominio.
+- Los roles especiales no son transferibles entre condominios.
+- Debe mantenerse registro histórico de asignaciones (tabla `user_special_roles`).
 
 ### 3.3 Vigencia
 - Fecha de inicio obligatoria
@@ -124,17 +127,15 @@ CREATE TABLE user_special_roles (
 ## 5. Flujos de Trabajo
 
 ### 5.1 Asignación de Rol Especial
-1. Administrador selecciona usuario
-2. Verifica roles actuales
-3. Selecciona nuevo rol especial
-4. Define período de vigencia
-5. Confirma asignación
+1. Administrador selecciona usuario existente en su panel.
+2. Verifica roles actuales.
+3. Selecciona nuevo rol especial (cargo) y fechas de vigencia.
+4. Confirma asignación.
 
 ### 5.2 Revocación de Rol
-1. Administrador selecciona asignación activa
-2. Establece fecha de finalización
-3. Actualiza estado a inactivo
-4. Sistema registra cambio en histórico
+1. Administrador selecciona asignación activa en la tabla de "Directiva Vigente".
+2. Ejecuta la acción de revocación.
+3. El sistema establece fecha de finalización a "hoy" y estado a inactivo.
 
 ## 6. Consideraciones Importantes
 
@@ -144,8 +145,8 @@ CREATE TABLE user_special_roles (
     2. **Rol de Directiva 1:** Ser `PRESIDENTE` (vía `UserSpecialRole`).
     3. **Rol de Directiva 2:** Ser `TESORERO` (vía otra entrada en `UserSpecialRole`).
     4. **Rol de Residente:** Tener una unidad asignada (`Unit`).
-- **Permisos Acumulativos:** El sistema otorgará el "superset" de permisos. Si como `ADMIN` tiene acceso total, el hecho de ser `TESORERO` no le restará acceso, simplemente le dará atribuciones formales adicionales (ej. para firmar actas como Tesorero).
-- **El Administrador-Directivo:** Es un caso de uso válido que el Administrador del software sea también un miembro de la directiva.
+- **Permisos Acumulativos:** El sistema otorgará el "superset" de permisos. Si como `ADMIN` tiene acceso total, el hecho de ser `TESORERO` no le restará acceso, simplemente le dará atribuciones formales adicionales.
+- **El Administrador-Directivo:** Es un caso de uso válido y común que el Administrador del software sea también un miembro de la directiva.
 
 ### 6.2 Auditoría
 - Registro de quién asignó cada rol
@@ -153,9 +154,13 @@ CREATE TABLE user_special_roles (
 - Trazabilidad de acciones por rol
 
 ### 6.3 Marketplace y Módulos Especiales
-- Roles especiales pueden tener accesos adicionales según módulos contratados
-- Permisos específicos por módulo del marketplace
-- Configuración flexible según necesidades del condominio
+- Roles especiales pueden tener accesos adicionales según módulos contratados.
+- **Estrategia Freemium:**
+    - El módulo de "Documentos" tiene un nivel básico gratuito (repositorio).
+    - Las funcionalidades de creación y firma son Premium.
+    - El decorador `@module_required` verifica tanto el contrato del condominio como el estado global del módulo (`Module.status`).
+- Permisos específicos por módulo del marketplace.
+- Configuración flexible según necesidades del condominio.
 
 ## 7. Mejores Prácticas
 
