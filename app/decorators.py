@@ -8,6 +8,7 @@ def get_current_user_from_jwt():
     user_id = get_jwt_identity()
     if user_id is None:
         return None
+    # Usamos .with_for_update() para un bloqueo pesimista si es necesario en transacciones complejas.
     return User.query.get(int(user_id))
 
 def login_required(f):
@@ -41,6 +42,36 @@ def master_required(f):
             return redirect(url_for('user.dashboard'))
         return f(*args, **kwargs)
     return decorated_function
+
+def module_required(module_name):
+    """
+    Decorator para rutas que pertenecen a un módulo contratable.
+    Verifica si el módulo está activo para el condominio del usuario.
+    Ejemplo de uso: @module_required('documents')
+    """
+    def decorator(f):
+        @wraps(f)
+        @login_required # Asegura que el usuario esté logueado primero
+        def decorated_function(*args, **kwargs):
+            user = kwargs.get('current_user')
+
+            # El rol MASTER siempre tiene acceso a todos los módulos.
+            if user.role.upper() == 'MASTER':
+                return f(*args, **kwargs)
+
+            condominium = Condominium.query.get(user.condominium_id)
+            if not condominium:
+                flash("No estás asociado a ningún condominio.", "error")
+                return redirect(url_for('user.dashboard'))
+
+            module_flag = f"has_{module_name}_module"
+            if not getattr(condominium, module_flag, False):
+                flash(f"El módulo '{module_name.replace('_', ' ').title()}' no está activado para tu condominio.", "error")
+                return redirect(url_for('user.dashboard'))
+
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
 
 def admin_required(f):
     """

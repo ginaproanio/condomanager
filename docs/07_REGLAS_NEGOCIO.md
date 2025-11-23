@@ -16,10 +16,9 @@ Rol con el más alto nivel de acceso, encargado de la gestión global de la plat
 
 ### 1.2 Perfil Administrador (ADMIN)
 Rol para gestionar un condominio específico. Asignado por el Perfil Maestro.
-- 🚧 **Crear y gestionar unidades en su condominio:** Implementada la creación y edición individual. La carga masiva por CSV está pendiente.
-- ✅ **Crear y gestionar unidades en su condominio (Individual):** Implementada la creación y edición individual.
-- 🚧 **Crear y gestionar unidades en su condominio (Masivo):** La interfaz para carga por CSV existe, pero la lógica de procesamiento está pendiente.
+- ✅ **Crear y gestionar unidades en su condominio:** Implementada la creación y listado de unidades desde el panel de administrador. La carga masiva y edición están pendientes.
 - ✅ **Aprobar/Rechazar registros de usuarios:** Implementado en `admin_routes`. Un `ADMIN` puede aprobar o rechazar usuarios de su propio `tenant`.
+- ✅ **Crear y gestionar usuarios en su condominio:** Implementada la creación y listado de usuarios desde el panel de administrador.
 - ❌ **Asignar unidades a usuarios:** No implementado. Depende de la creación de unidades.
 - ❌ **Gestionar configuraciones de su condominio:** No implementado.
 - ✅ **Restricción de acceso:** No puede crear condominios ni gestionar otros condominios. El acceso a las rutas de admin está protegido.
@@ -90,8 +89,27 @@ Roles con permisos específicos dentro de un condominio (Presidente, Tesorero, e
 - ❌ **Toda la lógica de validación está ausente.**
 
 ---
+## 5. Módulo "Firmas & Comunicados"
 
-## 5. Auditoría y Trazabilidad (Visión a Futuro)
+### 5.1 Activación del Módulo
+- ✅ **Activación por Condominio:** El rol `MASTER` puede activar o desactivar el módulo para cada condominio a través del flag `has_documents_module`. Si está desactivado, ninguna de sus funcionalidades es accesible para ese condominio.
+
+### 5.2 Permisos de Acceso y Uso
+- ✅ **Acceso al Módulo (Crear, Firmar, Enviar):**
+  - **Rol `MASTER`:** Acceso total a todos los documentos de todos los condominios.
+  - **Rol `ADMIN`:** Acceso total a los documentos de su condominio asignado.
+  - **Roles Especiales (`UserSpecialRole`):** Usuarios con un rol especial activo (ej. "PRESIDENTE", "SECRETARIO") tienen acceso total a los documentos de su condominio.
+- ✅ **Recepción de Documentos:**
+  - **Rol `USER` (Propietarios/Residentes):** No pueden acceder al módulo de gestión. Solo reciben los comunicados enviados por Email/WhatsApp y pueden ver los documentos que les han sido enviados en un portal de consulta.
+
+### 5.3 Flujos de Firma
+- ✅ **Firma Física:** El usuario autorizado puede descargar un PDF, firmarlo a mano, escanearlo y subirlo para registrar la firma.
+- ✅ **Firma Electrónica:** Usuarios autorizados que hayan configurado su certificado digital (.p12/.pfx) en su perfil pueden firmar documentos digitalmente.
+- ✅ **Recolección de Firmas Públicas:** Un usuario autorizado puede crear un documento y habilitar un enlace público para que cualquier persona (residente o no) pueda registrar su firma (nombre y cédula) para apoyar una causa (ej. petición al municipio). El sistema permite luego descargar estas firmas en formato Excel.
+
+---
+
+## 6. Auditoría y Trazabilidad (Visión a Futuro)
 - ❌ **Módulo no implementado.** No existe ninguna tabla o lógica para registrar las acciones de los usuarios.
 
 ---

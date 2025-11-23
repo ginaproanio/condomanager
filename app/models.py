@@ -74,6 +74,10 @@ class Condominium(db.Model):
     trial_start_date = db.Column(Date)
     trial_end_date = db.Column(Date)
     notes = db.Column(db.Text)
+    # --- Módulos Contratables ---
+    has_documents_module = db.Column(db.Boolean, default=False, nullable=False) # Módulo "Firmas & Comunicados"
+    has_billing_module = db.Column(db.Boolean, default=False, nullable=False)   # Módulo "Facturación"
+    has_requests_module = db.Column(db.Boolean, default=False, nullable=False)  # Módulo "Requerimientos"
 
     # FK corregidas a 'users.id'
     admin_user_id = db.Column(db.Integer, db.ForeignKey('users.id'))

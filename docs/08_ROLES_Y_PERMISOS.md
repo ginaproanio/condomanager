@@ -8,6 +8,7 @@ Versión: 1.0.0
 - Gestión global de usuarios (creación, asignación, aprobación)
 - Supervisión de condominios en modo **solo lectura** (`/supervise/<id>`).
 - Acceso de emergencia a paneles de administrador mediante **suplantación explícita** (`/impersonate/admin/<id>`).
+- Activación/Desactivación de módulos contratables por condominio (ej. "Firmas & Comunicados").
 - Configuración global del sistema.
 
 ### 1.2 ADMINISTRADOR
@@ -15,11 +16,13 @@ Versión: 1.0.0
 - Acceso a su panel de gestión a través de `/admin/condominio/<id>`.
 - Aprobación y rechazo de usuarios para su `tenant`.
 - Creación y gestión de unidades para su condominio.
+- **Módulo "Firmas & Comunicados"**: Si está activado, puede crear, firmar y enviar documentos oficiales.
 
 ### 1.3 USUARIO
 - Acceso básico a unidades asignadas
 - Visualización de información personal
 - Interacción con servicios básicos del condominio
+- **Módulo "Firmas & Comunicados"**: No tiene acceso a la gestión. Solo recibe y visualiza los documentos que le son enviados.
 
 ## 2. Roles Especiales del Condominio
 
@@ -27,6 +30,7 @@ Versión: 1.0.0
 **Descripción**: Representante legal principal del condominio
 **Permisos**:
 - Acceso a reportes de gestión
+- **Módulo "Firmas & Comunicados"**: Si está activado, puede crear, firmar y enviar documentos en nombre del condominio.
 - Visualización de indicadores administrativos
 - Supervisión de decisiones administrativas
 
@@ -35,6 +39,7 @@ Versión: 1.0.0
 **Permisos**:
 - Generación y gestión de actas
 - Manejo de documentos oficiales
+- **Módulo "Firmas & Comunicados"**: Si está activado, tiene permisos completos para gestionar documentos.
 - Gestión de sesiones de asamblea
 
 ### 2.3 TESORERO
