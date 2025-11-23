@@ -34,12 +34,17 @@ def api_login():
     # Crear token y establecerlo en una cookie
     access_token = create_access_token(identity=user.id, expires_delta=timedelta(hours=12)) # 12 horas
     
-    # Determinar URL de redirección basada en el rol del usuario
+    # --- SOLUCIÓN DE INGENIERÍA ---
+    # La API no debe construir URLs complejas. El frontend se encargará de la redirección.
+    # Simplemente indicamos la ruta base para cada rol.
     redirect_url = url_for('user.dashboard') # Por defecto
     if user.role == 'MASTER':
         redirect_url = url_for('master.master_panel')
     elif user.role == 'ADMIN':
-        redirect_url = url_for('admin.admin_panel')
+        # Ya no existe 'admin.admin_panel'. El ADMIN debe ir a su panel,
+        # pero la API no sabe el ID del condominio. Devolvemos una ruta genérica
+        # que el frontend interpretará.
+        redirect_url = '/admin' # El frontend redirigirá a /admin, que a su vez encontrará el condominio correcto.
 
     response = jsonify({"status": "success", "message": "Login exitoso", "user_role": user.role, "redirect_url": redirect_url})
     set_access_cookies(response, access_token)
