@@ -13,7 +13,7 @@ La directiva del condominio (compuesta por roles especiales) elige a un `ADMINIS
 - **Gestión de Plataforma:** Creación y configuración global de condominios y usuarios administradores.
 - **Gestión del Catálogo de Módulos:** Creación y edición de los módulos que la plataforma ofrece.
 - **Supervisión de Condominios (Solo Lectura):** Acceso a un panel de supervisión (`/supervise/<id>`) con estadísticas generales (conteos de unidades, usuarios activos/pendientes) para fines de facturación y seguimiento.
-- **Limitación Crítica de Seguridad:** El rol `MASTER` **NUNCA** puede operar, navegar o ejecutar acciones dentro del panel de un `ADMIN`. No existe la suplantación de roles. Su visión se limita a los datos agregados y métricas.
+- **Limitación Crítica de Seguridad:** El rol `MASTER` **NUNCA** puede operar, navegar o ejecutar acciones dentro del panel de un `ADMIN`. El sistema está diseñado para que la suplantación de roles sea imposible. El acceso del `MASTER` a los datos de un condominio se limita estrictamente a los datos agregados y métricas del panel de supervisión.
 - **Gestión del Catálogo de Módulos:**
     - **Exclusividad:** Solo el `MASTER` puede crear, editar y definir los precios de los módulos en el catálogo global del sistema (tabla `modules`).
     - **Gestión de Estado Global:** Pone un módulo en estado `MAINTENANCE` para toda la plataforma.

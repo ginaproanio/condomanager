@@ -2,7 +2,8 @@ from flask import Blueprint, jsonify, request, make_response, url_for
 from flask_jwt_extended import jwt_required, create_access_token, set_access_cookies, current_user
 from app.auth import get_current_user
 from app.models import Condominium, User, Unit
-from app import db
+from app.tenant import get_tenant
+from app import db, models
 import hashlib
 from datetime import timedelta
 
@@ -23,10 +24,20 @@ def api_login():
     password = data['password']
     pwd_hash = hashlib.sha256(password.encode()).hexdigest()
 
-    user = User.query.filter_by(email=email, password_hash=pwd_hash).first()
+    # --- SOLUCIÓN DE INGENIERÍA: AUTENTICACIÓN POR TENANT ---
+    # 1. Obtener el tenant del subdominio actual.
+    tenant = get_tenant()
+
+    # 2. La autenticación AHORA exige que el email, password Y tenant coincidan.
+    # EXCEPCIÓN: El MASTER puede loguearse desde cualquier tenant.
+    user_query = User.query.filter_by(email=email, password_hash=pwd_hash)
+    if tenant: # Si hay un subdominio, filtramos por tenant para todos excepto el MASTER
+        user_query = user_query.filter( (User.tenant == tenant) | (User.role == 'MASTER') )
+    user = user_query.first()
 
     if not user:
-        return jsonify({"error": "Credenciales incorrectas"}), 401
+        # Si no se encuentra, es porque las credenciales son incorrectas O porque intenta loguearse en el subdominio equivocado.
+        return jsonify({"error": "Credenciales incorrectas o acceso desde un subdominio no autorizado."}), 401
 
     if user.status != 'active':
         return jsonify({"error": f"Tu cuenta está en estado '{user.status}'"}), 403
@@ -34,9 +45,8 @@ def api_login():
     # Crear token y establecerlo en una cookie
     access_token = create_access_token(identity=user.id, expires_delta=timedelta(hours=12)) # 12 horas
     
-    # --- SOLUCIÓN DE INGENIERÍA FINAL Y ROBUSTA ---
+    # --- SOLUCIÓN DE INGENIERÍA DEFINITIVA Y ROBUSTA ---
     # La API de login es responsable de determinar la URL final y correcta.
-    # No habrá más redirecciones intermedias ni parches.
     redirect_url = url_for('user.dashboard') # Por defecto
     if user.role == 'MASTER':
         redirect_url = url_for('master.master_panel')
@@ -47,8 +57,8 @@ def api_login():
             # Si se encuentra, construir la URL final y específica.
             redirect_url = url_for('admin.admin_condominio_panel', condominium_id=admin_condo.id)
         else:
-            # Si es un ADMIN no asignado, la API devuelve un estado de 'warning'.
-            # El frontend será responsable de mostrar este mensaje al usuario.
+            # Si es un ADMIN no asignado, la API devuelve un estado de 'warning' para que el frontend lo maneje.
+            # No se usa flash() en una API.
             response = jsonify({"status": "warning", "message": "Rol de Administrador detectado, pero no estás asignado a ningún condominio.", "user_role": user.role, "redirect_url": redirect_url})
             set_access_cookies(response, access_token)
             return response
