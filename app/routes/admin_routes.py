@@ -74,6 +74,28 @@ def rechazar_usuario(user_id):
     flash(f"Usuario {user_to_reject.email} rechazado.", "info")
     return redirect('/admin')
 
+@admin_bp.route('/admin/condominio/<int:condominium_id>')
+@jwt_required()
+def admin_condominio_panel(condominium_id):
+    """
+    Panel de gestión específico para un condominio.
+    Muestra las unidades y opciones de gestión.
+    """
+    user = get_current_user()
+    condominium = Condominium.query.get_or_404(condominium_id)
+
+    # Verificación de seguridad: El ADMIN debe pertenecer al tenant del condominio
+    # O debe ser un MASTER suplantando a ese condominio.
+    is_impersonating = user.role == 'MASTER' and session.get('impersonating_condominium_id') == condominium_id
+    is_correct_admin = user.role == 'ADMIN' and user.tenant == condominium.subdomain
+
+    if not (is_impersonating or is_correct_admin):
+        flash("Acceso no autorizado a este condominio.", "error")
+        return redirect(url_for('user.dashboard'))
+
+    unidades = Unit.query.filter_by(condominium_id=condominium_id).order_by(Unit.name).all()
+    return render_template('admin/condominio_panel.html', user=user, condominium=condominium, unidades=unidades)
+
 @admin_bp.route('/admin/condominio/<int:condominium_id>/unidad/nueva', methods=['GET', 'POST'])
 @jwt_required()
 def crear_unidad(condominium_id):

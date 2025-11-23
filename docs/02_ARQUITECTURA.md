@@ -35,6 +35,10 @@ Sistema multi-condominio implementado inicialmente para "Punta Blanca", diseñad
 │   │   ├── public_routes.py # Rutas públicas (home, registro, login).
 │   │   ├── user_routes.py   # Rutas para usuarios autenticados (dashboard).
 │   │   ├── admin_routes.py  # Rutas para administradores de condominio.
+│   │   │   # Endpoints clave:
+│   │   │   # - /admin (GET) - Despachador (dispatcher) que redirige según el rol.
+│   │   │   # - /admin/condominio/<id> (GET) - Panel de gestión específico del condominio.
+│   │   │   # - /aprobar/<id> (GET) - Aprueba un usuario.
 │   │   ├── master_routes.py # Rutas para el super-administrador (rol MASTER).
 │   │   │   # Endpoints clave:
 │   │   │   # - /master/condominios (GET)
