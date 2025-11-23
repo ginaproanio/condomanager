@@ -65,4 +65,16 @@ def create_app():
     def shutdown_session(exception=None):
         db.session.remove()
 
+    # --- ESTA ES LA CORRECCIÓN DE SEGURIDAD ---
+    @app.after_request
+    def add_security_headers(response):
+        """
+        Añade cabeceras a cada respuesta para prevenir el caché en el navegador.
+        Esto soluciona el problema de poder usar el botón "atrás" después de cerrar sesión.
+        """
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '-1'
+        return response
+
     return app
