@@ -109,9 +109,15 @@ def crear_unidad(condominium_id):
     user = get_current_user()
     condominium = Condominium.query.get_or_404(condominium_id)
 
-    if user.role != 'ADMIN' or user.tenant != condominium.subdomain:
+    # --- LÓGICA DE SEGURIDAD UNIFICADA Y CORREGIDA ---
+    is_impersonating = user.role == 'MASTER' and session.get('impersonating_condominium_id') == condominium_id
+    is_correct_admin = (user.role == 'ADMIN' and 
+                        user.tenant and condominium.subdomain and 
+                        user.tenant.strip().lower() == condominium.subdomain.strip().lower())
+
+    if not (is_impersonating or is_correct_admin):
         flash("Acceso no autorizado.", "error")
-        return redirect(url_for('user.dashboard'))
+        return redirect(url_for('public.login')) # Redirigir al login en caso de fallo de seguridad
 
     if request.method == 'POST':
         new_unit = Unit(
@@ -141,9 +147,15 @@ def editar_unidad(unit_id):
     unit_to_edit = Unit.query.get_or_404(unit_id)
     condominium = unit_to_edit.condominium
 
-    if user.role != 'ADMIN' or user.tenant != condominium.subdomain:
+    # --- LÓGICA DE SEGURIDAD UNIFICADA Y CORREGIDA ---
+    is_impersonating = user.role == 'MASTER' and session.get('impersonating_condominium_id') == condominium.id
+    is_correct_admin = (user.role == 'ADMIN' and 
+                        user.tenant and condominium.subdomain and 
+                        user.tenant.strip().lower() == condominium.subdomain.strip().lower())
+
+    if not (is_impersonating or is_correct_admin):
         flash("Acceso no autorizado.", "error")
-        return redirect(url_for('user.dashboard'))
+        return redirect(url_for('public.login')) # Redirigir al login en caso de fallo de seguridad
 
     if request.method == 'POST':
         unit_to_edit.property_number = request.form.get('property_number')
