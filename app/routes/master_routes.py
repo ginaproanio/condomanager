@@ -27,6 +27,69 @@ def master_panel():
     all_users = User.query.all()
     return render_template('master/panel.html', user=user, config=config, all_users=all_users)
 
+@master_bp.route('/master/reports', methods=['GET', 'POST'])
+@jwt_required()
+def reports():
+    user = get_current_user()
+    if not user or user.role != 'MASTER':
+        flash("Acceso denegado.", "error")
+        return redirect('/dashboard')
+
+    # Generación de estadísticas en tiempo real
+    total_condos = Condominium.query.count()
+    active_condos = Condominium.query.filter_by(status='ACTIVO').count()
+    inactive_condos = total_condos - active_condos
+    
+    total_users = User.query.count()
+    # Usuarios con roles de gestión (ADMIN o MASTER)
+    management_users = User.query.filter(or_(User.role=='ADMIN', User.role=='MASTER')).count()
+    
+    # Módulos activos (conteo simple)
+    docs_module_active = Condominium.query.filter_by(has_documents_module=True).count()
+    
+    # Lógica de exportación (POST)
+    if request.method == 'POST':
+        action = request.form.get('action')
+        
+        if action == 'export_condos':
+            output = io.StringIO()
+            writer = csv.writer(output)
+            # Cabeceras
+            writer.writerow(['ID', 'Nombre Legal', 'Nombre Comercial', 'RUC', 'Estado', 'Subdominio', 'Admin Email', 'Mód. Documentos', 'Fecha Creación'])
+            
+            condos = Condominium.query.order_by(Condominium.created_at.desc()).all()
+            for c in condos:
+                admin_email = c.admin_user.email if c.admin_user else 'Sin Asignar'
+                writer.writerow([
+                    c.id, 
+                    c.legal_name or c.name, 
+                    c.name, 
+                    c.ruc, 
+                    c.status, 
+                    c.subdomain, 
+                    admin_email, 
+                    'ACTIVO' if c.has_documents_module else 'NO',
+                    c.created_at.strftime('%Y-%m-%d') if c.created_at else ''
+                ])
+                
+            output.seek(0)
+            return Response(
+                output.getvalue().encode('utf-8-sig'), # UTF-8 BOM para Excel en español
+                mimetype="text/csv",
+                headers={"Content-Disposition": f"attachment;filename=reporte_condominios_{datetime.now().strftime('%Y%m%d')}.csv"}
+            )
+
+    return render_template('master/reports.html', 
+                           user=user,
+                           stats={
+                               'total_condos': total_condos,
+                               'active_condos': active_condos,
+                               'inactive_condos': inactive_condos,
+                               'total_users': total_users,
+                               'management_users': management_users,
+                               'docs_module_active': docs_module_active
+                           })
+
 @master_bp.route('/master/condominios', methods=['GET'])
 @jwt_required()
 def master_condominios():

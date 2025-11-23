@@ -1,131 +1,74 @@
 # Reglas de Negocio
-Versión: 2.1.0 (Sincronizado con el código base actual: 2025-11-22)
-*(Nota: Este documento refleja el estado real de la implementación. ✅ Implementado, 🚧 En Proceso/Parcial, ❌ Faltante/Visión a Futuro.)*
+Versión: 3.0.0 (Sincronizado con implementación: 2025-11-23)
+*(Nota: Este documento refleja el estado real de la implementación.)*
 
 ## 1. Roles del Sistema
 
 ### 1.1 Perfil Maestro (MASTER)
 Rol con el más alto nivel de acceso, encargado de la gestión global de la plataforma.
-- ✅ **Crear nuevos condominios (Individual):** Implementado. El MASTER puede crear condominios uno por uno.
-- 🚧 **Crear nuevos condominios (Masivo):** La interfaz para carga por CSV existe, pero la lógica de procesamiento está pendiente.
-- ✅ **Crear nuevos condominios (Masivo):** Implementado. La carga por CSV para condominios es funcional.
-- ✅ **Asignar administradores a condominios:** Implementado. Se puede asignar un ADMIN al crear o editar un usuario.
-- ✅ **Gestionar Usuarios (Individual y Aprobación):** Flujo completo para crear, editar, aprobar, rechazar y gestionar usuarios.
-- ✅ **Vista de Supervisión de Condominio (Solo Lectura):** Implementado. Al acceder a un condominio, el `MASTER` ve un panel informativo con estadísticas clave, sin capacidad de realizar acciones operativas. **No existe la suplantación de roles.**
+- ✅ **Gestión Global:** Crea condominios (Individual/Masivo), inactiva tenants y gestiona usuarios globales.
+- ✅ **Catálogo de Módulos:** Puede activar/desactivar módulos a nivel global (activando flag de Mantenimiento) o por condominio.
+- ✅ **Acceso Transversal:** Tiene acceso "Premium" a todos los módulos para supervisión (ej. puede ver y crear documentos en cualquier tenant).
 
 ### 1.2 Perfil Administrador (ADMIN)
-Rol para gestionar un condominio específico. Asignado por el Perfil Maestro.
-- ✅ **Crear y gestionar unidades en su condominio:** Implementada la creación y listado de unidades desde el panel de administrador. La carga masiva y edición están pendientes.
-- ✅ **Aprobar/Rechazar registros de usuarios:** Implementado en `admin_routes`. Un `ADMIN` puede aprobar o rechazar usuarios de su propio `tenant`.
-- ✅ **Crear y gestionar usuarios en su condominio:** Implementada la creación y listado de usuarios desde el panel de administrador.
-- ❌ **Asignar unidades a usuarios:** No implementado. Depende de la creación de unidades.
-- ❌ **Gestionar configuraciones de su condominio:** No implementado.
-- ✅ **Restricción de acceso:** No puede crear condominios ni gestionar otros condominios. El acceso a las rutas de admin está protegido.
+Rol para gestionar un condominio específico.
+- ✅ **Gestión de Usuarios:** Aprueba/Rechaza registros y gestiona roles de su condominio.
+- ✅ **Gestión de la Directiva:** Puede asignar y revocar **Roles Especiales** (Presidente, Tesorero, etc.) a usuarios existentes.
+- ✅ **Gestión de Unidades:** Crea y asigna unidades (implementación básica).
+- ✅ **Acceso a Módulos Premium:** Tiene acceso completo a las funcionalidades de pago activas en su condominio (ej. Crear/Firmar documentos).
 
-### 1.3 Perfil Usuario (USER)
+### 1.3 Perfil Usuario (USER - Residente/Propietario)
 Usuario final del sistema.
-- ✅ **Ver su panel principal (`/dashboard`):** Implementado.
-- ❌ **Actualizar su información personal:** No implementado. No existe una interfaz de perfil de usuario.
-- ✅ **Acceso restringido:** No puede realizar acciones administrativas (asegurado por `jwt_required` y lógica de roles).
+- ✅ **Panel de Residente:** Visualiza su unidad asignada y accesos directos.
+- ✅ **Acceso Freemium a Documentos:** Puede visualizar y descargar documentos públicos/enviados de su condominio sin costo adicional.
+- ❌ **Restricción:** No puede crear documentos ni firmar (salvo en flujos públicos específicos o si se le otorga un Rol Especial).
 
-### 1.4 Roles Especiales de Condominio (Visión a Futuro)
-Roles con permisos específicos dentro de un condominio (Presidente, Tesorero, etc.).
-- 🚧 **Estructura de datos:** El modelo `UserSpecialRole` **existe** en `app/models.py`, sentando las bases para esta funcionalidad.
-- ❌ **Lógica de negocio:** No hay ninguna lógica implementada para asignar, gestionar, o validar estos roles.
-
----
-
-## 2. Jerarquía y Alcance
-
-### 2.1 Perfil Maestro
-- ✅ **Nivel más alto:** Confirmado por la lógica de roles en las rutas.
-- ✅ **Gestión de condominios:** Implementada la creación, edición e inactivación de condominios.
-
-### 2.2 Perfil Administrador
-- ✅ **Gestión de un condominio específico:** El `ADMIN` está asociado a un `tenant`. Las rutas de aprobación/rechazo de usuarios validan que el `ADMIN` solo pueda gestionar usuarios de su propio `tenant`.
-
-### 2.3 Perfil Usuario
-- ✅ **Acceso limitado:** Confirmado. El usuario solo ve su panel y páginas de servicios básicos.
-
-### 2.4 Roles Especiales
-- 🚧 **Modelo de datos existente:** El modelo `UserSpecialRole` está definido.
-- ❌ **Lógica de asignación y permisos:** Totalmente ausente.
+### 1.4 Roles Especiales (Directiva)
+Roles acumulativos asignados por el ADMIN (`UserSpecialRole`).
+- ✅ **Implementación:** Modelo `UserSpecialRole` activo.
+- ✅ **Permisos:** Un usuario con rol "Presidente" o "Secretario" hereda permisos "Premium" en el módulo de Documentos (puede crear y firmar), manteniendo su perfil de Usuario normal.
+- ✅ **Temporalidad:** Los roles tienen fecha de inicio y fin, gestionados automáticamente.
 
 ---
 
-## 3. Flujos de Trabajo
+## 2. Módulo "Firmas & Comunicados" (Modelo Freemium)
 
-### 3.1 Creación de Condominio
-- ✅ **Flujo implementado:** El MASTER puede crear condominios de forma individual a través de un formulario dedicado o de forma masiva mediante la importación de un archivo CSV.
+### 2.1 Estrategia de Acceso
+- ✅ **Nivel Básico (Gratis/Incluido):**
+    - Disponible para **todos** los usuarios (`USER`, `ADMIN`, `MASTER`) de un condominio activo.
+    - Funcionalidad: Visualizar repositorio (`index`), descargar PDF sin firmar.
+    - *Justificación:* Fomenta la transparencia y el uso de la plataforma.
+- ✅ **Nivel Premium (Pago/Restringido):**
+    - Requiere que el condominio tenga `has_documents_module = True`.
+    - Disponible para: `MASTER`, `ADMIN` y `Directiva` (con Roles Especiales activos).
+    - Funcionalidad: Crear documentos (`editor`), Editar, Firmar (Física), Enviar.
 
-### 3.2 Gestión de Unidades
-- ✅ **Paso 1: Crear unidades (Individual):** Implementado para el rol ADMIN.
-- 🚧 **Paso 1: Crear unidades (Masivo):** Carga y procesamiento de CSV no implementados.
-- ❌ **Paso 2: Asignar unidades a usuarios:** No implementado.
+### 2.2 Ciclo de Vida del Documento
+1. **Borrador:** Creado por un usuario Premium.
+2. **Firmado (Físico):** Se descarga, se firma en papel, se escanea y se sube la evidencia.
+3. **Publicado:** Visible para los residentes (Nivel Básico).
 
-### 3.3 Acceso de Usuarios
-1. ✅ **Registro:** Usuario se registra (`/registro`) y queda en estado `pending`.
-2. ✅ **Aprobación:** Un `ADMIN` o `MASTER` puede aprobar al usuario (`/aprobar/:id`), cambiando su estado a `active`.
-3. ✅ **Login:** El usuario `active` puede iniciar sesión (`/login`).
-
-### 3.4 Asignación de Roles Especiales (Visión a Futuro)
-- ❌ **Flujo no implementado.**
-
----
-
-## 4. Restricciones y Validaciones
-
-### 4.1 Nivel Maestro
-- ✅ **Rol único:** La lógica en las rutas asegura que solo este rol accede a sus funciones.
-
-### 4.2 Nivel Administrador
-- ✅ **Aislamiento de Condominio (Tenant):** Las rutas de gestión de usuarios en `admin_routes` verifican que el `ADMIN` pertenezca al mismo `tenant` que el usuario que está gestionando.
-
-### 4.3 Nivel Usuario
-- ✅ **Acceso Básico:** Correctamente limitado a vistas no administrativas.
-
-### 4.4 Roles Especiales
-- ❌ **Toda la lógica de validación está ausente.**
-
----
-## 5. Módulo "Firmas & Comunicados" (Implementado)
-
-### 5.1 Activación del Módulo
-- ✅ **Activación por Condominio:** El rol `MASTER` puede activar o desactivar el módulo para cada condominio a través del flag `has_documents_module`. Si está desactivado, ninguna de sus funcionalidades es accesible para ese condominio.
-
-### 5.2 Permisos de Acceso y Uso
-- ✅ **Acceso al Módulo (Crear, Firmar, Enviar):**
-    - **Rol `MASTER`:** Acceso total a todos los documentos de todos los condominios.
-    - **Rol `ADMIN`:** Acceso total a los documentos de su condominio asignado.
-    - **Roles Especiales (`UserSpecialRole`):** Usuarios con un rol especial activo (ej. "PRESIDENTE", "SECRETARIO") tienen acceso total a los documentos de su condominio.
-- ✅ **Recepción de Documentos:**
-    - **Rol `USER` (Propietarios/Residentes):** No pueden acceder al módulo de gestión. Solo reciben los comunicados enviados por Email/WhatsApp y pueden ver los documentos que les han sido enviados en un portal de consulta.
-
-### 5.3 Flujos de Firma
-- ✅ **Firma Física:** El usuario autorizado puede descargar un PDF, firmarlo a mano, escanearlo y subirlo para registrar la firma.
-- ✅ **Firma Electrónica:** Usuarios autorizados que hayan configurado su certificado digital (.p12/.pfx) en su perfil pueden firmar documentos digitalmente.
-- ✅ **Recolección de Firmas Públicas:** Un usuario autorizado puede crear un documento y habilitar un enlace público para que cualquier persona (residente o no) pueda registrar su firma (nombre y cédula) para apoyar una causa (ej. petición al municipio). El sistema permite luego descargar estas firmas en formato Excel.
-
-### 5.4 Flujo de Envío
-- ✅ **Envío Inteligente:** El sistema permite enviar los documentos firmados a través de Email y WhatsApp.
-- ✅ **Filtros de Destinatarios:** El administrador puede segmentar el envío a grupos específicos como "Todos", "Solo Propietarios", "Solo Inquilinos" o "Solo Morosos".
-- ✅ **Envío de Prueba:** Antes del envío masivo, el administrador puede enviar una prueba a su propio número de WhatsApp para verificar el contenido.
+### 2.3 Restricciones Técnicas
+- ✅ **Mantenimiento Global:** Si el módulo está en estado `MAINTENANCE` en la tabla `Module`, nadie puede acceder a funciones Premium, mostrando un mensaje de "Mejoras en curso".
+- ✅ **Validación de Tenant:** Los documentos están estrictamente aislados por `condominium_id`.
 
 ---
 
-## 6. Auditoría y Trazabilidad (Visión a Futuro para este Módulo)
-- ❌ **Módulo no implementado.** No existe ninguna tabla o lógica para registrar las acciones de los usuarios.
-- ❌ **Acciones a auditar:** `DOCUMENT_CREATED`, `DOCUMENT_SIGNED_PHYSICAL`, `DOCUMENT_SIGNED_ELECTRONIC`, `DOCUMENT_SENT`, `PUBLIC_SIGNATURE_COLLECTED`.
+## 3. Jerarquía y Seguridad
+
+### 3.1 Autenticación y Sesión
+- ✅ **JWT en Cookies:** Token seguro HTTP-Only.
+- ✅ **Contexto Global:** Un `context_processor` inyecta el objeto `user` en todos los templates para consistencia de UI.
+
+### 3.2 Validación de Permisos
+- ✅ **Decoradores en Cascada:**
+    1. `@login_required`: Usuario autenticado.
+    2. `@module_required('documents')`:
+        - Verifica Mantenimiento Global.
+        - Verifica Contrato del Condominio (`has_documents_module`).
+        - Verifica Rol (Master/Admin o Rol Especial).
 
 ---
 
-## 6. Restricciones Técnicas
-
-### 6.1 Validaciones de Seguridad
-- ✅ **Validación de Rol:** Implementada a través de la lógica en cada ruta protegida.
-- ✅ **Validación de Estado:** El login (`/login`) verifica que el usuario esté `active`.
-- ✅ **Pertenencia a Condominio (Tenant):** Implementada en las rutas de `admin_routes` para la gestión de usuarios.
-
-### 6.2 Integridad de Datos
-- ✅ **Email de usuario único:** Validado en la ruta de registro (`/registro`).
-- ❌ **Histórico de cambios:** No implementado.
+## 4. Auditoría y Trazabilidad
+- ❌ **Logs de Actividad:** No implementado (Deuda Técnica). No hay registro histórico de quién borró o editó un documento.

@@ -76,6 +76,12 @@ def login():
 def logout():
     response = make_response(redirect(url_for('public.login')))
     unset_jwt_cookies(response)
+    
+    # REFUERZO DE SEGURIDAD: Prevenir caché al salir
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    
     flash("Has cerrado sesión correctamente", "info")
     return response
 

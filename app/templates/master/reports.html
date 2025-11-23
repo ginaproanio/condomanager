@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Reportes Gerenciales{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <a href="{{ url_for('master.panel') }}" class="btn btn-outline-secondary mb-2">
+                <i class="fas fa-arrow-left me-2"></i>Volver
+            </a>
+            <h2 class="text-primary mb-0"><i class="fas fa-chart-line me-2"></i>Reportes Gerenciales</h2>
+        </div>
+        <form method="POST">
+            <input type="hidden" name="action" value="export_condos">
+            <button type="submit" class="btn btn-success shadow-sm">
+                <i class="fas fa-file-excel me-2"></i>Descargar Reporte Global (CSV)
+            </button>
+        </form>
+    </div>
+
+    <!-- Scorecards -->
+    <div class="row g-4 mb-5">
+        <!-- Condominios -->
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-primary text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase opacity-75">Condominios Totales</h6>
+                            <h2 class="display-4 fw-bold mb-0">{{ stats.total_condos }}</h2>
+                        </div>
+                        <i class="fas fa-building fa-2x opacity-50"></i>
+                    </div>
+                    <div class="mt-3 small">
+                        <span class="fw-bold">{{ stats.active_condos }}</span> Activos | 
+                        <span class="opacity-75">{{ stats.inactive_condos }} Inactivos</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Usuarios -->
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-info text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase opacity-75">Usuarios Totales</h6>
+                            <h2 class="display-4 fw-bold mb-0">{{ stats.total_users }}</h2>
+                        </div>
+                        <i class="fas fa-users fa-2x opacity-50"></i>
+                    </div>
+                    <div class="mt-3 small">
+                        <span class="fw-bold">{{ stats.management_users }}</span> Administradores
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Penetración de Módulo -->
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-secondary text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase opacity-75">Mód. Documentos</h6>
+                            <h2 class="display-4 fw-bold mb-0">{{ stats.docs_module_active }}</h2>
+                        </div>
+                        <i class="fas fa-file-contract fa-2x opacity-50"></i>
+                    </div>
+                    <div class="mt-3 small">
+                        Condominios con módulo activo
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Finanzas (Placeholder) -->
+        <div class="col-md-3">
+             <div class="card border-0 shadow-sm bg-success text-white h-100 opacity-75">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase opacity-75">Ingresos (Mes)</h6>
+                            <h2 class="display-4 fw-bold mb-0">$0</h2>
+                        </div>
+                        <i class="fas fa-dollar-sign fa-2x opacity-50"></i>
+                    </div>
+                    <div class="mt-3 small">
+                        Módulo de Facturación Pendiente
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sección de Gráficos / Tablas futuras -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0 text-primary">Detalle de Auditoría</h5>
+        </div>
+        <div class="card-body">
+            <div class="text-center py-5 text-muted">
+                <i class="fas fa-chart-bar fa-3x mb-3 opacity-25"></i>
+                <p>Próximamente: Gráficos de crecimiento mensual y actividad de usuarios.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
