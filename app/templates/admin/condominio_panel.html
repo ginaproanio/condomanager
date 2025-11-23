@@ -26,270 +26,261 @@
                         {% endif %}
                     {% endwith %}
 
-                    {% if user and user.role == 'ADMIN' and user.condominium_id == condominium.id %}
-                        <p>Bienvenido, <strong>{{ user.name }}</strong>. Estás administrando: <strong>{{ condominium.name }}</strong>.</p>
-                        <p>Dirección: {{ condominium.address }}, {{ condominium.city }}, {{ condominium.country }}</p>
-                        <p>Estado: <span class="badge bg-secondary">{{ condominium.status }}</span></p>
+                    {# --- SOLUCIÓN DE INGENIERÍA APLICADA --- #}
+                    {# Se elimina el bloque 'if/else' que contenía la lógica de seguridad errónea. #}
+                    {# Si el usuario ha llegado a esta plantilla, es porque la ruta de Python ya ha validado #}
+                    {# su autorización. La plantilla solo debe renderizar el contenido. #}
 
-                        <!-- Navegación por Pestañas -->
-                        <ul class="nav nav-tabs mb-4" id="condoAdminTabs" role="tablist">
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link active" id="units-tab" data-bs-toggle="tab" data-bs-target="#units" type="button" role="tab" aria-controls="units" aria-selected="true">
-                                    <i class="fas fa-th-list me-2"></i>Unidades
-                                </button>
-                            </li>
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="import-units-tab" data-bs-toggle="tab" data-bs-target="#import-units" type="button" role="tab" aria-controls="import-units" aria-selected="false">
-                                    <i class="fas fa-file-csv me-2"></i>Importar Unidades
-                                </button>
-                            </li>
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab" aria-controls="users" aria-selected="false">
-                                    <i class="fas fa-users me-2"></i>Usuarios de Unidades
-                                </button>
-                            </li>
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="import-users-tab" data-bs-toggle="tab" data-bs-target="#import-users" type="button" role="tab" aria-controls="import-users" aria-selected="false">
-                                    <i class="fas fa-user-plus me-2"></i>Importar Usuarios
-                                </button>
-                            </li>
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="pending-users-tab" data-bs-toggle="tab" data-bs-target="#pending-users" type="button" role="tab" aria-controls="pending-users" aria-selected="false">
-                                    <i class="fas fa-clock me-2"></i>Pendientes <span class="badge bg-warning text-dark ms-1">{{ pending_users_in_condo|length }}</span>
-                                </button>
-                            </li>
-                        </ul>
+                    <p>Bienvenido, <strong>{{ user.name }}</strong>. Estás administrando: <strong>{{ condominium.name }}</strong>.</p>
+                    <p>Estado: <span class="badge bg-secondary">{{ condominium.status }}</span></p>
 
-                        <!-- Contenido de las Pestañas -->
-                        <div class="tab-content" id="condoAdminTabsContent">
-                            <!-- Pestaña: Unidades -->
-                            <div class="tab-pane fade show active" id="units" role="tabpanel" aria-labelledby="units-tab">
-                                <div class="card border-0 shadow-sm mb-4">
-                                    <div class="card-header bg-primary text-white">
-                                        <h5 class="mb-0"><i class="fas fa-home me-2"></i>Unidades del Condominio</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        {% if units %}
-                                            <div class="table-responsive">
-                                                <table class="table table-hover">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>Número Propiedad</th>
-                                                            <th>Nombre</th>
-                                                            <th>Tipo</th>
-                                                            <th>Área m²</th>
-                                                            <th>Habitaciones</th>
-                                                            <th>Baños</th>
-                                                            <th>Acciones</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {% for unit in units %}
-                                                        <tr>
-                                                            <td>{{ unit.property_number }}</td>
-                                                            <td>{{ unit.name }}</td>
-                                                            <td>{{ unit.property_type }}</td>
-                                                            <td>{{ unit.area_m2 }}</td>
-                                                            <td>{{ unit.bedrooms }}</td>
-                                                            <td>{{ unit.bathrooms }}</td>
-                                                            <td>
-                                                                <div class="btn-group btn-group-sm">
-                                                                    <a href="{{ url_for('admin.editar_unidad', unit_id=unit.id) }}" class="btn btn-info">
-                                                                        <i class="fas fa-edit"></i>
-                                                                    </a>
-                                                                    <form action="{{ url_for('admin.eliminar_unidad', unit_id=unit.id) }}" method="POST" class="d-inline">
-                                                                        <button type="submit" class="btn btn-danger" onclick="return confirm('¿Estás seguro de que quieres eliminar esta unidad?');">
-                                                                            <i class="fas fa-trash"></i>
-                                                                        </button>
-                                                                    </form>
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                        {% endfor %}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        {% else %}
-                                            <div class="text-center py-4">
-                                                <i class="fas fa-info-circle fa-3x text-info mb-3"></i>
-                                                <h5 class="text-muted">No hay unidades registradas para este condominio.</h5>
-                                            </div>
-                                        {% endif %}
-                                    </div>
+                    <!-- Navegación por Pestañas -->
+                    <ul class="nav nav-tabs mb-4" id="condoAdminTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="units-tab" data-bs-toggle="tab" data-bs-target="#units" type="button" role="tab" aria-controls="units" aria-selected="true">
+                                <i class="fas fa-th-list me-2"></i>Unidades
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="import-units-tab" data-bs-toggle="tab" data-bs-target="#import-units" type="button" role="tab" aria-controls="import-units" aria-selected="false">
+                                <i class="fas fa-file-csv me-2"></i>Importar Unidades
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab" aria-controls="users" aria-selected="false">
+                                <i class="fas fa-users me-2"></i>Usuarios de Unidades
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="import-users-tab" data-bs-toggle="tab" data-bs-target="#import-users" type="button" role="tab" aria-controls="import-users" aria-selected="false">
+                                <i class="fas fa-user-plus me-2"></i>Importar Usuarios
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="pending-users-tab" data-bs-toggle="tab" data-bs-target="#pending-users" type="button" role="tab" aria-controls="pending-users" aria-selected="false">
+                                <i class="fas fa-clock me-2"></i>Pendientes <span class="badge bg-warning text-dark ms-1">{{ pending_users_in_condo|length }}</span>
+                            </button>
+                        </li>
+                    </ul>
+
+                    <!-- Contenido de las Pestañas -->
+                    <div class="tab-content" id="condoAdminTabsContent">
+                        <!-- Pestaña: Unidades -->
+                        <div class="tab-pane fade show active" id="units" role="tabpanel" aria-labelledby="units-tab">
+                            <div class="card border-0 shadow-sm mb-4">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0"><i class="fas fa-home me-2"></i>Unidades del Condominio</h5>
                                 </div>
-                            </div>
-
-                            <!-- Pestaña: Importar Unidades -->
-                            <div class="tab-pane fade" id="import-units" role="tabpanel" aria-labelledby="import-units-tab">
-                                <div class="card border-0 shadow-sm mb-4">
-                                    <div class="card-header bg-info text-white">
-                                        <h5 class="mb-0"><i class="fas fa-file-csv me-2"></i>Importar Unidades (CSV)</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <p class="text-muted">Sube un archivo CSV con la siguiente estructura para unidades:</p>
-                                        <p><code>property_number,name,property_type,area_m2,bedrooms,bathrooms</code></p>
-                                        <p class="text-muted">Ejemplo: <code>"A-101", "Apartamento 101", "apartamento", "85.5", "2", "2"</code></p>
-                                        <form action="{{ url_for('admin.admin_condominio_panel', condominium_id=condominium.id) }}" method="POST" enctype="multipart/form-data">
-                                            <input type="hidden" name="action" value="import_units_csv">
-                                            <div class="mb-3">
-                                                <label for="units_csv_file" class="form-label">Seleccionar archivo CSV de Unidades</label>
-                                                <input type="file" class="form-control" id="units_csv_file" name="csv_file" accept=".csv" required>
-                                            </div>
-                                            <button type="submit" class="btn btn-info">
-                                                <i class="fas fa-upload me-2"></i>Importar Unidades
-                                            </button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Pestaña: Usuarios de Unidades -->
-                            <div class="tab-pane fade" id="users" role="tabpanel" aria-labelledby="users-tab">
-                                <div class="card border-0 shadow-sm mb-4">
-                                    <div class="card-header bg-success text-white">
-                                        <h5 class="mb-0"><i class="fas fa-users me-2"></i>Usuarios de Unidades del Condominio</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        {% if users_in_condo %}
-                                            <div class="table-responsive">
-                                                <table class="table table-hover">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>Nombre</th>
-                                                            <th>Email</th>
-                                                            <th>Rol</th>
-                                                            <th>Unidad</th>
-                                                            <th>Estado</th>
-                                                            <th>Acciones</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {% for u in users_in_condo %}
-                                                        <tr>
-                                                            <td>{{ u.name }}</td>
-                                                            <td>{{ u.email }}</td>
-                                                            <td>{{ u.role }}</td>
-                                                            <td>{{ u.unit.property_number if u.unit else 'N/A' }}</td>
-                                                            <td><span class="badge bg-secondary">{{ u.status }}</span></td>
-                                                            <td>
-                                                                <div class="btn-group btn-group-sm">
-                                                                    <a href="/admin/usuario/editar/{{ u.id }}" class="btn btn-info">
-                                                                        <i class="fas fa-edit"></i>
-                                                                    </a>
-                                                                    <a href="/admin/usuario/eliminar/{{ u.id }}" class="btn btn-danger">
+                                <div class="card-body">
+                                    {% if units %}
+                                        <div class="table-responsive">
+                                            <table class="table table-hover">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Número Propiedad</th>
+                                                        <th>Nombre</th>
+                                                        <th>Tipo</th>
+                                                        <th>Área m²</th>
+                                                        <th>Habitaciones</th>
+                                                        <th>Baños</th>
+                                                        <th>Acciones</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for unit in units %}
+                                                    <tr>
+                                                        <td>{{ unit.property_number }}</td>
+                                                        <td>{{ unit.name }}</td>
+                                                        <td>{{ unit.property_type }}</td>
+                                                        <td>{{ unit.area_m2 }}</td>
+                                                        <td>{{ unit.bedrooms }}</td>
+                                                        <td>{{ unit.bathrooms }}</td>
+                                                        <td>
+                                                            <div class="btn-group btn-group-sm">
+                                                                <a href="{{ url_for('admin.editar_unidad', unit_id=unit.id) }}" class="btn btn-info">
+                                                                    <i class="fas fa-edit"></i>
+                                                                </a>
+                                                                <form action="{{ url_for('admin.eliminar_unidad', unit_id=unit.id) }}" method="POST" class="d-inline">
+                                                                    <button type="submit" class="btn btn-danger" onclick="return confirm('¿Estás seguro de que quieres eliminar esta unidad?');">
                                                                         <i class="fas fa-trash"></i>
-                                                                    </a>
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                        {% endfor %}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        {% else %}
-                                            <div class="text-center py-4">
-                                                <i class="fas fa-info-circle fa-3x text-info mb-3"></i>
-                                                <h5 class="text-muted">No hay usuarios registrados para este condominio.</h5>
-                                            </div>
-                                        {% endif %}
-                                    </div>
+                                                                    </button>
+                                                                </form>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    {% else %}
+                                        <div class="text-center py-4">
+                                            <i class="fas fa-info-circle fa-3x text-info mb-3"></i>
+                                            <h5 class="text-muted">No hay unidades registradas para este condominio.</h5>
+                                        </div>
+                                    {% endif %}
                                 </div>
                             </div>
+                        </div>
 
-                            <!-- Pestaña: Importar Usuarios -->
-                            <div class="tab-pane fade" id="import-users" role="tabpanel" aria-labelledby="import-users-tab">
-                                <div class="card border-0 shadow-sm mb-4">
-                                    <div class="card-header bg-warning text-dark">
-                                        <h5 class="mb-0"><i class="fas fa-user-plus me-2"></i>Importar Usuarios de Unidades (CSV)</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <p class="text-muted">Sube un archivo CSV con la siguiente estructura para usuarios de unidades:</p>
-                                        <p><code>email,name,password,phone,unit_property_number</code></p>
-                                        <p class="text-muted">Ejemplo: <code>"juan@ejemplo.com", "Juan Pérez", "password123", "+593987654321", "A-101"</code></p>
-                                        <p class="text-danger">**Importante:** La `unit_property_number` debe existir previamente en este condominio.</p>
-                                        <form action="{{ url_for('admin.admin_condominio_panel', condominium_id=condominium.id) }}" method="POST" enctype="multipart/form-data">
-                                            <input type="hidden" name="action" value="import_users_csv">
-                                            <div class="mb-3">
-                                                <label for="users_csv_file" class="form-label">Seleccionar archivo CSV de Usuarios</label>
-                                                <input type="file" class="form-control" id="users_csv_file" name="csv_file" accept=".csv" required>
-                                            </div>
-                                            <button type="submit" class="btn btn-warning text-dark">
-                                                <i class="fas fa-upload me-2"></i>Importar Usuarios
-                                            </button>
-                                        </form>
-                                    </div>
+                        <!-- Pestaña: Importar Unidades -->
+                        <div class="tab-pane fade" id="import-units" role="tabpanel" aria-labelledby="import-units-tab">
+                            <div class="card border-0 shadow-sm mb-4">
+                                <div class="card-header bg-info text-white">
+                                    <h5 class="mb-0"><i class="fas fa-file-csv me-2"></i>Importar Unidades (CSV)</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-muted">Sube un archivo CSV con la siguiente estructura para unidades:</p>
+                                    <p><code>property_number,name,property_type,area_m2,bedrooms,bathrooms</code></p>
+                                    <p class="text-muted">Ejemplo: <code>"A-101", "Apartamento 101", "apartamento", "85.5", "2", "2"</code></p>
+                                    <form action="{{ url_for('admin.admin_condominio_panel', condominium_id=condominium.id) }}" method="POST" enctype="multipart/form-data">
+                                        <input type="hidden" name="action" value="import_units_csv">
+                                        <div class="mb-3">
+                                            <label for="units_csv_file" class="form-label">Seleccionar archivo CSV de Unidades</label>
+                                            <input type="file" class="form-control" id="units_csv_file" name="csv_file" accept=".csv" required>
+                                        </div>
+                                        <button type="submit" class="btn btn-info">
+                                            <i class="fas fa-upload me-2"></i>Importar Unidades
+                                        </button>
+                                    </form>
                                 </div>
                             </div>
-                            
-                            <!-- Pestaña: Usuarios Pendientes del Condominio -->
-                            <div class="tab-pane fade" id="pending-users" role="tabpanel" aria-labelledby="pending-users-tab">
-                                <div class="card border-0 shadow-sm mb-4">
-                                    <div class="card-header bg-warning text-dark">
-                                        <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Usuarios Pendientes de Aprobación (Condominio)</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        {% if pending_users_in_condo %}
-                                            <div class="table-responsive">
-                                                <table class="table table-hover">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>Nombre</th>
-                                                            <th>Email</th>
-                                                            <th>Rol</th>
-                                                            <th>Fecha Registro</th>
-                                                            <th>Acciones</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {% for u in pending_users_in_condo %}
-                                                        <tr>
-                                                            <td>{{ u.name }}</td>
-                                                            <td>{{ u.email }}</td>
-                                                            <td>{{ u.role }}</td>
-                                                            <td>{{ u.created_at.strftime('%d/%m/%Y %H:%M') if u.created_at else 'N/A' }}</td>
-                                                            <td>
-                                                                <div class="btn-group btn-group-sm">
-                                                                    <a href="{{ url_for('admin.approve_user', user_id=u.id) }}" class="btn btn-success">
-                                                                        <i class="fas fa-check"></i> Aprobar
-                                                                    </a>
-                                                                    <a href="{{ url_for('admin.reject_user', user_id=u.id) }}" class="btn btn-danger">
-                                                                        <i class="fas fa-times"></i> Rechazar
-                                                                    </a>
-                                                                    <!-- Opcional: un botón para ver detalles/editar si es necesario para el ADMIN -->
-                                                                    <!-- <a href="/admin/usuario/editar/{{ u.id }}" class="btn btn-info">
-                                                                        <i class="fas fa-edit"></i> Ver/Editar
-                                                                    </a> -->
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                        {% endfor %}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        {% else %}
-                                            <div class="text-center py-4">
-                                                <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
-                                                <h5 class="text-muted">No hay usuarios pendientes de aprobación para este condominio.</h5>
-                                            </div>
-                                        {% endif %}
-                                    </div>
+                        </div>
+
+                        <!-- Pestaña: Usuarios de Unidades -->
+                        <div class="tab-pane fade" id="users" role="tabpanel" aria-labelledby="users-tab">
+                            <div class="card border-0 shadow-sm mb-4">
+                                <div class="card-header bg-success text-white">
+                                    <h5 class="mb-0"><i class="fas fa-users me-2"></i>Usuarios de Unidades del Condominio</h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if users_in_condo %}
+                                        <div class="table-responsive">
+                                            <table class="table table-hover">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Nombre</th>
+                                                        <th>Email</th>
+                                                        <th>Rol</th>
+                                                        <th>Unidad</th>
+                                                        <th>Estado</th>
+                                                        <th>Acciones</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for u in users_in_condo %}
+                                                    <tr>
+                                                        <td>{{ u.name }}</td>
+                                                        <td>{{ u.email }}</td>
+                                                        <td>{{ u.role }}</td>
+                                                        <td>{{ u.unit.property_number if u.unit else 'N/A' }}</td>
+                                                        <td><span class="badge bg-secondary">{{ u.status }}</span></td>
+                                                        <td>
+                                                            <div class="btn-group btn-group-sm">
+                                                                <a href="/admin/usuario/editar/{{ u.id }}" class="btn btn-info">
+                                                                    <i class="fas fa-edit"></i>
+                                                                </a>
+                                                                <a href="/admin/usuario/eliminar/{{ u.id }}" class="btn btn-danger">
+                                                                    <i class="fas fa-trash"></i>
+                                                                </a>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    {% else %}
+                                        <div class="text-center py-4">
+                                            <i class="fas fa-info-circle fa-3x text-info mb-3"></i>
+                                            <h5 class="text-muted">No hay usuarios registrados para este condominio.</h5>
+                                        </div>
+                                    {% endif %}
                                 </div>
                             </div>
-
                         </div>
 
-                        <div class="text-center mt-5">
-                            <a href="{{ url_for('master.master_panel') }}" class="btn btn-secondary">
-                                <i class="fas fa-arrow-left me-2"></i>Volver al Panel Maestro
-                            </a>
+                        <!-- Pestaña: Importar Usuarios -->
+                        <div class="tab-pane fade" id="import-users" role="tabpanel" aria-labelledby="import-users-tab">
+                            <div class="card border-0 shadow-sm mb-4">
+                                <div class="card-header bg-warning text-dark">
+                                    <h5 class="mb-0"><i class="fas fa-user-plus me-2"></i>Importar Usuarios de Unidades (CSV)</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-muted">Sube un archivo CSV con la siguiente estructura para usuarios de unidades:</p>
+                                    <p><code>email,name,password,phone,unit_property_number</code></p>
+                                    <p class="text-muted">Ejemplo: <code>"juan@ejemplo.com", "Juan Pérez", "password123", "+593987654321", "A-101"</code></p>
+                                    <p class="text-danger">**Importante:** La `unit_property_number` debe existir previamente en este condominio.</p>
+                                    <form action="{{ url_for('admin.admin_condominio_panel', condominium_id=condominium.id) }}" method="POST" enctype="multipart/form-data">
+                                        <input type="hidden" name="action" value="import_users_csv">
+                                        <div class="mb-3">
+                                            <label for="users_csv_file" class="form-label">Seleccionar archivo CSV de Usuarios</label>
+                                            <input type="file" class="form-control" id="users_csv_file" name="csv_file" accept=".csv" required>
+                                        </div>
+                                        <button type="submit" class="btn btn-warning text-dark">
+                                            <i class="fas fa-upload me-2"></i>Importar Usuarios
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Pestaña: Usuarios Pendientes del Condominio -->
+                        <div class="tab-pane fade" id="pending-users" role="tabpanel" aria-labelledby="pending-users-tab">
+                            <div class="card border-0 shadow-sm mb-4">
+                                <div class="card-header bg-warning text-dark">
+                                    <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Usuarios Pendientes de Aprobación (Condominio)</h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if pending_users_in_condo %}
+                                        <div class="table-responsive">
+                                            <table class="table table-hover">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Nombre</th>
+                                                        <th>Email</th>
+                                                        <th>Rol</th>
+                                                        <th>Fecha Registro</th>
+                                                        <th>Acciones</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for u in pending_users_in_condo %}
+                                                    <tr>
+                                                        <td>{{ u.name }}</td>
+                                                        <td>{{ u.email }}</td>
+                                                        <td>{{ u.role }}</td>
+                                                        <td>{{ u.created_at.strftime('%d/%m/%Y %H:%M') if u.created_at else 'N/A' }}</td>
+                                                        <td>
+                                                            <div class="btn-group btn-group-sm">
+                                                                <a href="{{ url_for('admin.approve_user', user_id=u.id) }}" class="btn btn-success">
+                                                                    <i class="fas fa-check"></i> Aprobar
+                                                                </a>
+                                                                <a href="{{ url_for('admin.reject_user', user_id=u.id) }}" class="btn btn-danger">
+                                                                    <i class="fas fa-times"></i> Rechazar
+                                                                </a>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    {% else %}
+                                        <div class="text-center py-4">
+                                            <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                                            <h5 class="text-muted">No hay usuarios pendientes de aprobación para este condominio.</h5>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
                         </div>
 
-                    {% else %}
-                        <div class="alert alert-warning text-center" role="alert">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            No tienes acceso a este panel de administración de condominio o no estás asignado a este condominio. Por favor, <a href="/login" class="alert-link">inicia sesión</a> como un Administrador autorizado.
-                        </div>
-                    {% endif %}
+                    </div>
+                    <div class="text-center mt-5">
+                        <a href="{{ url_for('master.master_panel') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Volver al Panel Maestro
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
