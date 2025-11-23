@@ -42,6 +42,50 @@ def seed_initial_data():
         else:
             print(f"✅ AUDIT: Configuración para '{default_tenant}' ya existe.")
 
+        # --- LÓGICA SANDBOX PARA DESARROLLO ---
+        # Asegurar que existe un condominio de pruebas y el Master está asignado a él
+        # para evitar errores de "NoneType" al crear documentos.
+        master_user = models.User.query.filter_by(role='MASTER').first()
+        if master_user:
+            sandbox_subdomain = 'sandbox'
+            sandbox = models.Condominium.query.filter_by(subdomain=sandbox_subdomain).first()
+            
+            if not sandbox:
+                print("ℹ️ AUDIT: Creando Condominio Sandbox...")
+                sandbox = models.Condominium(
+                    name="Condominio de Pruebas (Sandbox)",
+                    legal_name="Entorno de Desarrollo CondoManager",
+                    email=master_user.email,
+                    ruc="9999999999001",
+                    main_street="Calle de los Bugs",
+                    cross_street="Avenida de las Soluciones",
+                    city="Matrix",
+                    country="Ecuador",
+                    subdomain=sandbox_subdomain,
+                    status='ACTIVO',
+                    admin_user_id=master_user.id,
+                    created_by=master_user.id,
+                    has_documents_module=True,
+                    has_billing_module=True,
+                    has_requests_module=True
+                )
+                db.session.add(sandbox)
+                
+                # También la config visual
+                if not db.session.get(models.CondominiumConfig, sandbox_subdomain):
+                    viz_config = models.CondominiumConfig(
+                        tenant=sandbox_subdomain, 
+                        commercial_name="Sandbox Labs", 
+                        primary_color="#6f42c1"
+                    )
+                    db.session.add(viz_config)
+            
+            # Asignar Master al Sandbox si no tiene tenant o si es el por defecto
+            if master_user.tenant is None or master_user.tenant == 'puntablanca':
+                print(f"🔄 AUDIT: Asignando MASTER al condominio '{sandbox_subdomain}'...")
+                master_user.tenant = sandbox_subdomain
+                db.session.add(master_user)
+
         db.session.commit()
         print("✅ AUDIT: db.session.commit() ejecutado. Datos iniciales guardados en la DB.")
         print("✅✅✅ Script de siembra de datos iniciales finalizado con ÉXITO.")
