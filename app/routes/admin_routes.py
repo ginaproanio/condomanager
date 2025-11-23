@@ -3,6 +3,7 @@ from flask import (
     current_app, flash, request, session
 )
 from sqlalchemy import func
+from flask_jwt_extended import jwt_required
 from app import db
 from app.models import User, Condominium, Unit
 from app.auth import get_current_user
