@@ -90,7 +90,7 @@ def admin_condominio_panel(condominium_id):
     is_correct_admin = user.role == 'ADMIN' and user.tenant == condominium.subdomain
 
     if not (is_impersonating or is_correct_admin):
-        flash("Acceso no autorizado a este condominio.", "error")
+        flash("No tienes acceso a este panel de administración de condominio o no estás asignado a este condominio. Por favor, inicia sesión como un Administrador autorizado.", "error")
         return redirect(url_for('user.dashboard'))
 
     unidades = Unit.query.filter_by(condominium_id=condominium_id).order_by(Unit.name).all()

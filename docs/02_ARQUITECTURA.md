@@ -37,21 +37,16 @@ Sistema multi-condominio implementado inicialmente para "Punta Blanca", diseñad
 │   │   ├── admin_routes.py  # Rutas para administradores de condominio.
 │   │   │   # Endpoints clave:
 │   │   │   # - /admin (GET) - Despachador (dispatcher) que redirige según el rol.
-│   │   │   # - /admin/condominio/<id> (GET) - Panel de gestión específico del condominio.
+│   │   │   # - /admin/condominio/<id> (GET): Panel de gestión del condominio.
 │   │   │   # - /aprobar/<id> (GET) - Aprueba un usuario.
+│   │   │   # - /rechazar/<id> (GET): Rechaza un usuario pendiente.
+│   │   │   # - /admin/condominio/<id>/unidad/nueva (GET, POST): Formulario para crear unidad.
 │   │   ├── master_routes.py # Rutas para el super-administrador (rol MASTER).
 │   │   │   # Endpoints clave:
-│   │   │   # - /master/condominios (GET)
-│   │   │   # - /master/crear_condominio (GET, POST)
-│   │   │   # - /master/condominios/editar/<id> (GET, POST)
+│   │   │   # - /master/condominios (GET, POST para importar)
+│   │   │   # - /master/usuarios (GET, POST para importar)
 │   │   │   # - /master/supervise/<id> (GET) - Panel de supervisión de solo lectura.
 │   │   │   # - /master/impersonate/admin/<id> (GET) - Acceso de emergencia (suplantación).
-│   │   │   # - /master/condominios/importar (POST)
-│   │   │   # (Incluye endpoints como /master/condominios, /master/usuarios, /master/condominios/importar, etc.)
-│   │   │   # - /master/usuarios (GET)
-│   │   │   # - /master/usuarios/crear (GET, POST)
-│   │   │   # - /master/usuarios/editar/<id> (GET, POST)
-│   │   │   # - /master/usuarios/importar_admins (POST)
 │   │   ├── api_routes.py    # Endpoints de la API REST.
 │   │   └── dev_routes.py    # Rutas para desarrollo y depuración.
 │   ├── static/         # Archivos estáticos (CSS, JS, imágenes).

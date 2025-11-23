@@ -20,10 +20,11 @@ Estos endpoints son accedidos a través de un navegador y renderizan plantillas 
 
 ### 1.3 Rutas de Administrador (`admin_routes.py`)
 Estas rutas están protegidas por el rol `ADMIN` (o `MASTER`).
-- **`GET /admin/dashboard`**: Panel de administración del condominio.
-- **`GET /admin/users`**: Muestra la lista de usuarios del tenant actual.
-- **`POST /admin/approve/<int:user_id>`**: Aprueba a un usuario pendiente, cambiando su estado a `active`.
-- **`POST /admin/reject/<int:user_id>`**: Rechaza a un usuario pendiente.
+- **`GET /admin`**: **(Despachador)** Redirige al panel de gestión correcto. No renderiza una vista.
+- **`GET /admin/condominio/<int:id>`**: **(NUEVO)** Panel de gestión principal para un condominio específico.
+- **`GET /aprobar/<int:user_id>`**: Aprueba a un usuario pendiente, cambiando su estado a `active`.
+- **`GET /rechazar/<int:user_id>`**: Rechaza a un usuario pendiente.
+- **`GET /admin/dashboard`**: **(OBSOLETO)** Esta ruta ya no existe.
 
 ### 1.4 Rutas Maestras (`master_routes.py`)
 Estas rutas están protegidas por el rol `MASTER`.
