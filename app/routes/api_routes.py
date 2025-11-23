@@ -36,7 +36,7 @@ def api_login():
     
     # --- SOLUCIÓN DE INGENIERÍA FINAL Y ROBUSTA ---
     # La API de login es responsable de determinar la URL final y correcta.
-    # No habrá más redirecciones intermedias.
+    # No habrá más redirecciones intermedias ni parches.
     redirect_url = url_for('user.dashboard') # Por defecto
     if user.role == 'MASTER':
         redirect_url = url_for('master.master_panel')
