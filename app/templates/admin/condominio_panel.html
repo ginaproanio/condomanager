@@ -61,6 +61,12 @@
                                 <i class="fas fa-clock me-2"></i>Pendientes <span class="badge bg-warning text-dark ms-1">{{ pending_users_in_condo|length }}</span>
                             </button>
                         </li>
+                        <!-- NUEVO BOTÓN PARA ROLES ESPECIALES -->
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="special-roles-tab" data-bs-toggle="tab" data-bs-target="#special-roles" type="button" role="tab" aria-controls="special-roles" aria-selected="false">
+                                <i class="fas fa-user-tag me-2"></i>Directiva
+                            </button>
+                        </li>
                     </ul>
 
                     <!-- Contenido de las Pestañas -->
@@ -274,6 +280,103 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- NUEVA PESTAÑA: GESTIÓN DE DIRECTIVA -->
+                        <div class="tab-pane fade" id="special-roles" role="tabpanel" aria-labelledby="special-roles-tab">
+                            <div class="card border-0 shadow-sm mb-4">
+                                <div class="card-header bg-purple text-white" style="background-color: #6f42c1;">
+                                    <h5 class="mb-0"><i class="fas fa-user-tag me-2"></i>Gestión de Directiva y Roles Especiales</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <!-- Formulario de Asignación -->
+                                        <div class="col-md-4 border-end">
+                                            <h6 class="mb-3">Asignar Nuevo Cargo</h6>
+                                            <form action="{{ url_for('admin.asignar_rol_especial', condominium_id=condominium.id) }}" method="POST">
+                                                <div class="mb-3">
+                                                    <label for="role_user_id" class="form-label">Usuario</label>
+                                                    <select class="form-select" id="role_user_id" name="user_id" required>
+                                                        <option value="">Seleccionar Vecino...</option>
+                                                        {% for u in users_in_condo %}
+                                                            <option value="{{ u.id }}">{{ u.name }} ({{ u.email }})</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="special_role" class="form-label">Cargo</label>
+                                                    <select class="form-select" id="special_role" name="role" required>
+                                                        <option value="PRESIDENTE">Presidente</option>
+                                                        <option value="SECRETARIO">Secretario</option>
+                                                        <option value="TESORERO">Tesorero</option>
+                                                        <option value="CONTADOR">Contador</option>
+                                                        <option value="VOCAL">Vocal</option>
+                                                    </select>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="role_start_date" class="form-label">Fecha Inicio</label>
+                                                    {# Usamos JS simple para poner la fecha de hoy por defecto si no hay variable #}
+                                                    <input type="date" class="form-control" id="role_start_date" name="start_date" required value="{{ now_date }}">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="role_end_date" class="form-label">Fecha Fin (Opcional)</label>
+                                                    <input type="date" class="form-control" id="role_end_date" name="end_date">
+                                                    <div class="form-text">Dejar vacío si es indefinido.</div>
+                                                </div>
+                                                <button type="submit" class="btn btn-primary w-100" style="background-color: #6f42c1; border-color: #6f42c1;">
+                                                    <i class="fas fa-plus-circle me-2"></i>Asignar Cargo
+                                                </button>
+                                            </form>
+                                        </div>
+
+                                        <!-- Listado de Roles Activos -->
+                                        <div class="col-md-8">
+                                            <h6 class="mb-3">Directiva Vigente</h6>
+                                            {% if active_special_roles %}
+                                                <div class="table-responsive">
+                                                    <table class="table table-sm table-hover align-middle">
+                                                        <thead class="table-light">
+                                                            <tr>
+                                                                <th>Cargo</th>
+                                                                <th>Nombre</th>
+                                                                <th>Inicio</th>
+                                                                <th>Fin</th>
+                                                                <th>Acción</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {% for role in active_special_roles %}
+                                                            <tr>
+                                                                <td><span class="badge bg-primary">{{ role.role }}</span></td>
+                                                                <td>
+                                                                    {{ role.user.name }}<br>
+                                                                    <small class="text-muted">{{ role.user.email }}</small>
+                                                                </td>
+                                                                <td>{{ role.start_date }}</td>
+                                                                <td>{{ role.end_date if role.end_date else 'Indefinido' }}</td>
+                                                                <td>
+                                                                    <form action="{{ url_for('admin.revocar_rol_especial', role_id=role.id) }}" method="POST" class="d-inline">
+                                                                        <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('¿Estás seguro de revocar el cargo de {{ role.role }} a {{ role.user.name }}?');" title="Revocar Cargo">
+                                                                            <i class="fas fa-user-slash"></i>
+                                                                        </button>
+                                                                    </form>
+                                                                </td>
+                                                            </tr>
+                                                            {% endfor %}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            {% else %}
+                                                <div class="alert alert-light text-center border py-4">
+                                                    <i class="fas fa-users-slash fa-2x text-muted mb-2"></i>
+                                                    <p class="mb-0 text-muted">No hay miembros asignados a la directiva actualmente.</p>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- FIN NUEVA PESTAÑA -->
 
                     </div>
                     <div class="text-center mt-5">

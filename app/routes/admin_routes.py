@@ -8,6 +8,7 @@ from app import db
 from app.models import User, Condominium, Unit, UserSpecialRole
 from app.auth import get_current_user
 from app.decorators import condominium_admin_required
+from datetime import date, datetime
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -53,10 +54,86 @@ def admin_condominio_panel(condominium_id):
     pending_users_in_condo = User.query.filter_by(tenant=condominium.subdomain, status='pending').all()
     users_in_condo = User.query.filter(User.tenant == condominium.subdomain, User.status != 'pending').all()
     units = Unit.query.filter_by(condominium_id=condominium_id).order_by(Unit.name).all()
+    
+    # --- AGREGAR ESTO ---
+    # Obtener roles especiales activos para mostrarlos en la tabla
+    active_special_roles = UserSpecialRole.query.filter_by(
+        condominium_id=condominium.id, 
+        is_active=True
+    ).all()
+    # --------------------
 
     return render_template('admin/condominio_panel.html',
                            user=current_user,
                            condominium=condominium,
                            units=units,
                            pending_users_in_condo=pending_users_in_condo,
-                           users_in_condo=users_in_condo)
+                           users_in_condo=users_in_condo,
+                           active_special_roles=active_special_roles) # <-- PASAR LA VARIABLE AQUÍ
+
+@admin_bp.route('/admin/usuarios/roles_especiales', methods=['POST'])
+@condominium_admin_required
+def asignar_rol_especial(condominium_id):
+    """
+    Asigna un rol especial (Presidente, Secretario, etc.) a un usuario.
+    """
+    user_id = request.form.get('user_id')
+    role = request.form.get('role')
+    start_date_str = request.form.get('start_date')
+    end_date_str = request.form.get('end_date')
+
+    if not all([user_id, role, start_date_str]):
+        flash("Faltan datos obligatorios.", "error")
+        return redirect(url_for('admin.admin_condominio_panel', condominium_id=condominium_id))
+
+    try:
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date() if end_date_str else None
+        
+        # Verificar que el rol sea válido
+        ROLES_VALIDOS = ['PRESIDENTE', 'SECRETARIO', 'TESORERO', 'CONTADOR', 'VOCAL']
+        if role not in ROLES_VALIDOS:
+             flash("Rol inválido.", "error")
+             return redirect(url_for('admin.admin_condominio_panel', condominium_id=condominium_id))
+
+        # Desactivar roles previos del mismo tipo para este usuario en este condominio (opcional, según regla de negocio)
+        # UserSpecialRole.query.filter_by(user_id=user_id, condominium_id=condominium_id, role=role, is_active=True).update({'is_active': False})
+
+        new_role = UserSpecialRole(
+            user_id=user_id,
+            condominium_id=condominium_id,
+            role=role,
+            assigned_by=get_current_user().id,
+            start_date=start_date,
+            end_date=end_date,
+            is_active=True
+        )
+        
+        db.session.add(new_role)
+        db.session.commit()
+        flash(f"Rol de {role} asignado correctamente.", "success")
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error al asignar rol: {str(e)}", "error")
+
+    return redirect(url_for('admin.admin_condominio_panel', condominium_id=condominium_id))
+
+@admin_bp.route('/admin/usuarios/roles_especiales/revocar/<int:role_id>', methods=['POST'])
+@jwt_required() # No usamos condominium_admin_required directamente porque el ID viene en el form, pero validamos adentro
+def revocar_rol_especial(role_id):
+    role_entry = UserSpecialRole.query.get_or_404(role_id)
+    current_user = get_current_user()
+    
+    # Validación de seguridad manual
+    condo = Condominium.query.get(role_entry.condominium_id)
+    if not is_authorized_admin_for_condo(current_user, condo):
+        flash("No autorizado.", "error")
+        return redirect(url_for('user.dashboard'))
+
+    role_entry.is_active = False
+    role_entry.end_date = date.today()
+    db.session.commit()
+    
+    flash("Rol revocado correctamente.", "success")
+    return redirect(url_for('admin.admin_condominio_panel', condominium_id=role_entry.condominium_id))

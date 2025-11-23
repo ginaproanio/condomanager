@@ -138,10 +138,14 @@ CREATE TABLE user_special_roles (
 
 ## 6. Consideraciones Importantes
 
-### 6.1 Usuarios con Múltiples Roles
-- Un usuario puede ser USUARIO (con unidades asignadas) y tener roles especiales
-- Los permisos son acumulativos
-- Prioridad de acceso según rol más alto
+### 6.1 Usuarios con Múltiples Roles (Polimorfismo de Usuario)
+- **Compatibilidad Total:** No existe exclusión mutua entre roles. Un mismo usuario puede acumular:
+    1. **Rol Base:** Ser `ADMIN` del sistema para ese condominio.
+    2. **Rol de Directiva 1:** Ser `PRESIDENTE` (vía `UserSpecialRole`).
+    3. **Rol de Directiva 2:** Ser `TESORERO` (vía otra entrada en `UserSpecialRole`).
+    4. **Rol de Residente:** Tener una unidad asignada (`Unit`).
+- **Permisos Acumulativos:** El sistema otorgará el "superset" de permisos. Si como `ADMIN` tiene acceso total, el hecho de ser `TESORERO` no le restará acceso, simplemente le dará atribuciones formales adicionales (ej. para firmar actas como Tesorero).
+- **El Administrador-Directivo:** Es un caso de uso válido que el Administrador del software sea también un miembro de la directiva.
 
 ### 6.2 Auditoría
 - Registro de quién asignó cada rol
