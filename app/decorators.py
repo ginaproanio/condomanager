@@ -116,7 +116,9 @@ def admin_required(f):
     @login_required
     def decorated_function(*args, **kwargs):
         user = kwargs.get('current_user')
-        #   return redirect(url_for('user.dashboard'))
+        if user is None or user.role.upper() != 'ADMIN':
+            flash("Acceso denegado. Se requiere rol de Administrador.", "error")
+            return redirect(url_for('user.dashboard'))
         return f(*args, **kwargs)
     return decorated_function
 
