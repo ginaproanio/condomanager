@@ -148,9 +148,17 @@ def condominium_admin_required(f):
         condominium = Condominium.query.get_or_404(condominium_id)
         
         # --- LÓGICA DE AUTORIZACIÓN ÚNICA Y CENTRALIZADA ---
-        if not (user.role == 'ADMIN' and user.tenant.lower() == condominium.subdomain.lower()):
-            flash("No tienes autorización para acceder a este panel de administración.", "error")
-            return redirect(url_for('user.dashboard'))
+        # Usamos case-insensitive comparison para subdominios
+        if not (user.role == 'ADMIN' and user.tenant and condominium.subdomain and user.tenant.lower() == condominium.subdomain.lower()):
+            # Fallback: Validar también por ID directo si la asignación es por ID
+            if not (user.role == 'ADMIN' and condominium.admin_user_id == user.id):
+                flash("No tienes autorización para acceder a este panel de administración.", "error")
+                return redirect(url_for('user.dashboard'))
         
+        # Limpieza: Quitamos 'current_user' de kwargs para no romper la función final
+        # ya que la mayoría de rutas no esperan recibir este argumento.
+        if 'current_user' in kwargs:
+            del kwargs['current_user']
+
         return f(*args, **kwargs)
     return decorated_function
