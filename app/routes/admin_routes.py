@@ -45,7 +45,7 @@ def admin_panel(): # Esta función ahora es solo un despachador (dispatcher)
 @jwt_required()
 def aprobar_usuario(user_id):
     current_user = get_current_user()
-    if not current_user or current_user.role != 'ADMIN':
+    if not current_user or current_user.role not in ['ADMIN', 'MASTER']:
         flash("Acceso denegado.", "error")
         return redirect('/dashboard')
 
@@ -53,7 +53,7 @@ def aprobar_usuario(user_id):
 
     # --- LÓGICA DE SEGURIDAD UNIFICADA ---
     # Un ADMIN solo puede aprobar usuarios de su propio tenant.
-    if not user_to_approve.tenant or user_to_approve.tenant.strip().lower() != current_user.tenant.strip().lower():
+    if current_user.role == 'ADMIN' and (not user_to_approve.tenant or user_to_approve.tenant.strip().lower() != current_user.tenant.strip().lower()):
         flash("No tiene permiso para aprobar a este usuario.", "error")
         return redirect('/admin')
 
@@ -66,7 +66,7 @@ def aprobar_usuario(user_id):
 @jwt_required()
 def rechazar_usuario(user_id):
     current_user = get_current_user()
-    if not current_user or current_user.role != 'ADMIN':
+    if not current_user or current_user.role not in ['ADMIN', 'MASTER']:
         flash("Acceso denegado.", "error")
         return redirect('/dashboard')
 
@@ -74,7 +74,7 @@ def rechazar_usuario(user_id):
 
     # --- LÓGICA DE SEGURIDAD UNIFICADA ---
     # Un ADMIN solo puede rechazar usuarios de su propio tenant.
-    if not user_to_reject.tenant or user_to_reject.tenant.strip().lower() != current_user.tenant.strip().lower():
+    if current_user.role == 'ADMIN' and (not user_to_reject.tenant or user_to_reject.tenant.strip().lower() != current_user.tenant.strip().lower()):
         flash("No tiene permiso para rechazar a este usuario.", "error")
         return redirect('/admin')
 
