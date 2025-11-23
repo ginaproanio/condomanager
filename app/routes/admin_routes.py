@@ -87,7 +87,7 @@ def admin_condominio_panel(condominium_id):
     # Verificación de seguridad: El ADMIN debe pertenecer al tenant del condominio
     # O debe ser un MASTER suplantando a ese condominio.
     is_impersonating = user.role == 'MASTER' and session.get('impersonating_condominium_id') == condominium_id
-    is_correct_admin = user.role == 'ADMIN' and user.tenant and user.tenant.lower() == condominium.subdomain.lower()
+    is_correct_admin = user.role == 'ADMIN' and user.tenant and condominium.subdomain and user.tenant.strip().lower() == condominium.subdomain.strip().lower()
 
     if not (is_impersonating or is_correct_admin):
         flash("No tienes acceso a este panel de administración de condominio o no estás asignado a este condominio. Por favor, inicia sesión como un Administrador autorizado.", "error")
