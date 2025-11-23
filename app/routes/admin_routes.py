@@ -87,18 +87,18 @@ def admin_condominio_panel(condominium_id):
     # Verificación de seguridad: El ADMIN debe pertenecer al tenant del condominio
     # O debe ser un MASTER suplantando a ese condominio.
     is_impersonating = user.role == 'MASTER' and session.get('impersonating_condominium_id') == condominium_id
-    
-    # --- LÓGICA DE AUTORIZACIÓN CORREGIDA ---
+
+    # --- LÓGICA DE AUTORIZACIÓN DEFINITIVA ---
     # Un ADMIN tiene acceso si su 'tenant' coincide con el 'subdomain' del condominio.
     # Esta lógica permite múltiples administradores por condominio.
-    # Se usa .strip() y .lower() para evitar errores por espacios o mayúsculas/minúsculas.
+    # Se usa .strip() y .lower() para hacer la comparación robusta contra errores de datos.
     is_correct_admin = (user.role == 'ADMIN' and 
                         user.tenant and condominium.subdomain and 
                         user.tenant.strip().lower() == condominium.subdomain.strip().lower())
 
     if not (is_impersonating or is_correct_admin):
         flash("No tienes acceso a este panel de administración de condominio o no estás asignado a este condominio. Por favor, inicia sesión como un Administrador autorizado.", "error")
-        return redirect(url_for('public.login')) # CORRECCIÓN: Si falla el acceso, se debe redirigir al login, no al dashboard de usuario.
+        return redirect(url_for('public.login'))
 
     unidades = Unit.query.filter_by(condominium_id=condominium_id).order_by(Unit.name).all()
     return render_template('admin/condominio_panel.html', user=user, condominium=condominium, unidades=unidades)
