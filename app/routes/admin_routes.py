@@ -18,32 +18,27 @@ def is_authorized_admin_for_condo(user, condominium):
     if not user or not condominium:
         return False
 
-    # --- LÓGICA DE AUTORIZACIÓN ROBUSTA ---
-    # Un usuario es un administrador autorizado si cumple AMBAS condiciones:
+    # --- SOLUCIÓN DE INGENIERÍA DEFINITIVA ---
+    # La regla de negocio más robusta es la pertenencia al tenant.
+    # Un usuario es un administrador autorizado si y solo si:
     # 1. Su rol es ADMIN.
-    # 2. El subdominio del condominio al que intenta acceder coincide con su propio tenant.
-    # Esto es más robusto que depender de un `admin_user_id` que puede estar desactualizado.
+    # 2. El subdominio del condominio coincide con el tenant del usuario.
     return user.role == 'ADMIN' and condominium.subdomain.lower() == user.tenant.lower()
 
 @admin_bp.route('/admin')
 @jwt_required()
 def admin_panel(): # Esta función ahora es solo un despachador (dispatcher)
-    """
-    Redirige a un usuario ADMIN a su panel de condominio asignado.
-    Esta ruta no es accesible para otros roles.
-    """
     user = get_current_user()
     if not user or user.role != 'ADMIN':
         flash("Acceso denegado", "error")
         return redirect('/dashboard')
 
-    # Se busca el condominio que coincide con el tenant del ADMIN.
+    # La redirección debe seguir la misma lógica robusta basada en el tenant.
     admin_condo = Condominium.query.filter(func.lower(Condominium.subdomain) == func.lower(user.tenant)).first()
 
     if admin_condo:
         return redirect(url_for('admin.admin_condominio_panel', condominium_id=admin_condo.id))
 
-    # Si no se encuentra, significa que no hay un condominio que coincida con el tenant del usuario.
     flash("No se encontró un condominio que coincida con tu asignación de tenant.", "error")
     return redirect(url_for('user.dashboard'))
 
