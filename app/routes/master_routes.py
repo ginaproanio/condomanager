@@ -78,29 +78,6 @@ def supervise_condominium(condominium_id):
                            condominium=condominium, 
                            stats=stats)
 
-
-@master_bp.route('/impersonate/admin/<int:condominium_id>', methods=['GET'])
-@jwt_required()
-def impersonate_admin(condominium_id):
-    """
-    Permite a un MASTER tomar control temporal del panel de un ADMIN.
-    Esta acción debe ser auditable.
-    """
-    user = get_current_user()
-    if not user or user.role != 'MASTER':
-        flash('Acceso no autorizado.', 'danger')
-        return redirect(url_for('public.login'))
-
-    condominium = db.session.get(Condominium, condominium_id)
-    if not condominium:
-        flash('Condominio no encontrado.', 'danger')
-        return redirect(url_for('master.master_condominios'))
-
-    session['impersonating_condominium_id'] = condominium_id
-    
-    flash(f'Has tomado control del panel de administración de {condominium.name}.', 'warning')
-    return redirect(url_for('admin.admin_panel', condominium_id=condominium_id))
-
 @master_bp.route('/master/usuarios', methods=['GET'])
 @jwt_required()
 def master_usuarios():

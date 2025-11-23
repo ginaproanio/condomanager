@@ -37,17 +37,15 @@ Sistema multi-condominio implementado inicialmente para "Punta Blanca", diseñad
 │   │   ├── admin_routes.py  # Rutas para administradores de condominio (rol ADMIN).
 │   │   │   # Endpoints clave:
 │   │   │   # - /admin (GET): Despachador (dispatcher) que redirige al panel correcto.
-│   │   │   # - /admin/condominio/<id> (GET): Panel de gestión específico del condominio.
-│   │   │   # - /aprobar/<id> (GET): Aprueba un usuario pendiente.
-│   │   │   # - /rechazar/<id> (GET): Rechaza un usuario pendiente.
-│   │   │   # - /admin/condominio/<id>/unidad/nueva (GET, POST): Formulario para crear unidad.
+│   │   │   # - /admin/condominio/<id>: Panel de gestión específico del condominio.
+│   │   │   # - /aprobar/<id>: Aprueba un usuario pendiente.
+│   │   │   # - /rechazar/<id>: Rechaza un usuario pendiente.
 │   │   ├── master_routes.py # Rutas para el super-administrador (rol MASTER).
 │   │   │   # Endpoints clave:
 │   │   ├── document_routes.py # Rutas para el módulo "Firmas & Comunicados".
-│   │   │   # - /master/condominios (GET, POST para importar)
-│   │   │   # - /master/usuarios (GET, POST para crear/importar)
-│   │   │   # - /master/supervise/<id> (GET) - Panel de supervisión de solo lectura.
-│   │   │   # - /master/impersonate/admin/<id> (GET) - Acceso de emergencia (suplantación).
+│   │   │   # - /master/condominios: Gestión global de condominios.
+│   │   │   # - /master/usuarios: Gestión global de usuarios.
+│   │   │   # - /master/supervise/<id>: Panel de supervisión de solo lectura con métricas.
 │   │   ├── api_routes.py    # Endpoints de la API REST.
 │   │   └── dev_routes.py    # Rutas para desarrollo y depuración.
 │   ├── static/         # Archivos estáticos (CSS, JS, imágenes).
@@ -129,6 +127,12 @@ Para dar soporte a las reglas de negocio futuras, se proponen los siguientes mod
 - **Control de Acceso:**
     - **Nivel Condominio (Implementación Actual):** Protegido por el flag booleano `has_documents_module` en el modelo `Condominium`.
     - **Nivel Usuario:** El decorador `@module_required('documents')` centraliza la lógica de permisos, asegurando que solo usuarios autorizados (`MASTER`, `ADMIN`, `UserSpecialRole`) de un condominio con el módulo activo puedan acceder.
+        - **Lógica del Decorador:**
+            1. Concede acceso inmediato al rol `MASTER`.
+            2. Verifica que el módulo esté activo para el condominio del usuario.
+            3. Si está activo, concede acceso si el usuario es `ADMIN`.
+            4. Si no es `ADMIN`, verifica si el usuario tiene un **Rol Especial vigente y activo** (`PRESIDENTE`, `SECRETARIO`) que le otorgue permiso para ese módulo.
+            5. Si ninguna condición se cumple, deniega el acceso.
 
 #### 5.5.3 Arquitectura Escalable de Módulos (Visión a Futuro)
 - **Estado:** 🏛️ **Diseño Arquitectónico.** Esta es la evolución para soportar N módulos.
@@ -175,7 +179,7 @@ Esta sección documenta funcionalidades identificadas en las reglas de negocio (
 - **Estado:** ❌ Faltante.
 
 ### 7.2 Completar Gestión del Administrador (`ADMIN`)
-- **Objetivo:** Desarrollar las interfaces y la lógica para que un `ADMIN` pueda gestionar su condominio de forma individual (no solo por CSV).
+- **Objetivo:** Desarrollar las interfaces y la lógica para que un `ADMIN` pueda gestionar su condominio de forma individual.
 - **Tareas Pendientes:**
     - ✅ **Creación y edición individual de `Unit`:** Implementado.
     - ✅ **Aprobación y gestión individual de `User` para su condominio:** Implementado.

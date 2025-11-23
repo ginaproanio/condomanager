@@ -1,13 +1,19 @@
 # Roles y Permisos del Sistema
 Versión: 1.0.0
 
+## Filosofía de Permisos
+El sistema opera bajo un modelo de permisos acumulativos. Si un usuario tiene múltiples roles (ej. `ADMIN` y `PRESIDENTE`), sus permisos son la suma de todos sus roles. El acceso a funcionalidades específicas, como los módulos, se concede si CUALQUIERA de sus roles activos se lo permite.
+
+La directiva del condominio (compuesta por roles especiales) elige a un `ADMINISTRADOR`. Tanto el `ADMINISTRADOR` como los miembros de la directiva autorizados pueden hacer uso de los módulos contratados.
+
 ## 1. Roles Base del Sistema
 
 ### 1.1 MAESTRO
-- Gestión global de condominios
-- Gestión global de usuarios (creación, asignación, aprobación)
-- Supervisión de condominios en modo **solo lectura** (`/supervise/<id>`).
-- Acceso de emergencia a paneles de administrador mediante **suplantación explícita**.
+**Filosofía:** El `MASTER` es el superadministrador de la **plataforma**, no de los datos de los condominios. Su acceso a los datos de un condominio es siempre de **solo lectura y de alto nivel (métricas)**.
+- **Gestión de Plataforma:** Creación y configuración global de condominios y usuarios administradores.
+- **Gestión del Catálogo de Módulos:** Creación y edición de los módulos que la plataforma ofrece.
+- **Supervisión de Condominios (Solo Lectura):** Acceso a un panel de supervisión (`/supervise/<id>`) con estadísticas generales (conteos de unidades, usuarios activos/pendientes) para fines de facturación y seguimiento.
+- **Limitación Crítica de Seguridad:** El rol `MASTER` **NUNCA** puede operar, navegar o ejecutar acciones dentro del panel de un `ADMIN`. No existe la suplantación de roles. Su visión se limita a los datos agregados y métricas.
 - **Gestión del Catálogo de Módulos:**
     - **Exclusividad:** Solo el `MASTER` puede crear, editar y definir los precios de los módulos en el catálogo global del sistema (tabla `modules`).
     - **Gestión de Estado Global:** Pone un módulo en estado `MAINTENANCE` para toda la plataforma.
@@ -45,6 +51,8 @@ Versión: 1.0.0
 - **Módulo "Firmas & Comunicados"**: Si está activado, tiene permisos completos para gestionar documentos.
 - Gestión de sesiones de asamblea
 
+> **Nota Importante:** El acceso de un rol especial a un módulo específico (ej. `PRESIDENTE` al módulo de firmas) está condicionado a la **vigencia de su cargo**. El sistema debe validar que la fecha actual esté dentro del `start_date` y `end_date` del rol, y que el rol esté marcado como `is_active`. Si el cargo ha expirado, el acceso al módulo se revoca automáticamente.
+
 ### 2.3 TESORERO
 **Descripción**: Responsable de supervisión financiera
 **Permisos**:
@@ -69,7 +77,7 @@ Versión: 1.0.0
 
 ### 3.1 Asignación
 - Solo el ADMINISTRADOR puede asignar roles especiales
-- Un usuario puede tener múltiples roles especiales
+- Un usuario puede tener múltiples roles especiales (ej. ser `VOCAL` y `TESORERO` simultáneamente).
 - Los roles tienen período de vigencia definido
 
 ### 3.2 Restricciones

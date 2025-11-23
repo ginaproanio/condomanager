@@ -1,10 +1,23 @@
 # Plan de Implementación: Módulo "Firmas & Comunicados"
 
-Este documento detalla la implementación **actual y funcional** del módulo de **Firmas & Comunicados** en la plataforma CondoManager. El sistema soporta flujos de trabajo de firma física y electrónica, con un control de acceso granular por perfil de usuario basado en la arquitectura implementada.
+Este documento detalla el estado de implementación del módulo **"Firmas & Comunicados"**. Para eliminar cualquier ambigüedad, se presenta un resumen claro del estado de cada funcionalidad principal, seguido de los detalles técnicos de cada fase.
 
-## Fases del Proyecto
+## Resumen de Estado Actual (Qué SÍ está y qué NO está)
 
-El módulo se ha implementado en las siguientes fases funcionales:
+| Característica | Estado | Implementado | Detalles |
+| :--- | :--- | :--- | :--- |
+| **Creación y Edición de Documentos** | ✅ **Implementado** | **SÍ** | Los usuarios autorizados pueden crear y editar documentos con un editor de texto enriquecido. |
+| **Flujo de Firma Física** | ✅ **Implementado** | **SÍ** | El sistema permite descargar un PDF, firmarlo a mano, escanearlo y subirlo para registrar la firma. |
+| **Control de Acceso (Módulo y Roles)** | ✅ **Implementado** | **SÍ** | El acceso está protegido por la activación del módulo en el condominio y por el rol del usuario. |
+| **Recolección de Firmas Públicas** | ✅ **Implementado** | **SÍ** | Se puede generar un enlace público para que residentes o externos firmen peticiones. Incluye descarga en Excel. |
+| **Firma Electrónica (.p12/.pfx)** | 🚧 **Parcialmente** | **NO** | La base de datos está lista para almacenar los certificados, pero la interfaz y la lógica para firmar no están implementadas. |
+| **Envíos Inteligentes (Email/WhatsApp)** | ❌ **No Implementado** | **NO** | La funcionalidad para envíos masivos con filtros (morosos, propietarios, etc.) está diseñada pero no codificada. |
+
+---
+
+## Detalle por Fases del Proyecto
+
+A continuación, se describe el estado técnico de cada fase.
 
 1.  **Fundamentos y Firma Física:** El núcleo del sistema, cubriendo el 95% de los casos de uso.
 2.  **Integración de Firma Electrónica:** Añadir la capacidad para usuarios con certificados digitales.
@@ -13,7 +26,7 @@ El módulo se ha implementado en las siguientes fases funcionales:
 
 ---
 
-### **Fase 1: Fundamentos, Creación de Documentos y Firma Física (Implementado)**
+### **Fase 1: Fundamentos, Creación de Documentos y Firma Física (✅ Implementado)**
 
 **Objetivo:** Permitir a los usuarios autorizados crear documentos, generar un PDF, descargarlo, firmarlo a mano, subir la versión escaneada y registrarla en el sistema.
 
@@ -60,11 +73,14 @@ El módulo se ha implementado en las siguientes fases funcionales:
 
 ---
 
-### **Fase 2: Integración de Firma Electrónica Real (.p12/.pfx) (Diseñado)**
+### **Fase 2: Integración de Firma Electrónica Real (.p12/.pfx) (🚧 Parcialmente Implementado)**
 
 **Objetivo:** Permitir que usuarios avanzados con un certificado digital puedan firmar documentos directamente en la plataforma.
 
 **Pasos Técnicos:**
+
+1.  **✅ (SÍ) Extender el Modelo `User`:**
+    *   Se han añadido a `app/models.py` los campos para almacenar el certificado y la contraseña hasheada: `has_electronic_signature`, `signature_certificate`, `signature_cert_password_hash`. La base de datos está lista.
 
 1.  **Nuevas Dependencias:**
     *   Añadir `cryptography` y `endesive` (o similar) a `requirements.txt`.
@@ -73,20 +89,19 @@ El módulo se ha implementado en las siguientes fases funcionales:
     *   Añadir los campos para almacenar el certificado y la contraseña hasheada: `has_electronic_signature`, `signature_certificate`, `signature_cert_password_hash`.
 
 3.  **Perfil de Usuario:**
-    *   Crear una nueva ruta y plantilla (`/perfil/firma-electronica`) donde el usuario pueda subir su archivo `.p12` o `.pfx` y su contraseña. El sistema debe guardar el archivo encriptado y el hash de la contraseña.
+    *   **❌ (NO)** Falta por crear la ruta y la plantilla (`/perfil/firma-electronica`) donde el usuario pueda subir su archivo `.p12` o `.pfx` y su contraseña.
 
 4.  **Lógica de Firma Digital:**
-    *   Crear una función helper (ej. `sign_pdf_with_certificate`) que use `endesive` para aplicar la firma digital al PDF.
+    *   **❌ (NO)** Falta por crear la función helper (ej. `sign_pdf_with_certificate`) que use `endesive` para aplicar la firma digital al PDF.
 
 5.  **Actualizar la Interfaz de Firma:**
-    *   En la plantilla de firma, mostrar la opción de "Firmar Electrónicamente" solo si `current_user.has_electronic_signature` es `True`.
-    *   Esta opción debe mostrar un modal pidiendo la contraseña del certificado para autorizar la firma.
+    *   **❌ (NO)** Falta por modificar la plantilla de firma para que muestre la opción "Firmar Electrónicamente" y el modal que solicita la contraseña del certificado.
 
-**Resultado de la Fase 2:** El módulo ahora soporta un flujo híbrido, atendiendo tanto a usuarios comunes como a aquellos con capacidades de firma electrónica avanzada.
+**Resultado de la Fase 2:** La base de datos está preparada, pero la funcionalidad no es usable por el usuario final.
 
 ---
 
-### **Fase 3: Comunicaciones y Envíos Inteligentes (Diseñado)**
+### **Fase 3: Comunicaciones y Envíos Inteligentes (❌ No Implementado)**
 
 **Objetivo:** Transformar el módulo en una potente herramienta de comunicación, permitiendo envíos masivos y segmentados.
 
@@ -97,24 +112,22 @@ El módulo se ha implementado en las siguientes fases funcionales:
     *   Configurar las variables de entorno para Mail y Twilio en Railway o en el archivo `.env`.
 
 2.  **Interfaz de Envío Avanzada:**
-    *   Crear una nueva plantilla `send.html`.
-    *   Esta plantilla debe incluir:
+    *   **❌ (NO)** Falta por crear la plantilla `send.html` que incluya:
         *   **Filtros rápidos:** Radio buttons para "Todos", "Solo Propietarios", "Solo Inquilinos", "Solo Morosos".
         *   **Filtros avanzados:** Selects para filtrar por "Tipo de Unidad" o "Estado de Unidad".
         *   **Vista previa de destinatarios:** Una lista que se actualiza para mostrar a quién se enviará el comunicado.
 
 3.  **Lógica de Backend para Filtros:**
-    *   Implementar la función `get_recipients_by_filters` que, usando SQLAlchemy, construya una consulta a la base de datos para obtener los emails y teléfonos de los destinatarios según los filtros seleccionados.
+    *   **❌ (NO)** Falta por implementar la función `get_recipients_by_filters` que consulte la base de datos para obtener los destinatarios.
 
 4.  **Función de Envío y Prueba:**
-    *   Crear el helper `send_document_notification` que se encargue de enviar los correos (con el PDF adjunto) y los mensajes de WhatsApp.
-    *   Implementar la funcionalidad de **"Enviar prueba a mi WhatsApp"** que envía el mensaje solo al usuario actual antes del envío masivo.
+    *   **❌ (NO)** Falta por crear el helper `send_document_notification` para enviar los mensajes y la funcionalidad de **"Enviar prueba a mi WhatsApp"**.
 
-**Resultado de la Fase 3:** El módulo pasa de ser un simple gestor de documentos a ser el centro de comunicaciones oficiales del condominio.
+**Resultado de la Fase 3:** Esta funcionalidad está completamente en fase de diseño. No hay código implementado.
 
 ---
 
-### **Fase 4: Recolección de Firmas Públicas (Implementado)**
+### **Fase 4: Recolección de Firmas Públicas (✅ Implementado)**
 
 **Objetivo:** Añadir la capacidad de usar la plataforma para recolectar firmas de residentes para causas comunes (ej. peticiones al municipio).
 

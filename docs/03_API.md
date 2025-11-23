@@ -30,8 +30,7 @@ Estas rutas están protegidas por el rol `MASTER`.
 - **`POST /master/condominios/importar`**: Procesa la carga masiva de condominios.
 - **`GET /master/usuarios`**: Muestra y busca usuarios.
 - **`POST /master/usuarios/manage`**: Gestiona usuarios pendientes (aprobar, rechazar, etc.).
-- **`GET /supervise/<int:id>`**: Vista de supervisión de solo lectura de un condominio.
-- **`GET /impersonate/admin/<int:id>`**: Inicia la suplantación de un `ADMIN`.
+- **`GET /supervise/<int:id>`**: Vista de supervisión de solo lectura de un condominio. No existe la suplantación de roles.
 
 ---
 

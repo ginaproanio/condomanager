@@ -18,10 +18,6 @@ def is_authorized_admin_for_condo(user, condominium):
     if not user or not condominium:
         return False
 
-    # Un MASTER suplantando tiene acceso.
-    if user.role == 'MASTER' and session.get('impersonating_condominium_id') == condominium.id:
-        return True
-    
     # CORRECCIÓN: Un ADMIN tiene acceso si su ID está en el campo `admin_user_id` del condominio.
     # Esta es la relación directa y correcta.
     return user.role == 'ADMIN' and condominium.admin_user_id == user.id
@@ -40,11 +36,6 @@ def admin_panel(): # Esta función ahora es solo un despachador (dispatcher)
         admin_condo = Condominium.query.filter(func.lower(Condominium.subdomain) == func.lower(user.tenant)).first()
         if admin_condo:
             return redirect(url_for('admin.admin_condominio_panel', condominium_id=admin_condo.id))
-
-    # Si es un MASTER suplantando, redirigir al panel del condominio suplantado.
-    if user.role == 'MASTER' and session.get('impersonating_condominium_id'):
-        impersonated_condo_id = session.get('impersonating_condominium_id')
-        return redirect(url_for('admin.admin_condominio_panel', condominium_id=impersonated_condo_id))
 
     # Si un MASTER llega aquí sin suplantar, no tiene un panel de admin al que ir.
     # Lo enviamos a su propio panel maestro.

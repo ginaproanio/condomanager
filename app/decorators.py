@@ -1,7 +1,8 @@
 from functools import wraps
 from flask import flash, redirect, url_for, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from app.models import User, Condominium # Importar modelos necesarios
+from app.models import User, Condominium, UserSpecialRole # Importar modelos necesarios
+from datetime import date
 
 def get_current_user_from_jwt():
     """Safely gets the current user from the JWT."""
@@ -54,22 +55,55 @@ def module_required(module_name):
         @login_required # Asegura que el usuario esté logueado primero
         def decorated_function(*args, **kwargs):
             user = kwargs.get('current_user')
-
+ 
             # El rol MASTER siempre tiene acceso a todos los módulos.
             if user.role.upper() == 'MASTER':
                 return f(*args, **kwargs)
-
-            condominium = Condominium.query.get(user.condominium_id)
+ 
+            # La lógica de tenant es la forma correcta de encontrar el condominio
+            condominium = Condominium.query.filter_by(subdomain=user.tenant).first()
             if not condominium:
                 flash("No estás asociado a ningún condominio.", "error")
                 return redirect(url_for('user.dashboard'))
-
+ 
+            # --- LÓGICA DE PERMISOS CENTRALIZADA ---
+            # 1. Verificar si el módulo está activo para el condominio.
+            # Esta es la implementación actual. En el futuro, se consultará la tabla `CondominiumModuleActivation`.
             module_flag = f"has_{module_name}_module"
             if not getattr(condominium, module_flag, False):
                 flash(f"El módulo '{module_name.replace('_', ' ').title()}' no está activado para tu condominio.", "error")
                 return redirect(url_for('user.dashboard'))
-
-            return f(*args, **kwargs)
+ 
+            # 2. Si el módulo está activo, verificar si el usuario tiene un rol que le dé acceso.
+            # El rol ADMIN siempre tiene acceso si el módulo está activo.
+            if user.role.upper() == 'ADMIN':
+                return f(*args, **kwargs)
+ 
+            # 3. Verificar si el usuario tiene un ROL ESPECIAL vigente que le dé permiso.
+            # Esta sección es clave para la escalabilidad.
+            # Por ahora, definimos aquí qué roles especiales acceden a qué módulos.
+            # En el futuro, esto se leerá de una tabla en la base de datos.
+            special_roles_for_module = {
+                'documents': ['PRESIDENTE', 'SECRETARIO']
+                # 'billing': ['TESORERO'], # Ejemplo a futuro
+            }.get(module_name, [])
+ 
+            if special_roles_for_module:
+                has_valid_special_role = UserSpecialRole.query.filter(
+                    UserSpecialRole.user_id == user.id,
+                    UserSpecialRole.condominium_id == condominium.id,
+                    UserSpecialRole.role.in_(special_roles_for_module),
+                    UserSpecialRole.is_active == True,
+                    UserSpecialRole.start_date <= date.today(),
+                    (UserSpecialRole.end_date == None) | (UserSpecialRole.end_date >= date.today())
+                ).first()
+ 
+                if has_valid_special_role:
+                    return f(*args, **kwargs)
+ 
+            # Si no es MASTER, ni ADMIN, ni tiene un rol especial válido, se deniega el acceso.
+            flash("No tienes los permisos necesarios para acceder a este módulo.", "error")
+            return redirect(url_for('user.dashboard'))
         return decorated_function
     return decorator
 

@@ -11,8 +11,7 @@ Rol con el más alto nivel de acceso, encargado de la gestión global de la plat
 - ✅ **Crear nuevos condominios (Masivo):** Implementado. La carga por CSV para condominios es funcional.
 - ✅ **Asignar administradores a condominios:** Implementado. Se puede asignar un ADMIN al crear o editar un usuario.
 - ✅ **Gestionar Usuarios (Individual y Aprobación):** Flujo completo para crear, editar, aprobar, rechazar y gestionar usuarios.
-- ✅ **Vista de Supervisión de Condominio (Solo Lectura):** Implementado. Al acceder a un condominio, el `MASTER` ve un panel informativo con estadísticas clave, sin capacidad de realizar acciones operativas.
-- ✅ **Acceso de Emergencia (Suplantación):** Implementado. El `MASTER` puede tomar control explícitamente de un panel de `ADMIN` a través de un botón en la vista de supervisión. Esta acción debe ser auditable.
+- ✅ **Vista de Supervisión de Condominio (Solo Lectura):** Implementado. Al acceder a un condominio, el `MASTER` ve un panel informativo con estadísticas clave, sin capacidad de realizar acciones operativas. **No existe la suplantación de roles.**
 
 ### 1.2 Perfil Administrador (ADMIN)
 Rol para gestionar un condominio específico. Asignado por el Perfil Maestro.
