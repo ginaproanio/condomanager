@@ -1,0 +1,32 @@
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="my-3">
+            {% for category, message in messages %}
+                {# Mapeo de categorías de Flask a clases de Bootstrap #}
+                {% set bootstrap_class = 'info' %}
+                {% if category == 'error' or category == 'danger' %}
+                    {% set bootstrap_class = 'danger' %}
+                {% elif category == 'success' %}
+                    {% set bootstrap_class = 'success' %}
+                {% elif category == 'warning' %}
+                    {% set bootstrap_class = 'warning' %}
+                {% endif %}
+                
+                <div class="alert alert-{{ bootstrap_class }} alert-dismissible fade show" role="alert">
+                    {% if bootstrap_class == 'success' %}
+                        <i class="fas fa-check-circle me-2"></i>
+                    {% elif bootstrap_class == 'danger' %}
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                    {% elif bootstrap_class == 'warning' %}
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                    {% else %}
+                        <i class="fas fa-info-circle me-2"></i>
+                    {% endif %}
+                    
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}

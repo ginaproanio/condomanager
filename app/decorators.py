@@ -1,7 +1,7 @@
 from functools import wraps
 from flask import flash, redirect, url_for, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from app.models import User, Condominium, UserSpecialRole # Importar modelos necesarios
+from app.models import User, Condominium, UserSpecialRole, Module # Importar modelo Module
 from datetime import date
 
 def get_current_user_from_jwt():
@@ -65,21 +65,29 @@ def module_required(module_name):
             if not condominium:
                 flash("No estás asociado a ningún condominio.", "error")
                 return redirect(url_for('user.dashboard'))
+            
+            # --- NUEVA LÓGICA ROBUSTA DE MANTENIMIENTO GLOBAL ---
+            # 1. Verificar estado GLOBAL del módulo en el catálogo (Tabla Module)
+            # Usamos el 'code' (ej. 'documents') para buscar el módulo.
+            global_module = Module.query.filter_by(code=module_name).first()
+            if global_module and global_module.status == 'MAINTENANCE':
+                flash(f"El módulo '{global_module.name}' está temporalmente en mantenimiento por mejoras en la plataforma.", "warning")
+                return redirect(url_for('user.dashboard'))
  
             # --- LÓGICA DE PERMISOS CENTRALIZADA ---
-            # 1. Verificar si el módulo está activo para el condominio.
+            # 2. Verificar si el módulo está activo para el condominio (contratado).
             # Esta es la implementación actual. En el futuro, se consultará la tabla `CondominiumModuleActivation`.
             module_flag = f"has_{module_name}_module"
             if not getattr(condominium, module_flag, False):
                 flash(f"El módulo '{module_name.replace('_', ' ').title()}' no está activado para tu condominio.", "error")
                 return redirect(url_for('user.dashboard'))
  
-            # 2. Si el módulo está activo, verificar si el usuario tiene un rol que le dé acceso.
+            # 3. Si el módulo está activo, verificar si el usuario tiene un rol que le dé acceso.
             # El rol ADMIN siempre tiene acceso si el módulo está activo.
             if user.role.upper() == 'ADMIN':
                 return f(*args, **kwargs)
  
-            # 3. Verificar si el usuario tiene un ROL ESPECIAL vigente que le dé permiso.
+            # 4. Verificar si el usuario tiene un ROL ESPECIAL vigente que le dé permiso.
             # Esta sección es clave para la escalabilidad.
             # Por ahora, definimos aquí qué roles especiales acceden a qué módulos.
             # En el futuro, esto se leerá de una tabla en la base de datos.

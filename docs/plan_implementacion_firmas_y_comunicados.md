@@ -10,6 +10,7 @@ Este documento detalla el estado de implementación del módulo **"Firmas & Comu
 | **Flujo de Firma Física** | ✅ **Implementado** | **SÍ** | El sistema permite descargar un PDF, firmarlo a mano, escanearlo y subirlo para registrar la firma. |
 | **Control de Acceso (Módulo y Roles)** | ✅ **Implementado** | **SÍ** | El acceso está protegido por la activación del módulo en el condominio y por el rol del usuario. |
 | **Recolección de Firmas Públicas** | ✅ **Implementado** | **SÍ** | Se puede generar un enlace público para que residentes o externos firmen peticiones. Incluye descarga en Excel. |
+| **Nivel Básico vs Premium** | ✅ **Diseñado** | **NO** | Estrategia Freemium definida. Falta separar permisos para que todos accedan a "Documentos" (repositorio) y solo los premium a "Firmas". |
 | **Firma Electrónica (.p12/.pfx)** | 🚧 **Parcialmente** | **NO** | La base de datos está lista para almacenar los certificados, pero la interfaz y la lógica para firmar no están implementadas. |
 | **Envíos Inteligentes (Email/WhatsApp)** | ❌ **No Implementado** | **NO** | La funcionalidad para envíos masivos con filtros (morosos, propietarios, etc.) está diseñada pero no codificada. |
 
@@ -67,7 +68,7 @@ A continuación, se describe el estado técnico de cada fase.
         2.  **Botón "Subir documento firmado"**: Abre un modal con un formulario para subir el PDF escaneado, que se guardará en `pdf_signed_path` y cambiará el estado del documento a `signed`.
 
 7.  **Integración al Menú Principal:**
-    *   Se debe añadir el enlace "Firmas & Comunicados" en el layout principal (`base.html`), haciéndolo visible solo para los usuarios con el permiso correspondiente.
+    *   **⚠️ Pendiente:** Se debe añadir el enlace "Firmas & Comunicados" en el layout principal (`base.html`), haciéndolo visible solo para los usuarios con el permiso correspondiente.
 
 **Resultado de la Fase 1:** Un sistema funcional donde los usuarios autorizados pueden gestionar todo el ciclo de vida de un documento con firma física, con permisos estrictamente controlados por perfil y por activación de módulo.
 

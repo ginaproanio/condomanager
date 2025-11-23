@@ -58,6 +58,9 @@
                 <ul class="navbar-nav ms-auto">
                     {% if user %}
                         <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('document.index') }}"><i class="fas fa-file-alt me-1"></i>Documentos</a>
+                        </li>
+                        <li class="nav-item">
                             <span class="navbar-text me-3">Bienvenido, <strong>{{ user.name }}</strong> ({{ user.role }})</span>
                         </li>
                         <li class="nav-item">

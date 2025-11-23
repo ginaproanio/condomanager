@@ -5,7 +5,7 @@ from flask import (
 )
 from flask_jwt_extended import jwt_required
 from app import db
-from app.models import Document, DocumentSignature, User, Condominium, ResidentSignature
+from app.models import Document, DocumentSignature, User, Condominium, ResidentSignature, UserSpecialRole
 from app.decorators import login_required, module_required
 from werkzeug.utils import secure_filename
 import os
@@ -55,18 +55,13 @@ def generate_unsigned_pdf(doc):
     doc.pdf_unsigned_path = os.path.join('static', 'uploads', 'documents', 'unsigned', filename)
     db.session.commit()
 
-# ==================== RUTAS DEL MÓDULO ====================
+# ==================== LÓGICA REUTILIZABLE ====================
 
-@document_bp.route('/')
-@module_required('documents')
-def index(current_user):
-    docs = Document.query.filter_by(condominium_id=current_user.condominium_id).order_by(Document.created_at.desc()).all()
-    return render_template('documents/index.html', documents=docs)
-
-@document_bp.route('/nuevo', methods=['GET', 'POST'])
-@document_bp.route('/<int:doc_id>/editar', methods=['GET', 'POST'])
-@module_required('documents')
-def create_or_edit(current_user, doc_id=None):
+def create_or_edit_logic(current_user, doc_id=None):
+    """
+    Lógica compartida para crear o editar documentos.
+    Separada de la ruta para permitir decoradores diferentes si es necesario.
+    """
     doc = Document.query.get_or_404(doc_id) if doc_id else None
     if doc and doc.condominium_id != current_user.condominium_id:
         abort(403)
@@ -82,7 +77,8 @@ def create_or_edit(current_user, doc_id=None):
                 title=title,
                 content=content,
                 created_by_id=current_user.id,
-                condominium_id=current_user.condominium_id
+                # Asumimos que si llega aquí, ya se validó que tiene condominio
+                condominium_id=Condominium.query.filter_by(subdomain=current_user.tenant).first().id
             )
             db.session.add(doc)
             flash("Documento creado correctamente.", "success")
@@ -102,29 +98,92 @@ def create_or_edit(current_user, doc_id=None):
 
     return render_template('documents/editor.html', doc=doc)
 
+# ==================== RUTAS DEL MÓDULO ====================
+
+@document_bp.route('/')
+@login_required
+def index(current_user):
+    # 1. Obtener el condominio del usuario
+    condominium = Condominium.query.filter_by(subdomain=current_user.tenant).first()
+    
+    # 2. Determinar si tiene acceso PREMIUM (Módulo activado)
+    has_premium_access = False
+    if current_user.role == 'MASTER':
+        has_premium_access = True
+    elif condominium and condominium.has_documents_module:
+        # Si el condominio paga, verificamos roles
+        if current_user.role == 'ADMIN':
+            has_premium_access = True
+        else:
+            # Verificar roles especiales (Presidente, Secretario)
+            active_role = UserSpecialRole.query.filter(
+                UserSpecialRole.user_id == current_user.id,
+                UserSpecialRole.condominium_id == condominium.id,
+                UserSpecialRole.role.in_(['PRESIDENTE', 'SECRETARIO']),
+                UserSpecialRole.is_active == True,
+                UserSpecialRole.start_date <= datetime.now().date(),
+                (UserSpecialRole.end_date == None) | (UserSpecialRole.end_date >= datetime.now().date())
+            ).first()
+            if active_role:
+                has_premium_access = True
+
+    # 3. Obtener documentos (Todos pueden verlos, la restricción es al CREAR)
+    docs = []
+    if condominium:
+        docs = Document.query.filter_by(condominium_id=condominium.id).order_by(Document.created_at.desc()).all()
+    
+    return render_template('documents/index.html', documents=docs, has_premium_access=has_premium_access)
+
+@document_bp.route('/nuevo', methods=['GET', 'POST'])
+@module_required('documents') # ESTO SIGUE PROTEGIDO (Solo Premium)
+def create(current_user): # Renombrado para claridad
+    return create_or_edit_logic(current_user)
+
+@document_bp.route('/<int:doc_id>/editar', methods=['GET', 'POST'])
+@module_required('documents') # ESTO SIGUE PROTEGIDO (Solo Premium)
+def edit(current_user, doc_id):
+    return create_or_edit_logic(current_user, doc_id)
+
 @document_bp.route('/<int:doc_id>')
-@module_required('documents')
+# @module_required('documents') # <-- COMENTADO: Ahora todos pueden ver (Freemium)
+@login_required
 def view(current_user, doc_id):
+    # Asegurar que pertenece al condominio del usuario
     doc = Document.query.get_or_404(doc_id)
-    if doc.condominium_id != current_user.condominium_id:
+    user_condo = Condominium.query.filter_by(subdomain=current_user.tenant).first()
+    
+    if not user_condo or doc.condominium_id != user_condo.id:
         abort(403)
+        
     return render_template('documents/view.html', doc=doc)
 
 @document_bp.route('/<int:doc_id>/descargar-sin-firmar')
-@module_required('documents')
+# @module_required('documents') # <-- COMENTADO: Descarga permitida para todos
+@login_required
 def download_unsigned(current_user, doc_id):
     doc = Document.query.get_or_404(doc_id)
-    if doc.condominium_id != current_user.condominium_id:
+    user_condo = Condominium.query.filter_by(subdomain=current_user.tenant).first()
+    
+    if not user_condo or doc.condominium_id != user_condo.id:
         abort(403)
+        
     if not doc.pdf_unsigned_path or not os.path.exists(os.path.join('app', doc.pdf_unsigned_path)):
         generate_unsigned_pdf(doc)
     return send_file(os.path.join('app', doc.pdf_unsigned_path), as_attachment=True, download_name=f"{doc.title}_SIN_FIRMAR.pdf")
 
 @document_bp.route('/<int:doc_id>/firmar', methods=['GET', 'POST'])
-@module_required('documents')
+@module_required('documents') # PROTEGIDO: Firmar requiere módulo premium
 def sign(current_user, doc_id):
     doc = Document.query.get_or_404(doc_id)
-    if doc.condominium_id != current_user.condominium_id:
+    if doc.condominium_id != current_user.condominium_id: # cond_id corregido en create_or_edit_logic
+        # Nota: current_user.condominium_id no existe en el modelo User, se usa tenant.
+        # Pero el decorador @module_required ya hace validaciones.
+        # Aquí asumimos que la lógica de tenant está resuelta.
+        pass
+
+    # Validación manual de tenant (seguridad extra)
+    user_condo = Condominium.query.filter_by(subdomain=current_user.tenant).first()
+    if not user_condo or doc.condominium_id != user_condo.id:
         abort(403)
 
     if request.method == 'POST' and request.form.get('action') == 'upload_physical':
@@ -156,8 +215,11 @@ def sign(current_user, doc_id):
 @module_required('documents')
 def send(current_user, doc_id):
     doc = Document.query.get_or_404(doc_id)
-    if doc.condominium_id != current_user.condominium_id:
+    
+    user_condo = Condominium.query.filter_by(subdomain=current_user.tenant).first()
+    if not user_condo or doc.condominium_id != user_condo.id:
         abort(403)
+        
     if doc.status != 'signed':
         flash("El documento debe estar firmado antes de enviarse.", "warning")
         return redirect(url_for('document.view', doc_id=doc.id))
@@ -211,7 +273,9 @@ def public_signature_thanks(public_link):
 @module_required('documents')
 def download_signatures(current_user, doc_id):
     doc = Document.query.get_or_404(doc_id)
-    if doc.condominium_id != current_user.condominium_id:
+    
+    user_condo = Condominium.query.filter_by(subdomain=current_user.tenant).first()
+    if not user_condo or doc.condominium_id != user_condo.id:
         abort(403)
 
     signatures = ResidentSignature.query.filter_by(document_id=doc.id).order_by(ResidentSignature.signed_at.asc()).all()
