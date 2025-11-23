@@ -26,6 +26,41 @@ def upgrade():
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.PrimaryKeyConstraint('tenant')
     )
+    op.create_table('units',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('property_tax_code', sa.String(length=100), nullable=True),
+    sa.Column('property_number', sa.String(length=50), nullable=False),
+    sa.Column('name', sa.String(length=100), nullable=True),
+    sa.Column('property_type', sa.String(length=50), nullable=True),
+    sa.Column('main_street', sa.String(length=200), nullable=True),
+    sa.Column('cross_street', sa.String(length=200), nullable=True),
+    sa.Column('house_number', sa.String(length=20), nullable=True),
+    sa.Column('address_reference', sa.Text(), nullable=True),
+    sa.Column('latitude', sa.Float(), nullable=True),
+    sa.Column('longitude', sa.Float(), nullable=True),
+    sa.Column('building', sa.String(length=50), nullable=True),
+    sa.Column('floor', sa.String(length=20), nullable=True),
+    sa.Column('sector', sa.String(length=50), nullable=True),
+    sa.Column('area_m2', sa.Float(), nullable=True),
+    sa.Column('area_construction_m2', sa.Float(), nullable=True),
+    sa.Column('bedrooms', sa.Integer(), nullable=True),
+    sa.Column('bathrooms', sa.Integer(), nullable=True),
+    sa.Column('parking_spaces', sa.Integer(), nullable=True),
+    sa.Column('front_meters', sa.Float(), nullable=True),
+    sa.Column('depth_meters', sa.Float(), nullable=True),
+    sa.Column('topography', sa.String(length=50), nullable=True),
+    sa.Column('land_use', sa.String(length=100), nullable=True),
+    sa.Column('notes', sa.Text(), nullable=True),
+    sa.Column('condominium_id', sa.Integer(), nullable=False),
+    sa.Column('created_by', sa.Integer(), nullable=False),
+    sa.Column('status', sa.String(length=20), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.Column('updated_at', sa.DateTime(), nullable=True),
+    sa.ForeignKeyConstraint(['condominium_id'], ['condominiums.id'], ),
+    sa.ForeignKeyConstraint(['created_by'], ['users.id'], ),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('property_tax_code')
+    )
     op.create_table('users',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('cedula', sa.String(length=20), nullable=False),
@@ -45,7 +80,7 @@ def upgrade():
     sa.Column('has_electronic_signature', sa.Boolean(), nullable=True),
     sa.Column('signature_certificate', sa.LargeBinary(), nullable=True),
     sa.Column('signature_cert_password_hash', sa.String(length=255), nullable=True),
-    sa.ForeignKeyConstraint(['unit_id'], ['units.id'], ),
+    # La FK a units se crea después para evitar dependencia circular
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('cedula'),
     sa.UniqueConstraint('email')
@@ -84,41 +119,6 @@ def upgrade():
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('ruc'),
     sa.UniqueConstraint('subdomain')
-    )
-    op.create_table('units',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('property_tax_code', sa.String(length=100), nullable=True),
-    sa.Column('property_number', sa.String(length=50), nullable=False),
-    sa.Column('name', sa.String(length=100), nullable=True),
-    sa.Column('property_type', sa.String(length=50), nullable=True),
-    sa.Column('main_street', sa.String(length=200), nullable=True),
-    sa.Column('cross_street', sa.String(length=200), nullable=True),
-    sa.Column('house_number', sa.String(length=20), nullable=True),
-    sa.Column('address_reference', sa.Text(), nullable=True),
-    sa.Column('latitude', sa.Float(), nullable=True),
-    sa.Column('longitude', sa.Float(), nullable=True),
-    sa.Column('building', sa.String(length=50), nullable=True),
-    sa.Column('floor', sa.String(length=20), nullable=True),
-    sa.Column('sector', sa.String(length=50), nullable=True),
-    sa.Column('area_m2', sa.Float(), nullable=True),
-    sa.Column('area_construction_m2', sa.Float(), nullable=True),
-    sa.Column('bedrooms', sa.Integer(), nullable=True),
-    sa.Column('bathrooms', sa.Integer(), nullable=True),
-    sa.Column('parking_spaces', sa.Integer(), nullable=True),
-    sa.Column('front_meters', sa.Float(), nullable=True),
-    sa.Column('depth_meters', sa.Float(), nullable=True),
-    sa.Column('topography', sa.String(length=50), nullable=True),
-    sa.Column('land_use', sa.String(length=100), nullable=True),
-    sa.Column('notes', sa.Text(), nullable=True),
-    sa.Column('condominium_id', sa.Integer(), nullable=False),
-    sa.Column('created_by', sa.Integer(), nullable=False),
-    sa.Column('status', sa.String(length=20), nullable=True),
-    sa.Column('created_at', sa.DateTime(), nullable=True),
-    sa.Column('updated_at', sa.DateTime(), nullable=True),
-    sa.ForeignKeyConstraint(['condominium_id'], ['condominiums.id'], ),
-    sa.ForeignKeyConstraint(['created_by'], ['users.id'], ),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('property_tax_code')
     )
     op.create_table('documents',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -188,6 +188,9 @@ def upgrade():
     sa.ForeignKeyConstraint(['document_id'], ['documents.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
+    # Añadir la FK de users a units después de que todas las tablas existan
+    with op.batch_alter_table('users', schema=None) as batch_op:
+        batch_op.create_foreign_key('fk_users_unit_id', 'units', ['unit_id'], ['id'])
     # ### end Alembic commands ###
 
 
@@ -198,8 +201,8 @@ def downgrade():
     op.drop_table('user_special_roles')
     op.drop_table('invoices')
     op.drop_table('documents')
-    op.drop_table('units')
     op.drop_table('condominiums')
     op.drop_table('users')
+    op.drop_table('units')
     op.drop_table('condominium_configs')
     # ### end Alembic commands ###
