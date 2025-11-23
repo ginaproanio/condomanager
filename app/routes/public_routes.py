@@ -74,7 +74,7 @@ def login():
 
 @public_bp.route('/logout')
 def logout():
-    response = make_response(redirect(url_for('public.login')))
+    response = make_response(redirect(url_for('public.home')))
     unset_jwt_cookies(response)
     
     # REFUERZO DE SEGURIDAD: Prevenir caché al salir
