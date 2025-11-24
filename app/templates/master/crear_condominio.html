@@ -12,11 +12,13 @@
     </div>
     <div class="row justify-content-center">
         <div class="col-md-8">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h2 class="card-title mb-0">Registrar Nuevo Condominio</h2>
-                </div>
-                <div class="card-body">
+            <div class="card border-0 shadow-lg">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <h2 class="text-primary mb-0"><i class="fas fa-building me-2"></i>Registrar Nuevo Condominio</h2>
+                        <p class="lead text-muted mt-2">Ingrese los datos iniciales para el nuevo conjunto residencial.</p>
+                    </div>
+
                     {% with messages = get_flashed_messages(with_categories=true) %}
                         {% if messages %}
                             {% for category, message in messages %}

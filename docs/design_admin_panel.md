@@ -1,7 +1,7 @@
 # Documentación de Diseño: /admin (Panel de Administración)
 
-**Versión:** 1.0
-**Fecha:** 22 de Noviembre de 2025
+**Versión:** 1.1
+**Fecha:** 24 de Noviembre de 2025
 
 Este documento describe el diseño visual y funcional existente de la página "Panel de Administración" (`/admin`), accesible por los roles `ADMIN` y `MASTER`. El objetivo es registrar el estado actual de la interfaz.
 
@@ -11,14 +11,36 @@ La página utiliza un layout de ancho completo dentro de un contenedor (`<div cl
 
 - **Bordes**: No tienen bordes visibles (`border-0`).
 - **Sombra**: Poseen una sombra sutil para darles profundidad (`shadow-sm`).
-- **Fondo**: El encabezado de la tarjeta principal tiene un fondo claro (`bg-light`).
+- **Fondo**: El encabezado de la tarjeta principal tiene un fondo claro (`bg-light`) o blanco si se usa el estilo limpio.
 
-## 2. Encabezado y Estadísticas
+## 2. Encabezado y Navegación
 
-- **Título**: "Panel de Administración", alineado a la izquierda, con un ícono de engranaje (`fas fa-cog`).
-- **Insignia de Tenant**: A la derecha del título, se muestra el nombre del condominio actual (ej. "Punta Blanca") dentro de una insignia (`badge bg-primary`).
+### 2.1 Botón "Volver" (Estándar)
+Para mantener la consistencia en toda la plataforma (Master y Admin), el botón de retorno debe seguir estas reglas:
 
-### Tarjetas de Estadísticas
+*   **Ubicación:** Esquina superior izquierda del área de contenido principal (dentro del `card-body` o contenedor principal).
+*   **Estilo:** `btn btn-outline-secondary`.
+*   **Icono:** Flecha izquierda (`fas fa-arrow-left me-2`).
+*   **Texto:** "Volver" o "Volver a [Destino]".
+
+**Ejemplo de Implementación:**
+```html
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <a href="{{ url_for('ruta_destino') }}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Volver
+    </a>
+    <h2 class="text-primary mb-0 text-center flex-grow-1">
+        <!-- Título de la Página -->
+    </h2>
+    <div style="width: 100px;"></div> <!-- Espaciador para centrar el título -->
+</div>
+```
+
+### 2.2 Títulos de Sección
+*   Deben usar `text-primary` sobre fondo blanco para máxima legibilidad.
+*   Evitar `card-header` con colores sólidos oscuros (`bg-primary text-white`) si no es estrictamente necesario, prefiriendo un diseño limpio y minimalista.
+
+## 3. Estadísticas y Tarjetas Informativas
 
 Se muestra una fila con tres tarjetas de estadísticas sin borde y con colores de fondo sólidos:
 
@@ -28,19 +50,15 @@ Se muestra una fila con tres tarjetas de estadísticas sin borde y con colores d
 | **Activos** | Verde (`bg-success`) | Blanco | `fas fa-check-circle` |
 | **Rechazados** | Gris (`bg-secondary`) | Blanco | `fas fa-times-circle` |
 
-## 3. Tabla de "Usuarios Pendientes de Aprobación"
+## 4. Tabla de Usuarios y Listados
 
 Es el componente principal de la página y se presenta dentro de una tarjeta.
 
 - **Estilo de Tabla**: Utiliza un efecto `hover` (`table-hover`) que resalta la fila sobre la que se encuentra el cursor.
 - **Responsividad**: La tabla es responsiva (`table-responsive`), permitiendo el desplazamiento horizontal en pantallas pequeñas.
-- **Estado "Sin Usuarios"**: Si no hay usuarios pendientes, se muestra un mensaje centrado con un ícono grande de check (`fas fa-check-circle fa-3x text-success`) y texto descriptivo.
+- **Estado "Sin Datos"**: Si no hay registros, se muestra un mensaje centrado con un ícono grande y texto descriptivo.
 
-### Componentes dentro de la Tabla
-
-- **Insignia de Condominio**: El nombre del `tenant` del usuario se muestra dentro de una insignia de color cian con texto oscuro (`badge bg-info text-dark`).
-
-## 4. Botones y Controles
+## 5. Botones y Controles
 
 A continuación se detallan los botones de acción de esta interfaz.
 
@@ -50,9 +68,8 @@ A continuación se detallan los botones de acción de esta interfaz.
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Aprobar** | `btn btn-success` | Verde (`#198754`) | Blanco | `fas fa-check` | Botón pequeño (`btn-sm`). | Dentro del grupo de acciones de cada fila. Aprueba el registro del usuario. |
 | **Rechazar** | `btn btn-danger` | Rojo (`#dc3545`) | Blanco | `fas fa-times` | Botón pequeño (`btn-sm`). | Dentro del grupo de acciones de cada fila. Rechaza el registro del usuario. |
-| **Gestionar Mi Condominio** | `btn btn-primary` | Azul (`#0d6efd`) | Blanco | `fas fa-building` | Ninguno. | En la tarjeta "Acciones Rápidas". Es un enlace para recargar el panel. |
-| **Gestionar Unidades** | `btn btn-outline-primary disabled` | Transparente | Azul (`#0d6efd`) | `fas fa-building` | Deshabilitado. Borde azul. | En la tarjeta "Acciones Rápidas". Funcionalidad futura. |
-| **Ver Reportes** | `btn btn-outline-primary disabled` | Transparente | Azul (`#0d6efd`) | `fas fa-chart-bar` | Deshabilitado. Borde azul. | En la tarjeta "Acciones Rápidas". Funcionalidad futura. |
+| **Gestionar** | `btn btn-info` | Cian (`#0dcaf0`) | Negro | `fas fa-edit` | Botón pequeño (`btn-sm`). | Editar o gestionar un recurso. |
+| **Eliminar** | `btn btn-danger` | Rojo (`#dc3545`) | Blanco | `fas fa-trash` | Botón pequeño (`btn-sm`). | Eliminar un recurso (siempre con confirmación). |
 
 ### Estados de los Botones (Comportamiento Estándar de Bootstrap 5)
 

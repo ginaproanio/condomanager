@@ -8,10 +8,18 @@
         <div class="col-md-11">
             <div class="card border-0 shadow-lg">
                 <div class="card-body p-5">
-                    <div class="text-center mb-4">
-                        <h2 class="text-primary mb-3">
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <a href="{{ url_for('user.dashboard') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Volver a Mi Dashboard
+                        </a>
+                        <h2 class="text-primary mb-0 text-center flex-grow-1">
                             <i class="fas fa-building me-2"></i>Administración de {{ condominium.name }}
                         </h2>
+                        <div style="width: 200px;"></div> <!-- Espaciador para centrar el título -->
+                    </div>
+                    
+                    <div class="text-center mb-4">
                         <p class="lead text-muted">Gestiona unidades y usuarios de este condominio.</p>
                     </div>
 
@@ -577,11 +585,6 @@
                             </div>
                         </div>
                         
-                    </div>
-                    <div class="text-center mt-5">
-                        <a href="{{ url_for('user.dashboard') }}" class="btn btn-outline-secondary">
-                            <i class="fas fa-arrow-left me-2"></i>Volver a Mi Dashboard
-                        </a>
                     </div>
                 </div>
             </div>

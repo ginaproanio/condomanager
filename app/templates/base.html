@@ -90,11 +90,13 @@
                             <a class="btn btn-outline-danger btn-sm" href="{{ url_for('public.logout') }}">Cerrar sesión</a>
                         </li>
                     {% else %}
+                        {% if request.endpoint != 'public.login' %}
                         <li class="nav-item">
                             <a class="btn btn-primary" href="{{ url_for('public.login') }}">
                                 <i class="fas fa-sign-in-alt me-2"></i>Iniciar sesión
                             </a>
                         </li>
+                        {% endif %}
                     {% endif %}
                 </ul>
             </div>
