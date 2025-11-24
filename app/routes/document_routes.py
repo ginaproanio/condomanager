@@ -62,10 +62,19 @@ def create_or_edit_logic(current_user, doc_id=None):
     Lógica compartida para crear o editar documentos.
     Separada de la ruta para permitir decoradores diferentes si es necesario.
     """
+    # 1. Resolver el contexto del Condominio del Usuario
+    user_condo = None
+    if current_user.tenant:
+        user_condo = Condominium.query.filter_by(subdomain=current_user.tenant).first()
+
     doc = Document.query.get_or_404(doc_id) if doc_id else None
-    if doc and doc.condominium_id != current_user.condominium_id:
-        # Nota: Validación simple, idealmente usar tenant si model no tiene condo_id directo
-        pass 
+
+    # 2. Verificación de Seguridad (Authorization)
+    if doc:
+        # Permitir si es MASTER o si el documento pertenece al condominio del usuario
+        if current_user.role != 'MASTER':
+            if not user_condo or doc.condominium_id != user_condo.id:
+                abort(403) # Forbidden
 
     if request.method == 'POST':
         title = request.form['title']
@@ -74,9 +83,8 @@ def create_or_edit_logic(current_user, doc_id=None):
         collect_sigs = 'collect_signatures' in request.form
 
         if not doc:
-            # Determinación segura del Condominio ID
-            condo = Condominium.query.filter_by(subdomain=current_user.tenant).first()
-            condo_id = condo.id if condo else None
+            # Determinación segura del Condominio ID para nuevo documento
+            condo_id = user_condo.id if user_condo else None
             
             if not condo_id and current_user.role != 'MASTER':
                 flash("Error de integridad: Usuario sin condominio asignado.", "error")
