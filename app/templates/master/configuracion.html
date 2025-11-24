@@ -1,19 +1,125 @@
 {% extends "base.html" %}
 
-{% block title %}Configuración Global (Maestro){% endblock %}
+{% block title %}Configuración de Plataforma - Master{% endblock %}
 
 {% block content %}
 <div class="container py-5">
-    <div class="row">
-        <div class="col">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body text-center py-5">
-                    <h2 class="text-primary mb-3"><i class="fas fa-cogs me-2"></i>Configuración Global</h2>
-                    <p class="lead">Bienvenido al panel de configuración global, {{ user.name }}.</p>
-                    <p>{{ get_flashed_messages() | join(' ') }}</p>
-                    <a href="{{ url_for('master.master_panel') }}" class="btn btn-secondary mt-3">Volver al Panel Maestro</a>
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="text-primary mb-0"><i class="fas fa-cogs me-2"></i>Configuración de Plataforma</h2>
+                <a href="{{ url_for('master.master_panel') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Volver al Panel
+                </a>
+            </div>
+
+            {% include '_messages.html' %}
+
+            <div class="alert alert-info shadow-sm border-0">
+                <i class="fas fa-info-circle me-2"></i>
+                Esta configuración aplica a nivel global para la plataforma SaaS (CondoManager).
+            </div>
+
+            <!-- Configuración de Recaudación SaaS -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0 text-success"><i class="fas fa-university me-2"></i>Cuenta Bancaria (Recaudación SaaS)</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small">
+                        Datos bancarios que se mostrarán a los condominios para el pago de su suscripción a la plataforma.
+                    </p>
+                    <form method="POST">
+                        <input type="hidden" name="config_type" value="bank_account">
+                        
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Banco</label>
+                                <input type="text" class="form-control" name="bank_name" value="{{ config.get('bank_name', '') }}" placeholder="Ej: Banco Pichincha">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Tipo de Cuenta</label>
+                                <select class="form-select" name="account_type">
+                                    <option value="Corriente" {% if config.get('account_type') == 'Corriente' %}selected{% endif %}>Corriente</option>
+                                    <option value="Ahorros" {% if config.get('account_type') == 'Ahorros' %}selected{% endif %}>Ahorros</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Número de Cuenta</label>
+                                <input type="text" class="form-control" name="account_number" value="{{ config.get('account_number', '') }}" placeholder="XXXXXXXXXX">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Nombre del Titular</label>
+                                <input type="text" class="form-control" name="account_holder" value="{{ config.get('account_holder', '') }}" placeholder="Razón Social o Nombre">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">RUC / Cédula</label>
+                                <input type="text" class="form-control" name="account_id" value="{{ config.get('account_id', '') }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Correo de Confirmación</label>
+                                <input type="email" class="form-control" name="account_email" value="{{ config.get('account_email', '') }}">
+                            </div>
+                        </div>
+
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save me-2"></i>Guardar Datos Bancarios
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
+
+            <!-- Configuración de API Global (Meta/WhatsApp) -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0 text-primary"><i class="fab fa-facebook me-2"></i>API de Meta (Global)</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small">
+                        Claves de API para notificaciones del sistema (alertas de facturación, bienvenida, etc.). 
+                        No afecta a las configuraciones individuales de los condominios.
+                    </p>
+                    <form method="POST">
+                        <input type="hidden" name="config_type" value="meta_api">
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Identificador de Teléfono (Phone ID)</label>
+                            <input type="text" class="form-control font-monospace" name="meta_phone_id" value="{{ config.get('meta_phone_id', '') }}">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Identificador de Cuenta Comercial (Business ID)</label>
+                            <input type="text" class="form-control font-monospace" name="meta_business_id" value="{{ config.get('meta_business_id', '') }}">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Token de Acceso (Permanente)</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-key"></i></span>
+                                <input type="password" class="form-control font-monospace" name="meta_access_token" value="{{ config.get('meta_access_token', '') }}">
+                            </div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Guardar Credenciales Meta
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Accesos Directos -->
+            <div class="text-center mt-5">
+                <p class="text-muted">¿Buscas configurar tu perfil personal (foto, redes sociales)?</p>
+                <a href="{{ url_for('user.perfil') }}" class="btn btn-outline-info">
+                    <i class="fas fa-user-circle me-2"></i>Ir a Mi Perfil Personal
+                </a>
+            </div>
+
         </div>
     </div>
 </div>

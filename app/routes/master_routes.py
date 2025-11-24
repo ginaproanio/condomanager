@@ -311,16 +311,93 @@ def master_usuarios_eliminar(user_id):
     flash(f"Funcionalidad para eliminar usuario {user_id} no implementada.", "info")
     return redirect(url_for('master.master_usuarios'))
 
-@master_bp.route('/master/configuracion', methods=['GET'])
+@master_bp.route('/master/configuracion', methods=['GET', 'POST'])
 @jwt_required()
 def master_configuracion():
+    """
+    Panel de configuración global de la plataforma (Banco, APIs, etc.)
+    Usa el condominio 'sandbox' como almacén de esta configuración global.
+    """
     user = get_current_user()
     if not user or user.role != 'MASTER':
         flash("Acceso denegado – Se requiere rol MASTER", "error")
         return redirect('/dashboard')
 
-    # Aquí puedes agregar la lógica para cargar la configuración global
-    return render_template('master/configuracion.html', user=user)
+    # Usamos el condominio 'sandbox' o el tenant del master para guardar esta config
+    # En un sistema más grande, esto iría en una tabla 'PlatformConfig'
+    target_condo = None
+    if user.tenant:
+        target_condo = Condominium.query.filter_by(subdomain=user.tenant).first()
+    if not target_condo:
+        target_condo = Condominium.query.filter_by(subdomain='sandbox').first()
+    
+    if not target_condo:
+        flash("No se encontró un entorno (Sandbox) para guardar la configuración.", "error")
+        return redirect(url_for('master.master_panel'))
+
+    # Cargar configuración existente
+    # Usamos el campo 'notes' como un JSON improvisado o 'whatsapp_config' si queremos reutilizar
+    # Pero lo ideal es usar payment_config para el banco y whatsapp_config para meta.
+    
+    current_payment_config = target_condo.payment_config or {}
+    current_whatsapp_config = target_condo.whatsapp_config or {}
+    
+    # Unificar para la vista
+    config_data = {
+        # Banco (guardado en payment_config bajo la clave 'saas_bank_account')
+        'bank_name': current_payment_config.get('saas_bank_account', {}).get('bank_name', ''),
+        'account_type': current_payment_config.get('saas_bank_account', {}).get('account_type', ''),
+        'account_number': current_payment_config.get('saas_bank_account', {}).get('account_number', ''),
+        'account_holder': current_payment_config.get('saas_bank_account', {}).get('account_holder', ''),
+        'account_id': current_payment_config.get('saas_bank_account', {}).get('account_id', ''),
+        'account_email': current_payment_config.get('saas_bank_account', {}).get('account_email', ''),
+        
+        # Meta (guardado en whatsapp_config)
+        'meta_phone_id': current_whatsapp_config.get('phone_id', ''),
+        'meta_business_id': current_whatsapp_config.get('business_id', ''),
+        'meta_access_token': current_whatsapp_config.get('access_token', '')
+    }
+
+    if request.method == 'POST':
+        config_type = request.form.get('config_type')
+        
+        if config_type == 'bank_account':
+            # Actualizar datos bancarios en payment_config
+            new_bank_data = {
+                'bank_name': request.form.get('bank_name'),
+                'account_type': request.form.get('account_type'),
+                'account_number': request.form.get('account_number'),
+                'account_holder': request.form.get('account_holder'),
+                'account_id': request.form.get('account_id'),
+                'account_email': request.form.get('account_email')
+            }
+            # Preservar otros datos de payment_config si existen
+            updated_payment_config = dict(current_payment_config)
+            updated_payment_config['saas_bank_account'] = new_bank_data
+            
+            target_condo.payment_config = updated_payment_config
+            flag_modified(target_condo, "payment_config")
+            flash("Datos bancarios de la plataforma actualizados.", "success")
+
+        elif config_type == 'meta_api':
+            # Actualizar datos de Meta en whatsapp_config
+            updated_whatsapp_config = dict(current_whatsapp_config)
+            updated_whatsapp_config['phone_id'] = request.form.get('meta_phone_id')
+            updated_whatsapp_config['business_id'] = request.form.get('meta_business_id')
+            updated_whatsapp_config['access_token'] = request.form.get('meta_access_token')
+            
+            target_condo.whatsapp_config = updated_whatsapp_config
+            flag_modified(target_condo, "whatsapp_config")
+            flash("Credenciales de Meta actualizadas.", "success")
+            
+        try:
+            db.session.commit()
+            return redirect(url_for('master.master_configuracion'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Error al guardar: {e}", "error")
+
+    return render_template('master/configuracion.html', user=user, config=config_data)
 
 @master_bp.route('/master/usuarios/reaprobar/<int:user_id>', methods=['POST'])
 @jwt_required()
