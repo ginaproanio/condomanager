@@ -642,6 +642,7 @@ def manage_module_catalog():
                              module.maintenance_end = datetime.strptime(end_date_str, '%Y-%m-%dT%H:%M:%S')
                          except:
                              flash('Formato de fecha de fin de mantenimiento inválido.', 'warning')
+                             return redirect(url_for('master.manage_module_catalog'))
                 
                 module.maintenance_message = request.form.get('maintenance_message')
             else:
