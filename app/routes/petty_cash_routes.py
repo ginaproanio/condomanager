@@ -23,10 +23,14 @@ def index(condominium_id):
     # Calcular saldo
     balance = sum(t.amount for t in transactions)
     
+    # Fecha actual para el input date
+    now_date = datetime.utcnow().strftime('%Y-%m-%d')
+    
     return render_template('admin/petty_cash.html', 
                            condominium=condo, 
                            transactions=transactions, 
-                           balance=balance)
+                           balance=balance,
+                           now_date=now_date)
 
 @petty_cash_bp.route('/admin/condominio/<int:condominium_id>/caja-chica/nuevo', methods=['POST'])
 @condominium_admin_required
