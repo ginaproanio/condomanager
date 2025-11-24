@@ -88,4 +88,3 @@ def nuevo_movimiento(condominium_id):
         flash(f"Error al registrar: {str(e)}", "error")
         
     return redirect(url_for('petty_cash.index', condominium_id=condominium_id))
-

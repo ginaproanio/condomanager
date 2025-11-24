@@ -354,13 +354,19 @@ def ver_comprobante(filename):
     # En la DB se guarda como '/static/uploads/payments/filename' o similar, buscamos coincidencia parcial o exacta
     # Asumimos que payment.proof_of_payment guarda 'uploads/payments/filename' o similar
     
-    # Buscamos el pago que contenga este filename en su proof_of_payment
-    payment = Payment.query.filter(Payment.proof_of_payment.contains(filename)).first()
+    # Buscamos el pago que tenga este filename exacto en su proof_of_payment
+    # Se asume que proof_of_payment almacena la ruta relativa (ej: 'uploads/payments/archivo.png')
+    # o el nombre del archivo. Ajustar según cómo se guarde en la DB.
+    # Para mayor seguridad, usamos endswith o buscamos exactitud si se guarda solo el nombre.
+    payment = Payment.query.filter(Payment.proof_of_payment.endswith(filename)).first()
     
     if not payment:
         abort(404)
 
     current_user = get_current_user()
+    if not current_user:
+        abort(401) # Unauthorized si el usuario no existe o el token es inválido aunque haya pasado jwt_required
+
     
     # 2. Verificar Autorización
     # A) Es el dueño del pago (Usuario que lo subió)
