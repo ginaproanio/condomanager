@@ -31,6 +31,10 @@ def iniciar_pago():
 
     condominium = Condominium.query.get(condominium_id)
     
+    if not condominium:
+        flash("Condominio no encontrado.", "error")
+        return redirect(url_for('user.dashboard'))
+    
     # Verificar si el condominio tiene configurado PayPhone
     if not condominium.payment_config or not condominium.payment_config.get('token'):
         flash("Este condominio no tiene configurada la pasarela de pagos. Contacta a la administración.", "warning")

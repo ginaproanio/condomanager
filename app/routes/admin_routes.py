@@ -64,7 +64,8 @@ def admin_condominio_panel(condominium_id):
         condominium_id=condominium.id, 
         is_active=True
     ).all()
-    # --------------------
+    
+    now_date = datetime.now().strftime('%Y-%m-%d')
 
     return render_template('admin/condominio_panel.html',
                            user=current_user,
@@ -72,7 +73,8 @@ def admin_condominio_panel(condominium_id):
                            units=units,
                            pending_users_in_condo=pending_users_in_condo,
                            users_in_condo=users_in_condo,
-                           active_special_roles=active_special_roles) # <-- PASAR LA VARIABLE AQUÍ
+                           active_special_roles=active_special_roles,
+                           now_date=now_date)
 
 @admin_bp.route('/admin/usuarios/roles_especiales', methods=['POST'])
 @condominium_admin_required
