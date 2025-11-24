@@ -812,6 +812,8 @@ def inactivar_condominio(condo_id):
     flash(f'El condominio "{condo_to_inactivate.name}" ha sido inactivado.', 'success')
     return redirect(url_for('master.master_condominios'))
 
+from app.services.whatsapp import WhatsAppService
+
 @master_bp.route('/master/comunicaciones', methods=['GET'])
 @jwt_required()
 def master_comunicaciones():
@@ -839,14 +841,44 @@ def master_comunicaciones():
     # Obtener lista de destinatarios potenciales (Administradores)
     admins_count = User.query.filter_by(role='ADMIN', status='active').count()
     
-    # Estado simulado (se conectaría a servicio real)
+    # Estado real/simulado usando el servicio
     whatsapp_status = 'disconnected'
+    if condominium:
+        ws = WhatsAppService(condominium)
+        whatsapp_status = ws.get_status()
 
     return render_template('master/comunicaciones.html', 
                            user=user, 
                            condominium=condominium, 
                            admins_count=admins_count,
                            status=whatsapp_status)
+
+@master_bp.route('/master/comunicaciones/qr', methods=['GET'])
+@jwt_required()
+def master_get_qr():
+    """
+    Retorna el QR para la conexión de WhatsApp.
+    """
+    user = get_current_user()
+    if not user or user.role != 'MASTER':
+        return jsonify({"error": "Acceso denegado"}), 403
+
+    condominium = None
+    if user.tenant:
+        condominium = Condominium.query.filter_by(subdomain=user.tenant).first()
+    if not condominium:
+        condominium = Condominium.query.filter_by(subdomain='sandbox').first()
+        
+    if not condominium:
+         return jsonify({"error": "Condominio no encontrado"}), 404
+         
+    ws = WhatsAppService(condominium)
+    qr_data = ws.get_qr()
+    
+    if not qr_data:
+        return jsonify({"error": "No se pudo obtener el QR"}), 500
+        
+    return jsonify({"qr": qr_data, "status": "SCAN_QR"})
 
 @master_bp.route('/master/configurar-whatsapp', methods=['POST'])
 @jwt_required()

@@ -81,12 +81,17 @@
                             <div class="card-body text-center">
                                 <p class="text-muted small">Vincula el celular corporativo escaneando este código.</p>
                                 
-                                <div class="bg-light p-3 mb-3 border rounded d-flex align-items-center justify-content-center" style="height: 180px;">
-                                    <i class="fas fa-qrcode fa-5x opacity-25"></i>
-                                    <!-- Aquí iría el QR real -->
+                                <div class="bg-light p-3 mb-3 border rounded d-flex align-items-center justify-content-center" style="height: 200px;" id="qr-container">
+                                    <i class="fas fa-qrcode fa-5x opacity-25" id="qr-placeholder"></i>
+                                    <img id="qr-image" src="" alt="Código QR WhatsApp" class="img-fluid" style="display: none; max-height: 100%;">
+                                    <div id="qr-loading" style="display: none;">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Cargando...</span>
+                                        </div>
+                                    </div>
                                 </div>
                                 
-                                <button class="btn btn-primary w-100 btn-sm" disabled>
+                                <button class="btn btn-primary w-100 btn-sm" id="btn-generate-qr" onclick="generateQR()">
                                     <i class="fas fa-sync me-2"></i>Generar Nuevo QR
                                 </button>
                             </div>
@@ -243,5 +248,44 @@
     }
     // Ejecutar al cargar
     document.addEventListener('DOMContentLoaded', toggleConfigForm);
+
+    async function generateQR() {
+        const btn = document.getElementById('btn-generate-qr');
+        const placeholder = document.getElementById('qr-placeholder');
+        const img = document.getElementById('qr-image');
+        const loading = document.getElementById('qr-loading');
+
+        btn.disabled = true;
+        placeholder.style.display = 'none';
+        img.style.display = 'none';
+        loading.style.display = 'block';
+
+        try {
+            const response = await fetch('/master/comunicaciones/qr');
+            const data = await response.json();
+
+            if (response.ok && data.qr) {
+                let src = data.qr;
+                // Si no es base64 (es una URL o raw data), intentar usarla directamente o ajustarla
+                if (!src.startsWith('http') && !src.startsWith('data:image')) {
+                    src = 'data:image/png;base64,' + src;
+                }
+                img.src = src;
+                img.style.display = 'block';
+                loading.style.display = 'none';
+            } else {
+                alert('Error al generar QR: ' + (data.error || 'Error desconocido'));
+                placeholder.style.display = 'block';
+                loading.style.display = 'none';
+            }
+        } catch (error) {
+            console.error('Error fetching QR:', error);
+            alert('Error de conexión al intentar obtener el QR.');
+            placeholder.style.display = 'block';
+            loading.style.display = 'none';
+        } finally {
+            btn.disabled = false;
+        }
+    }
 </script>
 {% endblock %}
