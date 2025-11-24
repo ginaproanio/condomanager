@@ -12,5 +12,6 @@ pyOpenSSL==24.0.0
 endesive==2.0.10
 Flask-Mail==0.10.0
 twilio==9.0.0
-reportlab==4.0.4pytest
+reportlab==4.0.4
+pytest
 pytest-flask
