@@ -233,9 +233,12 @@ def reportar_pago():
             db.session.add(new_payment)
             db.session.commit()
             flash('Comprobante subido correctamente. Tu pago está en revisión por la administración.', 'success')
+            # Mantener al usuario en la misma página para ver su estado o hacer otro pago
+            return redirect(url_for('user.pagos'))
         except Exception as e:
             db.session.rollback()
             flash(f'Error al guardar el reporte: {str(e)}', 'error')
+            return redirect(url_for('user.pagos'))
             
     return redirect(url_for('user.reportes'))
 

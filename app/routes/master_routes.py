@@ -633,7 +633,15 @@ def manage_module_catalog():
                 
                 end_date_str = request.form.get('maintenance_end')
                 if end_date_str:
-                     module.maintenance_end = datetime.strptime(end_date_str, '%Y-%m-%dT%H:%M')
+                     # Convertir a datetime sin zona horaria (naive) pero consistente con la DB
+                     try:
+                         module.maintenance_end = datetime.strptime(end_date_str, '%Y-%m-%dT%H:%M')
+                     except ValueError:
+                         # Intento de fallback si el navegador envía segundos
+                         try:
+                             module.maintenance_end = datetime.strptime(end_date_str, '%Y-%m-%dT%H:%M:%S')
+                         except:
+                             flash('Formato de fecha de fin de mantenimiento inválido.', 'warning')
                 
                 module.maintenance_message = request.form.get('maintenance_message')
             else:

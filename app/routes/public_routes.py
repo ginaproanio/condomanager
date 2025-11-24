@@ -82,8 +82,8 @@ def demo_request():
                 cross_street="Av. Pruebas",
                 city="Quito",
                 country="Ecuador",
-                trial_start_date=datetime.utcnow(),
-                trial_end_date=datetime.utcnow() + timedelta(days=15),
+                trial_start_date=datetime.utcnow().date(),
+                trial_end_date=(datetime.utcnow() + timedelta(days=15)).date(),
                 has_documents_module=True,
                 has_billing_module=True,
                 has_requests_module=True

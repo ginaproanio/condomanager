@@ -142,6 +142,10 @@ def condominium_admin_required(f):
         user = kwargs.get('current_user')
         condominium_id = kwargs.get('condominium_id')
         
+        if not user:
+            flash("Sesión no válida.", "error")
+            return redirect(url_for('public.login'))
+
         if not condominium_id:
             abort(500, "Error de configuración: la ruta protegida no recibió un ID de condominio.")
         
