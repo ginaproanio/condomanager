@@ -45,6 +45,14 @@ class User(db.Model):
     signature_certificate = db.Column(db.LargeBinary) # Almacena el archivo .p12 encriptado
     signature_cert_password_hash = db.Column(db.String(255)) # Hash de la contraseña del certificado
 
+    # --- Redes Sociales ---
+    twitter_profile = db.Column(db.String(255))
+    facebook_profile = db.Column(db.String(255))
+    instagram_profile = db.Column(db.String(255))
+    linkedin_profile = db.Column(db.String(255))
+    tiktok_profile = db.Column(db.String(255))
+
+
 
 # 2. CONFIGURACIÓN CONDOMINIO
 class CondominiumConfig(db.Model):

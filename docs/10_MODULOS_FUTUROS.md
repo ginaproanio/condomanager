@@ -74,6 +74,27 @@ Este módulo permitirá a los **Propietarios** autorizar el ingreso de visitas d
 
 ---
 
+## 3. Módulo de Alerta de Emergencia Vecinal ("Botón de Pánico")
+
+**Concepto:** Sistema de respuesta rápida ante emergencias médicas, de seguridad o incendios, similar a una "Alerta Amber" pero a nivel de comunidad cerrada.
+
+### Funcionalidades Clave
+1.  **Activación Simple:** Botón rojo prominente en la App/Dashboard del propietario.
+2.  **Tipos de Alerta:**
+    *   🆘 SOS (Seguridad / Intrusión)
+    *   🚑 Médica
+    *   🔥 Fuego
+3.  **Notificación Masiva Inmediata:**
+    *   Envío automático de notificación Push y/o WhatsApp a todos los guardias de seguridad.
+    *   Notificación a los vecinos del mismo bloque/edificio (opcional configurable).
+    *   Notificación a la administración.
+4.  **Geolocalización:** Identificación exacta de la unidad (casa/departamento) que emitió la alerta.
+
+### Objetivo
+Reducir el tiempo de respuesta ante incidentes críticos y fomentar la solidaridad vecinal organizada.
+
+---
+
 ## Estado de Desarrollo
 Estos módulos se encuentran en fase de **Diseño y Especificación**. Su implementación requerirá:
 1.  Creación de tablas en Base de Datos.

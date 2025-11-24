@@ -74,6 +74,23 @@ def perfil():
     config = current_app.get_tenant_config(tenant)
 
     if request.method == 'POST':
+        # --- ACTUALIZACIÓN DE REDES SOCIALES ---
+        if 'update_social' in request.form:
+            user.twitter_profile = request.form.get('twitter_profile', '').strip()
+            user.facebook_profile = request.form.get('facebook_profile', '').strip()
+            user.instagram_profile = request.form.get('instagram_profile', '').strip()
+            user.linkedin_profile = request.form.get('linkedin_profile', '').strip()
+            user.tiktok_profile = request.form.get('tiktok_profile', '').strip()
+            
+            try:
+                db.session.commit()
+                flash("Perfiles sociales actualizados correctamente.", "success")
+            except Exception as e:
+                db.session.rollback()
+                flash(f"Error al actualizar perfil social: {str(e)}", "danger")
+            
+            return redirect(url_for('user.perfil'))
+
         # Lógica para subir certificado .p12/.pfx
         if 'certificate' in request.files:
             file = request.files['certificate']

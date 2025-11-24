@@ -13,7 +13,7 @@ Desacoplamos el "Dinero que entra" del "Dinero que se registra contablemente" y 
 | :--- | :--- | :--- | :--- |
 | **Gestión de Recaudación (Cobranza)** | `collections` | Recibir dinero (PayPhone, Transferencias) y registrar quién pagó. | **ACTIVO** |
 | **Contabilidad Condominial** | `accounting` | Registrar asientos, balances, reportes financieros formales. | *PRÓXIMAMENTE* |
-| **Caja Chica** | `petty_cash` | Gestión ágil de gastos menores operativos. | *PRÓXIMAMENTE* |
+| **Caja Chica** | `petty_cash` | Gestión ágil de gastos menores operativos. | **ACTIVO** |
 | **Facturación Electrónica (SRI)** | `invoicing` | Emisión de facturas legales válidas para el SRI. | *PLANIFICADO* |
 
 ---
@@ -25,13 +25,12 @@ Este es el módulo **base**.
 
 *   **Funcionalidad Actual:** Pagos completos o parciales vía PayPhone o Transferencia.
 *   **Diferimiento (Cuotas):** PayPhone *ya ofrece* al pagador diferir su pago con su tarjeta de crédito al momento de pagar. **NO es el condominio quien financia**, es el banco del emisor de la tarjeta.
-    *   *Aclaración:* Si te refieres a que el Condominio acepte "pagos parciales" (abonos) de una deuda grande, el sistema actualmente permite ingresar un monto libre.
 
 #### 2.2 Módulo de Contabilidad Condominial - `accounting`
 Para la gestión formal de los libros.
 
 #### 2.3 Módulo de Caja Chica - `petty_cash`
-Para la operación diaria de gastos menores.
+Para la operación diaria de gastos menores. Permite registrar ingresos y egresos de efectivo con comprobantes.
 
 #### 2.4 Facturación Electrónica - `invoicing`
 Para legalizar tributariamente los ingresos.
@@ -66,10 +65,28 @@ Vender espacios publicitarios digitales a negocios locales que quieren llegar a 
     *   **CPC:** Costo por cada clic en el anuncio.
 *   **Implementación:** Módulo `ad_network`.
 
+### 5. Módulo de Recargas y Pagos de Servicios
+Permite a los condóminos pagar servicios básicos y realizar recargas desde la plataforma.
+
+*   **Proveedores Integrables:**
+    *   **Red Facilito:** Amplia red de recaudación en Ecuador.
+    *   **Nuvei, PlacetoPay, Kushki:** Pasarelas robustas con servicios de valor agregado.
+    *   **PayPhone:** Ya integrado, ofrece opciones de pago de servicios.
+    *   **Ya Ganaste, PonleMás, RAPIACTIVO:** Especializados en recargas digitales.
+*   **Beneficio:** Comodidad para el usuario y posible comisión por transacción para la plataforma.
+
+### 6. Módulo de Validación de Datos (KYC)
+Para asegurar la veracidad de la información de los residentes y propietarios.
+
+*   **Herramientas:**
+    *   **ZampiSoft API Consult:** https://apiconsult.zampisoft.com/ (Ecuador).
+    *   **WebServices EC:** http://webservices.ec/.
+*   **Uso:** Validar cédulas, RUCs y antecedentes al registrar nuevos usuarios o inquilinos.
+
 ---
 
 ## 4. Roadmap de Implementación
 
-1.  **Fase 1 (Actual):** Recaudación Sólida + Marketplace Inmobiliario (Sindicación).
+1.  **Fase 1 (Actual):** Recaudación Sólida + Marketplace Inmobiliario (Sindicación) + Redes Sociales (Perfil).
 2.  **Fase 2 (Q2 2025):** Publicidad Hiper-Local (AdServer). Es el "Low Hanging Fruit" (fácil de implementar, alta rentabilidad).
-3.  **Fase 3 (Q3 2025):** Club de Compras. Requiere logística y acuerdos comerciales fuera del software.
+3.  **Fase 3 (Q3 2025):** Club de Compras y Pagos de Servicios. Requiere logística y acuerdos comerciales.
