@@ -267,7 +267,37 @@ class Module(db.Model):
     base_price = db.Column(db.Float, default=0.0)
     billing_cycle = db.Column(db.String(20), default='monthly') # 'monthly', 'yearly'
     status = db.Column(db.String(30), default='COMING_SOON') # 'ACTIVE', 'MAINTENANCE', 'ARCHIVED'
+    pricing_type = db.Column(db.String(20), default='per_module') # 'per_module', 'per_user'
+    
+    # Maintenance Mode Info
+    maintenance_mode = db.Column(db.Boolean, default=False)
+    maintenance_start = db.Column(db.DateTime)
+    maintenance_end = db.Column(db.DateTime)
+    maintenance_message = db.Column(db.String(255))
+
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+# --- PERSONALIZACIÓN DE MÓDULOS POR CONDOMINIO ---
+class CondominiumModule(db.Model):
+    __tablename__ = 'condominium_modules'
+    id = db.Column(db.Integer, primary_key=True)
+    condominium_id = db.Column(db.Integer, db.ForeignKey('condominiums.id'), nullable=False)
+    module_id = db.Column(db.Integer, db.ForeignKey('modules.id'), nullable=False)
+    
+    status = db.Column(db.String(20), default='ACTIVE') # ACTIVE, INACTIVE, TRIAL
+    
+    # Condiciones Comerciales Personalizadas
+    price_override = db.Column(db.Float, nullable=True) # Si es NULL, usa el precio base del módulo
+    pricing_type = db.Column(db.String(20), default='per_module') # per_module, per_user
+    billing_cycle = db.Column(db.String(20), default='monthly')
+    
+    activated_at = db.Column(db.DateTime, default=datetime.utcnow)
+    trial_ends_at = db.Column(db.DateTime)
+    
+    # Relaciones
+    condominium = db.relationship('Condominium', backref='module_config')
+    module = db.relationship('Module')
+
 
 # --- MÓDULO DE PAGOS (PAYPHONE) ---
 class Payment(db.Model):

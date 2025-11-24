@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Configurar Módulos - {{ condo.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <a href="{{ url_for('master.editar_condominio', condo_id=condo.id) }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Volver
+        </a>
+        <h2 class="text-primary mb-0"><i class="fas fa-cogs me-2"></i>Personalizar Módulos</h2>
+        <div style="width: 100px;"></div>
+    </div>
+
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>
+        Aquí puedes personalizar las condiciones comerciales (precio, tipo de cobro) de cada módulo específicamente para el condominio <strong>{{ condo.name }}</strong>.
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Módulos Disponibles</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Módulo</th>
+                            <th>Estado Global</th>
+                            <th>Estado en Condominio</th>
+                            <th>Precio Acordado</th>
+                            <th>Tipo Cobro</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for module in all_modules %}
+                            {% set config = module_configs.get(module.id) %}
+                            <tr>
+                                <td>
+                                    <strong>{{ module.name }}</strong>
+                                    <div class="small text-muted">Base: ${{ "%.2f"|format(module.base_price) }} ({{ "Por Usuario" if module.pricing_type == 'per_user' else "Por Módulo" }})</div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ module.status }}</span>
+                                </td>
+                                <td>
+                                    {% if config and config.status == 'ACTIVE' %}
+                                        <span class="badge bg-success">Activo</span>
+                                    {% elif config and config.status == 'TRIAL' %}
+                                        <span class="badge bg-info">Prueba</span>
+                                    {% else %}
+                                        <span class="badge bg-light text-dark">Inactivo</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if config and config.price_override is not none %}
+                                        <span class="text-primary fw-bold">${{ "%.2f"|format(config.price_override) }}</span>
+                                    {% else %}
+                                        <span class="text-muted">${{ "%.2f"|format(module.base_price) }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if config %}
+                                        {{ "Por Usuario" if config.pricing_type == 'per_user' else "Por Módulo" }}
+                                    {% else %}
+                                        {{ "Por Usuario" if module.pricing_type == 'per_user' else "Por Módulo" }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#configModal{{ module.id }}">
+                                        <i class="fas fa-sliders-h"></i> Configurar
+                                    </button>
+
+                                    <!-- Modal Config -->
+                                    <div class="modal fade" id="configModal{{ module.id }}" tabindex="-1">
+                                        <div class="modal-dialog">
+                                            <form action="{{ url_for('master.save_condo_module_config', condo_id=condo.id) }}" method="POST">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">Configurar {{ module.name }}</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <input type="hidden" name="module_id" value="{{ module.id }}">
+                                                        
+                                                        <div class="mb-3">
+                                                            <label class="form-label">Estado para este Condominio</label>
+                                                            <select name="status" class="form-select">
+                                                                <option value="INACTIVE" {% if not config or config.status == 'INACTIVE' %}selected{% endif %}>Inactivo</option>
+                                                                <option value="ACTIVE" {% if config and config.status == 'ACTIVE' %}selected{% endif %}>Activo</option>
+                                                                <option value="TRIAL" {% if config and config.status == 'TRIAL' %}selected{% endif %}>Periodo de Prueba</option>
+                                                            </select>
+                                                        </div>
+
+                                                        <div class="mb-3">
+                                                            <label class="form-label">Precio Acordado ($)</label>
+                                                            <input type="number" step="0.01" name="price_override" class="form-control" 
+                                                                   value="{{ config.price_override if config and config.price_override is not none else '' }}"
+                                                                   placeholder="Dejar vacío para usar precio base (${{ module.base_price }})">
+                                                            <div class="form-text">Si se deja vacío, se usará el precio global actual.</div>
+                                                        </div>
+
+                                                        <div class="mb-3">
+                                                            <label class="form-label">Modelo de Cobro</label>
+                                                            <select name="pricing_type" class="form-select">
+                                                                <option value="per_module" {% if (config and config.pricing_type == 'per_module') or (not config and module.pricing_type == 'per_module') %}selected{% endif %}>Por Módulo (Fijo)</option>
+                                                                <option value="per_user" {% if (config and config.pricing_type == 'per_user') or (not config and module.pricing_type == 'per_user') %}selected{% endif %}>Por Usuario/Unidad</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                                                    </div>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

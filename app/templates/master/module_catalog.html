@@ -30,7 +30,7 @@
                             <th>Código (ID Técnico)</th>
                             <th>Precio Base</th>
                             <th>Ciclo Fact.</th>
-                            <th>Estado Global</th>
+                            <th>Desarrollado</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
@@ -51,14 +51,17 @@
                                 {% endif %}
                             </td>
                             <td>
-                                <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#moduleModal"
+                                <button class="btn btn-sm btn-info text-white" data-bs-toggle="modal" data-bs-target="#moduleModal"
                                         data-module-id="{{ module.id }}"
                                         data-module-code="{{ module.code }}"
                                         data-module-name="{{ module.name }}"
                                         data-module-description="{{ module.description }}"
                                         data-module-price="{{ module.base_price }}"
                                         data-module-cycle="{{ module.billing_cycle }}"
-                                        data-module-status="{{ module.status }}">
+                                        data-module-status="{{ module.status }}"
+                                        data-module-pricing-type="{{ module.pricing_type }}"
+                                        data-module-maintenance="{{ 'true' if module.maintenance_mode else 'false' }}"
+                                        data-module-maintenance-end="{{ module.maintenance_end }}">
                                     <i class="fas fa-edit"></i> Editar
                                 </button>
                             </td>
@@ -102,6 +105,13 @@
                             <input type="number" step="0.01" name="base_price" id="modalModulePrice" class="form-control" value="0.00">
                         </div>
                         <div class="col-md-4 mb-3">
+                            <label class="form-label">Tipo de Cobro</label>
+                            <select name="pricing_type" id="modalModulePricingType" class="form-select">
+                                <option value="per_module">Por Módulo (Fijo)</option>
+                                <option value="per_user">Por Usuario/Unidad</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
                             <label class="form-label">Ciclo de Facturación</label>
                             <select name="billing_cycle" id="modalModuleCycle" class="form-select">
                                 <option value="monthly">Mensual</option>
@@ -111,13 +121,30 @@
                             </select>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label class="form-label">Estado Global</label>
-                            <select name="status" id="modalModuleStatus" class="form-select">
+                            <label class="form-label">Estado de Desarrollo</label>
+                            <select name="status" id="modalModuleStatus" class="form-select" onchange="toggleMaintenanceFields()">
                                 <option value="ACTIVE">Activo</option>
                                 <option value="MAINTENANCE">En Mantenimiento</option>
                                 <option value="ARCHIVED">Archivado</option>
                                 <option value="COMING_SOON">Próximamente</option>
                             </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Campos de Mantenimiento (Ocultos por defecto) -->
+                    <div id="maintenanceFields" class="row border-top pt-3 mt-3" style="display: none;">
+                        <h6 class="text-warning"><i class="fas fa-tools me-2"></i>Configuración de Mantenimiento</h6>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Fecha Inicio (Automático)</label>
+                            <input type="text" class="form-control" value="Ahora" disabled>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Fecha Fin Estimada</label>
+                            <input type="datetime-local" name="maintenance_end" id="modalModuleMaintenanceEnd" class="form-control">
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label class="form-label">Mensaje para Usuarios</label>
+                            <input type="text" name="maintenance_message" id="modalModuleMaintenanceMessage" class="form-control" placeholder="Ej: Estamos actualizando el sistema de seguridad...">
                         </div>
                     </div>
                 </div>
@@ -131,6 +158,16 @@
 </div>
 
 <script>
+    function toggleMaintenanceFields() {
+        const status = document.getElementById('modalModuleStatus').value;
+        const maintenanceDiv = document.getElementById('maintenanceFields');
+        if (status === 'MAINTENANCE') {
+            maintenanceDiv.style.display = 'flex';
+        } else {
+            maintenanceDiv.style.display = 'none';
+        }
+    }
+
     // Script para llenar el modal al editar
     const moduleModal = document.getElementById('moduleModal');
     moduleModal.addEventListener('show.bs.modal', event => {
@@ -147,10 +184,22 @@
             document.getElementById('modalModulePrice').value = button.getAttribute('data-module-price');
             document.getElementById('modalModuleCycle').value = button.getAttribute('data-module-cycle');
             document.getElementById('modalModuleStatus').value = button.getAttribute('data-module-status');
+            
+            // Campos nuevos
+            document.getElementById('modalModulePricingType').value = button.getAttribute('data-module-pricing-type') || 'per_module';
+            
+            // Mantenimiento
+            const isMaintenance = button.getAttribute('data-module-status') === 'MAINTENANCE';
+            if (isMaintenance) {
+                // Aquí podríamos llenar la fecha si la tuviéramos en el data attribute formateada correctamente
+            }
+            toggleMaintenanceFields();
+
         } else { // Modo Creación
             modalTitle.textContent = 'Crear Nuevo Módulo';
             document.getElementById('moduleModal').querySelector('form').reset();
             document.getElementById('modalModuleId').value = '';
+            toggleMaintenanceFields();
         }
     });
 </script>

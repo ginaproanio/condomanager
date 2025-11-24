@@ -145,9 +145,13 @@ Cuando se despliegue en un dominio real (ej: `condomanager.com`) con certificado
 - **Modelos Clave:**
     - **`Module` (Catálogo de Módulos):**
         - **Propósito:** Tabla que contiene todos los módulos que la plataforma puede ofrecer.
-        - **Atributos:** `id`, `code` (ej: 'documents'), `name`, `description`, `base_price`, `billing_cycle`, `status` ('ACTIVE', 'MAINTENANCE', 'ARCHIVED', 'COMING_SOON').
+        - **Atributos:** `id`, `code` (ej: 'documents'), `name`, `description`, `base_price`, `billing_cycle`, `status` ('ACTIVE', 'MAINTENANCE', 'ARCHIVED', 'COMING_SOON'), `pricing_type` ('per_module', 'per_user'), `maintenance_mode` (bool), `maintenance_end` (datetime), `maintenance_message` (string).
         - **Gestión:** El MASTER gestiona este catálogo desde `/master/modules`.
-- **Lógica de Seguridad Global:** El decorador `@module_required` verifica primero el estado en `Module`. Si está en `MAINTENANCE`, bloquea el acceso globalmente, independientemente de si el condominio pagó.
+    - **`CondominiumModule` (Personalización por Condominio):**
+        - **Propósito:** Tabla intermedia que permite personalizar las condiciones comerciales de un módulo para un condominio específico.
+        - **Atributos:** `id`, `condominium_id`, `module_id`, `status` ('ACTIVE', 'INACTIVE', 'TRIAL'), `price_override` (float), `pricing_type` ('per_module', 'per_user'), `activated_at`, `trial_ends_at`.
+        - **Lógica:** Permite "overrides" de precio y tipo de cobro sobre el catálogo global.
+- **Lógica de Seguridad Global:** El decorador `@module_required` verifica primero el estado en `Module` (si está en mantenimiento) y luego la configuración específica en `CondominiumModule` (o los flags legacy `has_billing_module`).
 
 #### 5.5.4 Módulo Comunicaciones (Híbrido)
 - **Estado:** ✅ UI y Backend de Configuración listos.

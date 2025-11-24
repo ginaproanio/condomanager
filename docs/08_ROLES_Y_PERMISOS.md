@@ -17,7 +17,8 @@ La directiva del condominio (compuesta por roles especiales) elige a un `ADMINIS
 - **Limitación Crítica de Seguridad:** El rol `MASTER` **NUNCA** puede operar, navegar o ejecutar acciones dentro del panel de un `ADMIN`. El sistema está diseñado para que la suplantación de roles sea imposible. El acceso del `MASTER` a los datos de un condominio se limita estrictamente a los datos agregados y métricas del panel de supervisión.
 - **Gestión del Catálogo de Módulos:**
     - **Exclusividad:** Solo el `MASTER` puede crear, editar y definir los precios de los módulos en el catálogo global del sistema (tabla `modules`).
-    - **Gestión de Estado Global:** Pone un módulo en estado `MAINTENANCE` para toda la plataforma. Esto bloquea el acceso incluso si el condominio lo ha pagado.
+    - **Personalización Comercial:** Puede definir condiciones específicas para cada condominio (precio especial, tipo de cobro por usuario o por módulo, períodos de prueba) a través de la tabla `CondominiumModule`.
+    - **Gestión de Estado Global:** Pone un módulo en estado `MAINTENANCE` para toda la plataforma. Esto bloquea el acceso incluso si el condominio lo ha pagado, mostrando un mensaje personalizado de mantenimiento (con fecha estimada de fin).
     - **Gestión de Estado Específico:** Registra períodos de mantenimiento para un módulo en un condominio específico, dejando un historial auditable.
 - **Documentos Propios:** El MASTER tiene su propio módulo de "Documentos" para gestionar contratos, términos de servicio y comunicados de la plataforma, independiente de los condominios.
 - **Sandbox:** El MASTER reside en un condominio de pruebas ("Sandbox") para sus configuraciones personales (como WhatsApp).

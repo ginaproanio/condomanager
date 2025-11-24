@@ -6,7 +6,7 @@ from flask_jwt_extended import jwt_required
 from sqlalchemy import or_
 from sqlalchemy.orm.attributes import flag_modified
 from app.auth import get_current_user
-from app.models import Condominium, User, CondominiumConfig, Unit # get_current_user_data no existe
+from app.models import Condominium, User, CondominiumConfig, Unit
 from app import db, models
 from datetime import datetime, timedelta
 import io
@@ -132,7 +132,9 @@ def master_condominios():
         query = query.filter(or_(
             Condominium.name.ilike(search_term),
             Condominium.ruc.ilike(search_term),
-            Condominium.subdomain.ilike(search_term)
+            Condominium.subdomain.ilike(search_term),
+            Condominium.email.ilike(search_term),
+            Condominium.status.ilike(search_term)
         ))
 
     all_condominiums = query.order_by(Condominium.created_at.desc()).all()
@@ -618,7 +620,28 @@ def manage_module_catalog():
             module.description = request.form.get('description')
             module.base_price = float(request.form.get('base_price', 0))
             module.billing_cycle = request.form.get('billing_cycle')
-            module.status = request.form.get('status')
+            
+            new_status = request.form.get('status')
+            module.status = new_status
+            module.pricing_type = request.form.get('pricing_type')
+
+            # Lógica de Mantenimiento
+            if new_status == 'MAINTENANCE':
+                module.maintenance_mode = True
+                if not module.maintenance_start:
+                    module.maintenance_start = datetime.utcnow()
+                
+                end_date_str = request.form.get('maintenance_end')
+                if end_date_str:
+                     module.maintenance_end = datetime.strptime(end_date_str, '%Y-%m-%dT%H:%M')
+                
+                module.maintenance_message = request.form.get('maintenance_message')
+            else:
+                module.maintenance_mode = False
+                module.maintenance_start = None
+                module.maintenance_end = None
+                module.maintenance_message = None
+
             db.session.commit()
         except Exception as e:
             db.session.rollback()
@@ -877,3 +900,53 @@ def configurar_whatsapp():
         flash(f"Error al guardar configuración: {str(e)}", "error")
         
     return redirect(url_for('master.master_comunicaciones'))
+
+@master_bp.route('/master/condominios/configurar-modulos/<int:condo_id>', methods=['GET'])
+@jwt_required()
+def configure_condo_modules(condo_id):
+    user = get_current_user()
+    if not user or user.role != 'MASTER':
+        flash("Acceso denegado.", "error")
+        return redirect(url_for('public.login'))
+    
+    condo = Condominium.query.get_or_404(condo_id)
+    all_modules = models.Module.query.order_by(models.Module.name).all()
+    
+    # Get existing configurations
+    configs = models.CondominiumModule.query.filter_by(condominium_id=condo.id).all()
+    module_configs = {c.module_id: c for c in configs}
+    
+    return render_template('master/configure_condo_modules.html', 
+                           user=user, condo=condo, 
+                           all_modules=all_modules, 
+                           module_configs=module_configs)
+
+@master_bp.route('/master/condominios/guardar-config-modulo/<int:condo_id>', methods=['POST'])
+@jwt_required()
+def save_condo_module_config(condo_id):
+    user = get_current_user()
+    if not user or user.role != 'MASTER':
+        flash("Acceso denegado.", "error")
+        return redirect(url_for('public.login'))
+    
+    condo = Condominium.query.get_or_404(condo_id)
+    module_id = request.form.get('module_id')
+    
+    config = models.CondominiumModule.query.filter_by(condominium_id=condo.id, module_id=module_id).first()
+    if not config:
+        config = models.CondominiumModule(condominium_id=condo.id, module_id=module_id)
+        db.session.add(config)
+    
+    config.status = request.form.get('status')
+    
+    price_override = request.form.get('price_override')
+    if price_override and price_override.strip():
+        config.price_override = float(price_override)
+    else:
+        config.price_override = None
+        
+    config.pricing_type = request.form.get('pricing_type')
+    
+    db.session.commit()
+    flash(f'Configuración del módulo actualizada para {condo.name}.', 'success')
+    return redirect(url_for('master.configure_condo_modules', condo_id=condo.id))
