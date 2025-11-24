@@ -85,6 +85,12 @@
                                 <i class="fas fa-wallet me-2 text-dark"></i>Finanzas
                             </button>
                         </li>
+                        <!-- NUEVA PESTAÑA PERSONALIZACIÓN -->
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="branding-tab" data-bs-toggle="tab" data-bs-target="#branding" type="button" role="tab" aria-controls="branding" aria-selected="false">
+                                <i class="fas fa-paint-brush me-2 text-primary"></i>Personalización
+                            </button>
+                        </li>
                     </ul>
 
                     <!-- Contenido de las Pestañas -->
@@ -443,7 +449,7 @@
                                         <div class="col-md-6">
                                             <div class="list-group text-start">
                                                 <div class="list-group-item border-0 bg-light mb-2 rounded">
-                                                    <i class="fas fa-check text-success me-2"></i>Listado de Residentes (Excel)
+                                                    <i class="fas fa-check text-success me-2"></i>Listado de Propietarios (Excel)
                                                 </div>
                                                 <div class="list-group-item border-0 bg-light mb-2 rounded">
                                                     <i class="fas fa-check text-success me-2"></i>Estado de Ocupación
@@ -466,26 +472,77 @@
                                     <h5 class="mb-0"><i class="fas fa-wallet me-2"></i>Gestión Financiera</h5>
                                 </div>
                                 <div class="card-body text-center py-5">
-                                    <div class="row justify-content-center">
-                                        <div class="col-md-6">
-                                            <div class="card border-primary h-100">
-                                                <div class="card-body">
-                                                    <i class="fas fa-credit-card fa-3x text-primary mb-3"></i>
-                                                    <h4>Pasarela de Pagos</h4>
-                                                    <p class="text-muted">Configura PayPhone para recibir pagos de alícuotas directamente.</p>
-                                                    <a href="{{ url_for('admin.configuracion_pagos', condominium_id=condominium.id) }}" class="btn btn-primary">
-                                                        <i class="fas fa-cogs me-2"></i>Configurar PayPhone
-                                                    </a>
+                                    <i class="fas fa-cash-register fa-5x text-dark mb-4"></i>
+                                    <h3>Control de Pagos y Cobranza</h3>
+                                    <p class="lead text-muted">Gestiona transacciones automáticas y valida transferencias manuales.</p>
+                                    
+                                    <div class="row justify-content-center mt-4">
+                                        <div class="col-md-8">
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <div class="card bg-light border-0 h-100">
+                                                        <div class="card-body text-start">
+                                                            <h6 class="text-primary"><i class="fas fa-credit-card me-2"></i>Pasarela Automática</h6>
+                                                            <p class="small mb-0">Configura PayPhone para recibir cobros con tarjeta.</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="card bg-light border-0 h-100">
+                                                        <div class="card-body text-start">
+                                                            <h6 class="text-success"><i class="fas fa-file-invoice-dollar me-2"></i>Conciliación</h6>
+                                                            <p class="small mb-0">Revisa y aprueba comprobantes de transferencias subidos por residentes.</p>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
+                                        </div>
+                                    </div>
+
+                                    <a href="{{ url_for('admin.finanzas', condominium_id=condominium.id) }}" class="btn btn-dark btn-lg mt-4 shadow-sm">
+                                        <i class="fas fa-external-link-alt me-2"></i>Abrir Panel Financiero
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- PESTAÑA PERSONALIZACIÓN (NUEVO) -->
+                        <div class="tab-pane fade" id="branding" role="tabpanel" aria-labelledby="branding-tab">
+                            <div class="card border-0 shadow-sm mb-4">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0"><i class="fas fa-paint-brush me-2"></i>Identidad del Condominio</h5>
+                                </div>
+                                <div class="card-body py-5">
+                                    <div class="row justify-content-center">
+                                        <div class="col-md-8">
+                                            <form action="{{ url_for('admin.personalizar_condominio', condominium_id=condominium.id) }}" method="POST" enctype="multipart/form-data">
+                                                <div class="mb-4 text-center">
+                                                    <p class="text-muted">Sube el logo de tu condominio y personaliza el color principal de la interfaz.</p>
+                                                </div>
+                                                
+                                                <div class="mb-4">
+                                                    <label for="logo_file" class="form-label fw-bold">Logo del Condominio</label>
+                                                    <input class="form-control" type="file" id="logo_file" name="logo_file" accept=".png,.jpg,.jpeg,.webp">
+                                                    <div class="form-text">Se recomienda una imagen cuadrada o rectangular (PNG transparente) de al menos 200x200px.</div>
+                                                </div>
+
+                                                <div class="mb-4">
+                                                    <label for="primary_color" class="form-label fw-bold">Color Principal</label>
+                                                    <input type="color" class="form-control form-control-color w-100" id="primary_color" name="primary_color" value="#007bff" title="Elige el color principal">
+                                                </div>
+
+                                                <div class="d-grid">
+                                                    <button type="submit" class="btn btn-primary btn-lg">
+                                                        <i class="fas fa-save me-2"></i>Guardar Cambios
+                                                    </button>
+                                                </div>
+                                            </form>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-
-                        <!-- FIN NUEVA PESTAÑA -->
-
+                        
                     </div>
                     <div class="text-center mt-5">
                         <a href="{{ url_for('user.dashboard') }}" class="btn btn-outline-secondary">

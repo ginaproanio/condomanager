@@ -8,53 +8,116 @@
         <div class="col-md-8">
             <div class="card border-0 shadow-lg">
                 <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0"><i class="fas fa-credit-card me-2"></i>Realizar Pago</h4>
+                    <h4 class="mb-0"><i class="fas fa-wallet me-2"></i>Centro de Pagos</h4>
                 </div>
-                <div class="card-body p-5">
+                <div class="card-body p-4">
                     
                     {% include '_messages.html' %}
 
-                    {% if condominium and condominium.payment_config and condominium.payment_config.get('token') %}
-                        <div class="text-center mb-4">
-                            <h5 class="text-primary fw-bold mb-3">Pasarela de Pagos Segura</h5>
-                            <p class="text-muted">Paga tus alícuotas de forma segura con tu tarjeta de crédito o débito favorita.</p>
+                    <!-- Pestañas -->
+                    <ul class="nav nav-tabs nav-fill mb-4" id="paymentTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="card-tab" data-bs-toggle="tab" data-bs-target="#card-panel" type="button" role="tab">
+                                <i class="fas fa-credit-card me-2"></i>Pago con Tarjeta
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="transfer-tab" data-bs-toggle="tab" data-bs-target="#transfer-panel" type="button" role="tab">
+                                <i class="fas fa-university me-2"></i>Reportar Transferencia
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="paymentTabsContent">
+                        
+                        <!-- PANEL 1: PAYPHONE -->
+                        <div class="tab-pane fade show active" id="card-panel" role="tabpanel">
+                            {% if condominium and condominium.payment_config and condominium.payment_config.get('token') %}
+                                <div class="text-center mb-4">
+                                    <img src="https://payphone.app/images/logo-payphone-blue.svg" alt="PayPhone" style="height: 40px;" class="mb-3">
+                                    <p class="text-muted small">Paga tus alícuotas de forma segura e inmediata.</p>
+                                </div>
+
+                                <form action="{{ url_for('payment.iniciar_pago') }}" method="POST">
+                                    <div class="mb-3">
+                                        <label for="amount" class="form-label fw-bold">Monto a Pagar (USD)</label>
+                                        <div class="input-group input-group-lg">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" class="form-control" id="amount" name="amount" step="0.01" min="0.01" placeholder="0.00" required>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="description" class="form-label">Concepto</label>
+                                        <input type="text" class="form-control" id="description" name="description" placeholder="Ej: Alícuota Marzo" required>
+                                    </div>
+
+                                    <div class="d-grid gap-2">
+                                        <button type="submit" class="btn btn-warning btn-lg text-dark fw-bold">
+                                            <i class="fas fa-check-circle me-2"></i>Pagar Ahora
+                                        </button>
+                                    </div>
+                                </form>
+                            {% else %}
+                                <div class="text-center py-4">
+                                    <i class="fas fa-credit-card fa-3x text-muted mb-3 opacity-50"></i>
+                                    <h5>Pagos con tarjeta no habilitados</h5>
+                                    <p class="text-muted small">Tu administración no ha configurado PayPhone aún.</p>
+                                </div>
+                            {% endif %}
                         </div>
 
-                        <form action="{{ url_for('payment.iniciar_pago') }}" method="POST">
-                            <div class="mb-4">
-                                <label for="amount" class="form-label fw-bold">Monto a Pagar (USD)</label>
-                                <div class="input-group input-group-lg">
-                                    <span class="input-group-text">$</span>
-                                    <input type="number" class="form-control" id="amount" name="amount" step="0.01" min="0.01" placeholder="0.00" required>
+                        <!-- PANEL 2: TRANSFERENCIA -->
+                        <div class="tab-pane fade" id="transfer-panel" role="tabpanel">
+                            <div class="alert alert-info border-0 bg-light text-dark mb-4">
+                                <div class="d-flex">
+                                    <i class="fas fa-info-circle fa-2x me-3 mt-1 text-primary"></i>
+                                    <div>
+                                        <strong>Instrucciones:</strong>
+                                        <ul class="mb-0 ps-3 small">
+                                            <li>Realiza la transferencia bancaria a la cuenta del condominio.</li>
+                                            <li>Guarda la foto o captura del comprobante.</li>
+                                            <li>Sube el archivo aquí para que Tesorería lo valide.</li>
+                                        </ul>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div class="mb-4">
-                                <label for="description" class="form-label">Concepto / Descripción</label>
-                                <input type="text" class="form-control" id="description" name="description" placeholder="Ej: Alícuota Marzo 2024 - Casa 5" required>
-                            </div>
+                            <form action="{{ url_for('user.reportar_pago') }}" method="POST" enctype="multipart/form-data">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Monto Transferido (USD)</label>
+                                    <div class="input-group input-group-lg">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" class="form-control" name="amount" step="0.01" min="0.01" placeholder="0.00" required>
+                                    </div>
+                                </div>
 
-                            <div class="alert alert-light border small">
-                                <i class="fas fa-lock me-2 text-success"></i>
-                                Tu transacción será procesada de forma segura por <strong>PayPhone</strong>. CondoManager no almacena los datos de tu tarjeta.
-                            </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Descripción / Referencia</label>
+                                    <input type="text" class="form-control" name="description" placeholder="Ej: Transferencia Banco Pichincha - Alícuota Marzo" required>
+                                </div>
 
-                            <div class="d-grid gap-2">
-                                <button type="submit" class="btn btn-warning btn-lg text-dark fw-bold">
-                                    <i class="fas fa-check-circle me-2"></i>Pagar con PayPhone
-                                </button>
-                                <a href="{{ url_for('user.dashboard') }}" class="btn btn-outline-secondary">Cancelar</a>
-                            </div>
-                        </form>
-                    {% else %}
-                        <div class="text-center py-5">
-                            <i class="fas fa-exclamation-triangle fa-4x text-warning mb-3"></i>
-                            <h4>Pagos No Configurados</h4>
-                            <p class="text-muted">La administración de tu condominio aún no ha activado la pasarela de pagos.</p>
-                            <p class="small text-muted">Si eres administrador, ve al panel de gestión > Finanzas para configurarlo.</p>
-                            <a href="{{ url_for('user.dashboard') }}" class="btn btn-primary mt-3">Volver al Inicio</a>
+                                <div class="mb-4">
+                                    <label class="form-label fw-bold">Comprobante (Imagen o PDF)</label>
+                                    <input type="file" class="form-control" name="proof_file" accept="image/*,.pdf" required>
+                                    <div class="form-text">Formatos permitidos: JPG, PNG, PDF.</div>
+                                </div>
+
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-primary btn-lg">
+                                        <i class="fas fa-upload me-2"></i>Enviar Reporte
+                                    </button>
+                                </div>
+                            </form>
                         </div>
-                    {% endif %}
+
+                    </div>
+
+                    <div class="text-center mt-4 pt-3 border-top">
+                        <a href="{{ url_for('user.reportes') }}" class="text-decoration-none text-muted">
+                            <i class="fas fa-history me-1"></i>Ver mi historial de pagos
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>

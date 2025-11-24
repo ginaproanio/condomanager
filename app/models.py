@@ -25,6 +25,10 @@ class User(db.Model):
     status = db.Column(db.String(20), default='pending')
     created_at = db.Column(db.DateTime, default=datetime.now)
 
+    # --- Validación de Contacto ---
+    email_verified = db.Column(db.Boolean, default=False)
+    verification_token = db.Column(db.String(100), unique=True)
+    
     # --- SOLUCIÓN AL PROBLEMA PRINCIPAL ---
     # Añadir la columna para relacionar al usuario con una unidad.
     # Es 'nullable' porque un usuario puede no estar asignado a una unidad al registrarse.
@@ -273,9 +277,16 @@ class Payment(db.Model):
     # PayPhone Data
     payphone_transaction_id = db.Column(db.String(100)) # ID de PayPhone
     client_transaction_id = db.Column(db.String(100), unique=True) # Nuestro ID único
-    status = db.Column(db.String(20), default='PENDING') # PENDING, APPROVED, CANCELED, REJECTED
+    status = db.Column(db.String(20), default='PENDING') # PENDING, APPROVED, CANCELED, REJECTED, PENDING_REVIEW
     response_json = db.Column(db.JSON) # Guardar respuesta completa para auditoría
     
+    # Nuevos Campos para Pagos Manuales
+    payment_method = db.Column(db.String(20), default='PAYPHONE') # PAYPHONE, TRANSFER, CASH
+    proof_of_payment = db.Column(db.String(500)) # Ruta del archivo subido
+    reviewed_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    review_date = db.Column(db.DateTime)
+    review_notes = db.Column(db.Text)
+
     # Relaciones
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     unit_id = db.Column(db.Integer, db.ForeignKey('units.id'), nullable=True)
@@ -285,6 +296,7 @@ class Payment(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relaciones ORM
-    user = db.relationship('User', backref='payments')
+    user = db.relationship('User', foreign_keys=[user_id], backref='payments')
+    reviewer = db.relationship('User', foreign_keys=[reviewed_by], backref='reviewed_payments')
     unit = db.relationship('Unit', backref='payments')
     condominium = db.relationship('Condominium', backref='payments')

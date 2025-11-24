@@ -34,29 +34,33 @@ Sistema multi-condominio implementado inicialmente para "Punta Blanca", diseñad
 │   ├── tenant.py       # Lógica para determinar el tenant (inquilino) de la solicitud.
 │   ├── routes/         # Módulo que contiene todas las rutas (endpoints) de la aplicación.
 │   │   ├── __init__.py # Inicializa y registra los blueprints de rutas.
-│   │   ├── public_routes.py # Rutas públicas (home, registro, login).
-│   │   ├── user_routes.py   # Rutas para usuarios autenticados (dashboard).
+│   │   ├── public_routes.py # Rutas públicas (home, registro, login, demos).
+│   │   ├── user_routes.py   # Rutas para usuarios autenticados (dashboard, pagos).
 │   │   ├── admin_routes.py  # Rutas para administradores de condominio (rol ADMIN).
 │   │   │   # Endpoints clave:
 │   │   │   # - /admin/condominio/<id>: Panel de gestión (Unidades, Usuarios, Directiva).
 │   │   │   # - /admin/usuarios/roles_especiales: Asignación de roles de directiva.
+│   │   │   # - /admin/condominio/<id>/finanzas: Panel de control financiero.
 │   │   ├── master_routes.py # Rutas para el super-administrador (rol MASTER).
 │   │   │   # Endpoints clave:
 │   │   │   # - /master: Panel global con tarjetas de gestión.
 │   │   │   # - /master/modules: Catálogo global de módulos.
 │   │   ├── document_routes.py # Rutas para el módulo "Firmas & Comunicados" (Freemium).
+│   │   ├── payment_routes.py  # Endpoints para callbacks y proceso de pagos.
 │   │   ├── api_routes.py    # Endpoints de la API REST.
 │   │   └── dev_routes.py    # Rutas para desarrollo y depuración.
 │   ├── static/         # Archivos estáticos (CSS, JS, imágenes).
 │   │   ├── css/
 │   │   ├── js/
-│   │   └── img/
+│   │   ├── img/
+│   │   └── uploads/    # Almacenamiento de archivos subidos (comprobantes, certificados).
 │   └── templates/      # Plantillas HTML (vistas).
 │       ├── admin/
 │       ├── auth/
-│       ├── documents/  # Plantillas del módulo de documentos (index, editor, view, sign).
+│       ├── documents/  # Plantillas del módulo de documentos.
 │       ├── master/
-│       ├── services/
+│       ├── public/     # Plantillas públicas (demo request).
+│       ├── services/   # Vistas de servicios (pagos, reportes).
 │       └── user/
 ├── Procfile            # Configuración de despliegue en Railway.
 ├── requirements.txt    # Dependencias de Python.
@@ -93,12 +97,14 @@ Cuando se despliegue en un dominio real (ej: `condomanager.com`) con certificado
     - `has_electronic_signature`: Booleano que indica si el usuario ha configurado su certificado.
     - `signature_certificate`: Campo binario que almacena el certificado `.p12` o `.pfx`.
     - `signature_cert_password_hash`: Hash de la contraseña del certificado para su uso seguro.
+- **Validación:** `email_verified`, `verification_token`.
 - Relaciones: Un usuario puede ser administrador de `Condominium` o creador de `Unit`.
 
 ### 5.2 Condominium
-- **Atributos:** `id`, `name`, `legal_name`, `email`, `ruc`, `main_street`, `cross_street`, `house_number`, `city`, `country`, `latitude`, `longitude`, `subdomain`, `status`, `billing_day`, `grace_days`, `trial_start_date`, `trial_end_date`, `notes`, `admin_user_id`, `legal_representative_id`, `created_by`, `created_at`, `updated_at`.
+- **Atributos:** `id`, `name`, `legal_name`, `email`, `ruc`, `main_street`, `cross_street`, `house_number`, `city`, `country`, `latitude`, `longitude`, `subdomain`, `status` (ACTIVO, DEMO, INACTIVO), `billing_day`, `grace_days`, `trial_start_date`, `trial_end_date`, `notes`, `admin_user_id`, `legal_representative_id`, `created_by`, `created_at`, `updated_at`.
 - **Flags de Módulos:** `has_documents_module`, `has_billing_module`.
 - **Configuración WhatsApp:** `whatsapp_provider` ('GATEWAY_QR' o 'META_API'), `whatsapp_config` (JSON).
+- **Configuración Pagos:** `payment_provider` ('PAYPHONE'), `payment_config` (JSON).
 - Relaciones: Contiene múltiples `Unit`s y `User`s (ADMINs asignados).
 
 ### 5.3 Unit
@@ -147,7 +153,16 @@ Cuando se despliegue en un dominio real (ej: `condomanager.com`) con certificado
 - **Estrategia:** Multi-Driver (Gateway QR / Meta API).
 - **Modelos:** Uso de campos JSON en `Condominium` para flexibilidad de credenciales.
 
-#### 5.5.5 AuditLog (Propuesto)
+#### 5.5.5 Módulo de Pagos (Recaudación)
+- **Estado:** ✅ Implementado (PayPhone + Transferencias).
+- **Propósito:** Gestión financiera descentralizada (Multi-Merchant).
+- **Modelo `Payment`:**
+    - Registra transacciones.
+    - `payment_method`: 'PAYPHONE' (Auto) o 'TRANSFER' (Manual).
+    - `status`: 'APPROVED', 'PENDING_REVIEW', 'REJECTED'.
+    - Auditoría: `reviewed_by`, `review_notes`.
+
+#### 5.5.6 AuditLog (Propuesto)
 - **Propósito:** Registrar acciones clave en el sistema para trazabilidad y seguridad.
 - **Estado:** ❌ Faltante.
 
@@ -163,15 +178,16 @@ Esta sección documenta funcionalidades identificadas en las reglas de negocio (
 
 ### 7.1 Implementación de Firma Electrónica Real
 - **Objetivo:** Integrar librerías criptográficas (`endesive`) para firmar digitalmente los PDFs con certificados .p12 subidos por el usuario.
-- **Estado:** 🚧 Parcial (Base de datos lista).
+- **Estado:** 🚧 Parcial (Base de datos y carga de certificados listos).
 
 ### 7.2 Envíos Inteligentes
 - **Objetivo:** Módulo de notificaciones masivas por WhatsApp/Email.
-- **Estado:** ❌ Faltante.
+- **Estado:** 🚧 Parcial (Configuración lista, falta motor de envío).
 
-### 7.3 Implementación de Auditoría
-- **Objetivo:** Crear un sistema de trazabilidad de acciones críticas implementando el modelo `AuditLog`.
-- **Estado:** ❌ Faltante.
+### 7.3 Nuevos Módulos (IoT y Comercial)
+Consultar `docs/10_MODULOS_FUTUROS.md` para el detalle de:
+1.  **Módulo de Control de Accesos y Registro de Visitas (IoT Ready).**
+2.  **Módulo de Marketplace Inmobiliario (Venta/Arriendo).**
 
 ## 8. Consideraciones para Futuras Mejoras
 - **Modularización:** La estructura actual es adecuada, pero a medida que el proyecto crezca, se puede evaluar una mayor modularización (ej. `app/api/v1/`, `app/core/`) para desacoplar componentes.

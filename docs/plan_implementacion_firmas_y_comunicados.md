@@ -10,11 +10,11 @@ Este documento detalla el estado de implementación del módulo **"Firmas & Comu
 | **Creación y Edición** | ✅ **Implementado** | Los usuarios con permisos pueden crear, editar y visualizar documentos. |
 | **Control de Acceso** | ✅ **Implementado** | Modelo **Freemium** activo. Acceso básico para residentes, acceso Premium para Admin/Directiva si el condominio paga. |
 | **Directiva (Roles Especiales)**| ✅ **Implementado** | Admin puede asignar Presidente/Secretario, quienes heredan permisos de firma. |
-| **Recolección de Firmas** | ✅ **Implementado** | Enlaces públicos para peticiones. Descarga de Excel no implementada en UI pero modelo listo. |
+| **Recolección de Firmas** | ✅ **Implementado** | Enlaces públicos para peticiones. Reporte visual de estados de firmas por documento. |
 | **Firma Física** | ✅ **Implementado** | Flujo completo: Descargar PDF -> Firmar manual -> Escanear -> Subir evidencia. |
 | **Firma Electrónica (.p12)** | ✅ **Configurada** | Interfaz de usuario para subir certificado y validación criptográfica de contraseña implementada. |
 | **Notificaciones UI** | ✅ **Implementado** | Alerta visual (Badge Rojo) en el Dashboard del usuario cuando hay documentos nuevos. |
-| **Envíos WhatsApp** | 🚧 **En Progreso** | Interfaz de gestión e integración híbrida (Gateway/Meta) diseñada y codificada. Falta motor de envío. |
+| **Envíos WhatsApp** | 🚧 **En Progreso** | Interfaz de gestión e integración híbrida (Gateway/Meta) lista en Admin y Master. Falta motor de envío. |
 
 ---
 
@@ -46,6 +46,7 @@ Este documento detalla el estado de implementación del módulo **"Firmas & Comu
 - ✅ **Estrategia:** Modelo Híbrido definido (Gateway QR vs Meta API).
 - ✅ **Base de Datos:** Campos `whatsapp_provider` y `whatsapp_config` añadidos a `Condominium`.
 - ✅ **Interfaz Admin:** Consola de "Comunicaciones" creada con selector de proveedor y configuración.
+- ✅ **Interfaz Master:** Consola "Comunicaciones Corporativas" implementada con capacidad de configuración independiente (Sandbox).
 - ✅ **Interfaz Usuario:** Badge de notificación en tarjeta de documentos.
 - ❌ **Motor de Envío:** Falta conectar con el servicio de mensajería real (Waha/Meta).
 

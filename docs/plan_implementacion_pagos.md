@@ -38,21 +38,26 @@ Registra cada intento de pago vinculado a un usuario, una unidad y un condominio
 
 ### Fase 1: Configuración (Admin)
 - [x] Actualizar Modelo `Condominium` y Migración DB.
-- [ ] Crear vista `/admin/configuracion/pagos`: Formulario para ingresar ID y Token de PayPhone.
+- [x] Crear vista `/admin/configuracion/pagos`: Formulario para ingresar ID y Token de PayPhone.
 - [ ] Validar credenciales con una llamada de prueba a PayPhone.
 
 ### Fase 2: Botón de Pago (Usuario)
 - [x] Crear Modelo `Payment` y Migración DB.
-- [ ] Implementar Helper `PayPhoneService` que lea las credenciales dinámicamente del objeto `current_user.unit.condominium`.
-- [ ] Vista `/pagos`: Mostrar deuda (mockup inicial) y botón "Pagar con PayPhone".
+- [x] Implementar Helper `PayPhoneService` que lea las credenciales dinámicamente del objeto `current_user.unit.condominium`.
+- [x] Vista `/pagos`: Mostrar deuda (mockup inicial) y botón "Pagar con PayPhone".
 
 ### Fase 3: Callbacks y Seguridad
-- [ ] Endpoint de retorno para actualizar estado del pago.
+- [ ] Endpoint de retorno para actualizar estado del pago. (Parcialmente implementado en `payment_routes.py`)
 - [ ] Protección CSRF en botones de pago.
 
 ### Fase 4: Reportes
-- [ ] Admin: Listado de recaudación diaria.
+- [x] Admin: Listado de recaudación diaria (Implementado tabla de historial en `/admin/configuracion/pagos` y `/admin/reportes`).
+- [x] User: Historial personal de pagos en `/reportes`.
 - [ ] Master: Métricas de volumen transaccional global (anonimizado).
+
+### Fase 5: Pagos Manuales (Pendiente)
+- [ ] Formulario para subir comprobante de transferencia (imagen/pdf).
+- [ ] Vista de Admin para conciliar pagos manuales.
 
 ## 5. Credenciales de Prueba (SORSABSA)
 Se utilizarán las credenciales provistas para simular el condominio "Algarrobos" durante el desarrollo.

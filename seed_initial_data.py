@@ -1,94 +1,372 @@
 import os
 import hashlib
+from datetime import datetime, timedelta
 from app import create_app
 from app.extensions import db
 from app import models
 
 def seed_initial_data():
     """
-    Siembra datos iniciales en la base de datos si no existen.
-    Esto incluye el usuario MASTER y la configuración del tenant por defecto.
+    Siembra datos iniciales en la base de datos para un entorno de desarrollo completo.
+    Incluye: Master, Sandbox, Condominio de Prueba (Algarrobos), Unidades, Residentes, Pagos y Documentos.
     """
     app = create_app()
     with app.app_context():
-        print("AUDIT: Iniciando script de siembra de datos iniciales.")
+        print("AUDIT: Iniciando script de siembra de datos masiva...")
 
-        # Crear usuario maestro si no existe
+        # ==========================================
+        # 0. CATÁLOGO DE MÓDULOS (GLOBAL)
+        # ==========================================
+        print("📦 Verificando Catálogo de Módulos...")
+        modules_data = [
+            {
+                "code": "documents",
+                "name": "Firmas & Comunicados",
+                "description": "Gestión de documentos, firmas electrónicas y comunicados oficiales.",
+                "base_price": 0.00,
+                "billing_cycle": "monthly",
+                "status": "ACTIVE"
+            },
+            {
+                "code": "billing",
+                "name": "Facturación y Cobranza",
+                "description": "Automatización de alícuotas, pasarela de pagos y conciliación.",
+                "base_price": 25.00,
+                "billing_cycle": "monthly",
+                "status": "ACTIVE"
+            },
+            {
+                "code": "requests",
+                "name": "Gestión de Requerimientos",
+                "description": "Sistema de tickets para mantenimiento, quejas y sugerencias.",
+                "base_price": 15.00,
+                "billing_cycle": "monthly",
+                "status": "COMING_SOON"
+            },
+            {
+                "code": "communications",
+                "name": "Comunicaciones Masivas",
+                "description": "Envíos masivos por WhatsApp (Gateway/API) y notificaciones.",
+                "base_price": 10.00,
+                "billing_cycle": "monthly",
+                "status": "ACTIVE"
+            }
+        ]
+
+        for mod_data in modules_data:
+            existing_mod = models.Module.query.filter_by(code=mod_data["code"]).first()
+            if not existing_mod:
+                print(f"   ➕ Creando módulo: {mod_data['name']}")
+                new_mod = models.Module(
+                    code=mod_data["code"],
+                    name=mod_data["name"],
+                    description=mod_data["description"],
+                    base_price=mod_data["base_price"],
+                    billing_cycle=mod_data["billing_cycle"],
+                    status=mod_data["status"]
+                )
+                db.session.add(new_mod)
+            else:
+                # Opcional: Actualizar datos si ya existe para mantener consistencia
+                existing_mod.name = mod_data["name"]
+                existing_mod.description = mod_data["description"]
+                existing_mod.status = mod_data["status"]
+                db.session.add(existing_mod)
+        
+        db.session.commit() # Guardar módulos antes de seguir
+
+        # ==========================================
+        # 1. USUARIO MAESTRO (SUPERADMIN)
+        # ==========================================
         master_email = os.environ.get('MASTER_EMAIL', 'maestro@condomanager.com')
-        if not models.User.query.filter_by(email=master_email).first():
-            print(f"AUDIT: Creando usuario maestro para {master_email}...")
+        master = models.User.query.filter_by(email=master_email).first()
+        
+        if not master:
+            print(f"🌱 Creando Master: {master_email}...")
             master_password = os.environ.get('MASTER_PASSWORD', 'Master2025!')
             pwd_hash = hashlib.sha256(master_password.encode()).hexdigest()
-            # --- CORRECCIÓN CRÍTICA ---
-            # Usar los nuevos campos y añadir una cédula por defecto.
             master = models.User(
-                cedula='0000000000', # Cédula por defecto para el usuario maestro
-                email=master_email, first_name='Administrador', last_name='Maestro', 
+                cedula='0000000000',
+                email=master_email, 
+                first_name='Super', 
+                last_name='Admin', 
                 password_hash=pwd_hash,
-                tenant=None, role='MASTER', status='active'
+                role='MASTER', 
+                status='active',
+                tenant='sandbox', # Asignado directamente al sandbox
+                email_verified=True
             )
             db.session.add(master)
-            print("AUDIT: Usuario maestro añadido a la sesión.")
+            db.session.flush() # Para tener ID
         else:
-            print("✅ AUDIT: Usuario maestro ya existe.")
+            print("✅ Master ya existe.")
 
-        # Crear configuración de tenant por defecto si no existe
-        default_tenant = 'puntablanca'
-        if not db.session.get(models.CondominiumConfig, default_tenant):
-            print(f"AUDIT: Creando configuración para el tenant por defecto '{default_tenant}'...")
-            config = models.CondominiumConfig(tenant=default_tenant, commercial_name='Punta Blanca')
-            db.session.add(config)
-            print("AUDIT: Configuración de tenant añadida a la sesión.")
-        else:
-            print(f"✅ AUDIT: Configuración para '{default_tenant}' ya existe.")
-
-        # --- LÓGICA SANDBOX PARA DESARROLLO ---
-        # Asegurar que existe un condominio de pruebas y el Master está asignado a él
-        # para evitar errores de "NoneType" al crear documentos.
-        master_user = models.User.query.filter_by(role='MASTER').first()
-        if master_user:
-            sandbox_subdomain = 'sandbox'
-            sandbox = models.Condominium.query.filter_by(subdomain=sandbox_subdomain).first()
+        # ==========================================
+        # 2. CONDOMINIO SANDBOX (Entorno del Master)
+        # ==========================================
+        sandbox_subdomain = 'sandbox'
+        sandbox = models.Condominium.query.filter_by(subdomain=sandbox_subdomain).first()
+        
+        if not sandbox:
+            print(f"🌱 Creando Condominio Sandbox ({sandbox_subdomain})...")
+            sandbox = models.Condominium(
+                name="Condominio de Pruebas (Sandbox)",
+                legal_name="Entorno de Desarrollo CondoManager",
+                email="dev@condomanager.com",
+                ruc="9999999999001",
+                main_street="Calle de los Bugs",
+                cross_street="Avenida de las Soluciones",
+                city="Matrix",
+                country="Ecuador",
+                subdomain=sandbox_subdomain,
+                status='ACTIVO',
+                admin_user_id=master.id,
+                created_by=master.id,
+                has_documents_module=True,
+                has_billing_module=True,
+                has_requests_module=True,
+                payment_provider='PAYPHONE',
+                whatsapp_provider='GATEWAY_QR'
+            )
+            db.session.add(sandbox)
             
-            if not sandbox:
-                print("ℹ️ AUDIT: Creando Condominio Sandbox...")
-                sandbox = models.Condominium(
-                    name="Condominio de Pruebas (Sandbox)",
-                    legal_name="Entorno de Desarrollo CondoManager",
-                    email=master_user.email,
-                    ruc="9999999999001",
-                    main_street="Calle de los Bugs",
-                    cross_street="Avenida de las Soluciones",
-                    city="Matrix",
-                    country="Ecuador",
-                    subdomain=sandbox_subdomain,
-                    status='ACTIVO',
-                    admin_user_id=master_user.id,
-                    created_by=master_user.id,
-                    has_documents_module=True,
-                    has_billing_module=True,
-                    has_requests_module=True
+            # Configuración Visual Sandbox
+            if not db.session.get(models.CondominiumConfig, sandbox_subdomain):
+                viz_config = models.CondominiumConfig(
+                    tenant=sandbox_subdomain, 
+                    commercial_name="Sandbox Labs", 
+                    primary_color="#6f42c1" # Morado Developer
                 )
-                db.session.add(sandbox)
-                
-                # También la config visual
-                if not db.session.get(models.CondominiumConfig, sandbox_subdomain):
-                    viz_config = models.CondominiumConfig(
-                        tenant=sandbox_subdomain, 
-                        commercial_name="Sandbox Labs", 
-                        primary_color="#6f42c1"
-                    )
-                    db.session.add(viz_config)
+                db.session.add(viz_config)
+        
+        # Asegurar que el Master apunta al Sandbox
+        if master.tenant != sandbox_subdomain:
+            master.tenant = sandbox_subdomain
+            db.session.add(master)
             
-            # Asignar Master al Sandbox si no tiene tenant o si es el por defecto
-            if master_user.tenant is None or master_user.tenant == 'puntablanca':
-                print(f"🔄 AUDIT: Asignando MASTER al condominio '{sandbox_subdomain}'...")
-                master_user.tenant = sandbox_subdomain
-                db.session.add(master_user)
+        # ==========================================
+        # 2.5 CONDOMINIO PUNTA BLANCA (Cliente Real/Ejemplo)
+        # ==========================================
+        puntablanca_subdomain = 'puntablanca'
+        pb_config = db.session.get(models.CondominiumConfig, puntablanca_subdomain)
+        if pb_config:
+            # Si existe la config, aseguramos que apunte al logo si existe
+            logo_path = 'app/static/uploads/logos/puntablanca.png'
+            if os.path.exists(logo_path):
+                 print(f"ℹ️ Encontrado logo para {puntablanca_subdomain}, actualizando URL...")
+                 pb_config.logo_url = 'uploads/logos/puntablanca.png'
+                 db.session.add(pb_config)
+        else:
+             # Si no existe la config pero existe el condominio (caso legacy), la creamos
+             pb_condo = models.Condominium.query.filter_by(subdomain=puntablanca_subdomain).first()
+             if pb_condo:
+                 print(f"🌱 Creando Config Visual para {puntablanca_subdomain}...")
+                 logo_url = None
+                 if os.path.exists('app/static/uploads/logos/puntablanca.png'):
+                     logo_url = 'uploads/logos/puntablanca.png'
+                     
+                 pb_config = models.CondominiumConfig(
+                    tenant=puntablanca_subdomain, 
+                    commercial_name="Punta Blanca Ocean Club", 
+                    primary_color="#007bff",
+                    logo_url=logo_url
+                )
+                 db.session.add(pb_config)
+
+        # ==========================================
+        # 3. CONDOMINIO DE PRUEBA REAL (Algarrobos)
+        # ==========================================
+        demo_subdomain = 'algarrobos'
+        algarrobos = models.Condominium.query.filter_by(subdomain=demo_subdomain).first()
+        
+        if not algarrobos:
+            print(f"🌱 Creando Condominio Realista ({demo_subdomain})...")
+            
+            # Crear Admin del Condominio
+            admin_email = "admin@algarrobos.com"
+            admin_user = models.User(
+                cedula='1700000001',
+                email=admin_email,
+                first_name='Michelle',
+                last_name='Tobar',
+                password_hash=hashlib.sha256('Admin123!'.encode()).hexdigest(),
+                role='ADMIN',
+                status='active',
+                tenant=demo_subdomain,
+                email_verified=True,
+                cellphone='0991234567'
+            )
+            db.session.add(admin_user)
+            db.session.flush()
+
+            algarrobos = models.Condominium(
+                name="Conjunto Residencial Los Algarrobos",
+                legal_name="Comité Pro-Mejoras Algarrobos",
+                email=admin_email,
+                ruc="1790000000001",
+                main_street="Av. Interoceánica Km 14",
+                cross_street="Calle Los Ceibos",
+                city="Cumbayá",
+                country="Ecuador",
+                subdomain=demo_subdomain,
+                status='ACTIVO',
+                admin_user_id=admin_user.id,
+                created_by=master.id,
+                has_documents_module=True, # PREMIUM ACTIVADO
+                has_billing_module=True,
+                payment_config={"token": "TOK_TEST_123", "id": "ID_TEST_123"}, # Mock PayPhone
+                whatsapp_provider='META_API'
+            )
+            db.session.add(algarrobos)
+            db.session.flush()
+
+            # Config Visual Algarrobos
+            if not db.session.get(models.CondominiumConfig, demo_subdomain):
+                viz_config = models.CondominiumConfig(
+                    tenant=demo_subdomain, 
+                    commercial_name="Los Algarrobos", 
+                    primary_color="#28a745" # Verde Naturaleza
+                )
+                db.session.add(viz_config)
+
+            # ------------------------------------------
+            # 3.1 UNIDADES Y RESIDENTES
+            # ------------------------------------------
+            print("   ... Generando Unidades y Residentes...")
+            
+            # Lista de datos fake para residentes
+            residents_data = [
+                ("Juan", "Perez", "101", "Casa"),
+                ("Maria", "Lopez", "102", "Casa"),
+                ("Carlos", "Andrade", "201", "Departamento"), # Tesorero
+                ("Ana", "Torres", "202", "Departamento"), # Presidente
+                ("Luis", "Gomez", "A1", "Local Comercial")
+            ]
+
+            users_objects = [] # Guardar para roles especiales
+
+            for idx, (nombre, apellido, num, tipo) in enumerate(residents_data):
+                # Crear Unidad
+                unit = models.Unit(
+                    property_number=num,
+                    name=f"{tipo} {num}",
+                    property_type=tipo,
+                    condominium_id=algarrobos.id,
+                    created_by=admin_user.id,
+                    area_m2=120.0,
+                    bedrooms=3,
+                    bathrooms=2
+                )
+                db.session.add(unit)
+                db.session.flush()
+
+                # Crear Residente
+                residente = models.User(
+                    cedula=f'17000000{idx+2}',
+                    email=f"{nombre.lower()}.{apellido.lower()}@example.com",
+                    first_name=nombre,
+                    last_name=apellido,
+                    password_hash=hashlib.sha256('Vecino123!'.encode()).hexdigest(),
+                    role='USER',
+                    status='active',
+                    tenant=demo_subdomain,
+                    email_verified=True,
+                    unit_id=unit.id, # Asignado a la unidad
+                    cellphone=f'099000000{idx}'
+                )
+                db.session.add(residente)
+                db.session.flush()
+                users_objects.append(residente)
+
+            # ------------------------------------------
+            # 3.2 DIRECTIVA (Roles Especiales)
+            # ------------------------------------------
+            print("   ... Asignando Directiva...")
+            # Carlos (Tesorero)
+            tesorero_role = models.UserSpecialRole(
+                user_id=users_objects[2].id,
+                condominium_id=algarrobos.id,
+                role='TESORERO',
+                assigned_by=admin_user.id,
+                start_date=datetime.utcnow().date(),
+                is_active=True
+            )
+            # Ana (Presidente)
+            presidente_role = models.UserSpecialRole(
+                user_id=users_objects[3].id,
+                condominium_id=algarrobos.id,
+                role='PRESIDENTE',
+                assigned_by=admin_user.id,
+                start_date=datetime.utcnow().date(),
+                is_active=True
+            )
+            db.session.add_all([tesorero_role, presidente_role])
+
+            # ------------------------------------------
+            # 3.3 DOCUMENTOS
+            # ------------------------------------------
+            print("   ... Creando Documentos de Prueba...")
+            doc1 = models.Document(
+                title="Acta de Asamblea General 2024",
+                content="<p>Se aprueba el presupuesto...</p>",
+                created_by_id=admin_user.id,
+                condominium_id=algarrobos.id,
+                status='signed',
+                created_at=datetime.utcnow() - timedelta(days=5)
+            )
+            
+            doc2 = models.Document(
+                title="Comunicado: Mantenimiento Piscina",
+                content="<p>La piscina estará cerrada por mantenimiento...</p>",
+                created_by_id=admin_user.id,
+                condominium_id=algarrobos.id,
+                status='sent',
+                created_at=datetime.utcnow()
+            )
+            db.session.add_all([doc1, doc2])
+
+            # ------------------------------------------
+            # 3.4 PAGOS (Historial Financiero)
+            # ------------------------------------------
+            print("   ... Registrando Pagos...")
+            # Pago Aprobado (Tarjeta)
+            pago1 = models.Payment(
+                amount=85.00,
+                amount_with_tax=85.00,
+                description="Alícuota Enero - Casa 101",
+                status='APPROVED',
+                payment_method='PAYPHONE',
+                payphone_transaction_id='mock_tx_1',
+                user_id=users_objects[0].id,
+                unit_id=users_objects[0].unit_id,
+                condominium_id=algarrobos.id,
+                created_at=datetime.utcnow() - timedelta(days=10)
+            )
+            
+            # Pago Pendiente (Transferencia)
+            pago2 = models.Payment(
+                amount=85.00,
+                amount_with_tax=85.00,
+                description="Transferencia Febrero - Casa 102",
+                status='PENDING_REVIEW',
+                payment_method='TRANSFER',
+                proof_of_payment='comprobante_mock.pdf', # Archivo simulado
+                user_id=users_objects[1].id,
+                unit_id=users_objects[1].unit_id,
+                condominium_id=algarrobos.id,
+                created_at=datetime.utcnow() - timedelta(hours=2)
+            )
+            db.session.add_all([pago1, pago2])
+
+        else:
+            print(f"✅ Condominio '{demo_subdomain}' ya existe.")
 
         db.session.commit()
-        print("✅ AUDIT: db.session.commit() ejecutado. Datos iniciales guardados en la DB.")
-        print("✅✅✅ Script de siembra de datos iniciales finalizado con ÉXITO.")
+        print("✅✅✅ Script de siembra de datos COMPLETADO con ÉXITO.")
+        print("-------------------------------------------------------")
+        print(f"🔑 Master: {master_email} / (Pass en ENV o default)")
+        print(f"🔑 Admin Algarrobos: admin@algarrobos.com / Admin123!")
+        print("-------------------------------------------------------")
 
 if __name__ == '__main__':
     seed_initial_data()

@@ -27,6 +27,13 @@
         .border-primary { border-color: var(--primary) !important; }
         
         .navbar-brand { font-weight: 600; font-size: 1.5rem; }
+        /* Restricción de tamaño del logo */
+        .navbar-brand img {
+            max-height: 40px;
+            width: auto;
+            margin-right: 10px;
+        }
+
         .hero-bg {
             background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
         }
@@ -50,7 +57,14 @@
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
         <div class="container-fluid">
-            <a class="navbar-brand me-4" href="{{ url_for('master.master_panel') if user and user.role == 'MASTER' else (url_for('user.dashboard') if user else url_for('public.home')) }}">CondoManager</a>
+            <a class="navbar-brand me-4" href="{{ url_for('master.master_panel') if user and user.role == 'MASTER' else (url_for('user.dashboard') if user else url_for('public.home')) }}">
+                {% if config and config.logo_url %}
+                    <img src="{{ url_for('static', filename=config.logo_url) }}" alt="Logo {{ config.commercial_name }}">
+                {% else %}
+                    <i class="fas fa-building me-2 text-primary"></i>
+                {% endif %}
+                {{ config.commercial_name if config and config.commercial_name else 'CondoManager' }}
+            </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -111,7 +125,13 @@
         <div class="container">
             <div class="row">
                 <div class="col-md-6">
-                    <h5><i class="fas fa-building me-2"></i>
+                    <h5>
+                        {% if config and config.logo_url %}
+                            <img src="{{ url_for('static', filename=config.logo_url) }}" alt="Logo" style="height: 30px; margin-right: 10px; filter: brightness(0) invert(1);">
+                        {% else %}
+                            <i class="fas fa-building me-2"></i>
+                        {% endif %}
+                        
                         {% if config and config.commercial_name %}
                             {{ config.commercial_name }}
                         {% else %}

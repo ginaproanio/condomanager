@@ -4,6 +4,7 @@ from flask import (
 )
 from flask_jwt_extended import jwt_required
 from sqlalchemy import or_
+from sqlalchemy.orm.attributes import flag_modified
 from app.auth import get_current_user
 from app.models import Condominium, User, CondominiumConfig, Unit # get_current_user_data no existe
 from app import db, models
@@ -710,3 +711,92 @@ def inactivar_condominio(condo_id):
     db.session.commit()
     flash(f'El condominio "{condo_to_inactivate.name}" ha sido inactivado.', 'success')
     return redirect(url_for('master.master_condominios'))
+
+@master_bp.route('/master/comunicaciones', methods=['GET'])
+@jwt_required()
+def master_comunicaciones():
+    """
+    Panel de comunicaciones globales para el MASTER.
+    """
+    user = get_current_user()
+    if not user or user.role != 'MASTER':
+        flash("Acceso denegado.", "error")
+        return redirect(url_for('public.login'))
+
+    # Obtener el condominio "Sandbox" o donde resida el Master
+    # Lógica: Buscar por tenant del usuario, si no, buscar por subdomain 'sandbox'
+    condominium = None
+    if user.tenant:
+        condominium = Condominium.query.filter_by(subdomain=user.tenant).first()
+    
+    if not condominium:
+        # Fallback: Buscar sandbox
+        condominium = Condominium.query.filter_by(subdomain='sandbox').first()
+    
+    if not condominium:
+        flash("No se encontró un condominio base (Sandbox) para la configuración del Master.", "warning")
+
+    # Obtener lista de destinatarios potenciales (Administradores)
+    admins_count = User.query.filter_by(role='ADMIN', status='active').count()
+    
+    # Estado simulado (se conectaría a servicio real)
+    whatsapp_status = 'disconnected'
+
+    return render_template('master/comunicaciones.html', 
+                           user=user, 
+                           condominium=condominium, 
+                           admins_count=admins_count,
+                           status=whatsapp_status)
+
+@master_bp.route('/master/configurar-whatsapp', methods=['POST'])
+@jwt_required()
+def configurar_whatsapp():
+    """
+    Guarda la configuración del proveedor de WhatsApp para el MASTER.
+    """
+    user = get_current_user()
+    if not user or user.role != 'MASTER':
+        flash("Acceso denegado.", "error")
+        return redirect(url_for('public.login'))
+
+    # Determinar condominio del Master
+    condo = None
+    if user.tenant:
+        condo = Condominium.query.filter_by(subdomain=user.tenant).first()
+    if not condo:
+        condo = Condominium.query.filter_by(subdomain='sandbox').first()
+    
+    if not condo:
+        flash("Error crítico: No tienes un condominio asignado para guardar la configuración.", "error")
+        return redirect(url_for('master.master_comunicaciones'))
+    
+    provider = request.form.get('whatsapp_provider')
+    
+    if provider not in ['GATEWAY_QR', 'META_API']:
+        flash("Proveedor no válido", "error")
+        return redirect(url_for('master.master_comunicaciones'))
+        
+    condo.whatsapp_provider = provider
+    
+    # Actualizar configuración JSON
+    if not condo.whatsapp_config:
+        current_config = {}
+    else:
+        current_config = dict(condo.whatsapp_config)
+    
+    if provider == 'META_API':
+        current_config['phone_id'] = request.form.get('meta_phone_id')
+        current_config['business_id'] = request.form.get('meta_business_id')
+        current_config['access_token'] = request.form.get('meta_access_token')
+    
+    condo.whatsapp_config = current_config
+    flag_modified(condo, "whatsapp_config")
+    
+    try:
+        db.session.commit()
+        flash("Configuración de comunicaciones actualizada correctamente.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error al guardar configuración: {str(e)}", "error")
+        
+    return redirect(url_for('master.master_comunicaciones'))

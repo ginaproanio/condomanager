@@ -277,3 +277,130 @@ def configuracion_pagos(condominium_id):
     transactions = Payment.query.filter_by(condominium_id=condominium_id).order_by(Payment.created_at.desc()).all()
         
     return render_template('admin/config_pagos.html', condominium=condo, transactions=transactions)
+
+@admin_bp.route('/admin/condominio/<int:condominium_id>/finanzas', methods=['GET'])
+@condominium_admin_required
+def finanzas(condominium_id):
+    """
+    Panel Principal de Finanzas: Muestra transacciones y pagos pendientes de aprobación.
+    """
+    condo = Condominium.query.get_or_404(condominium_id)
+    
+    # Pagos pendientes de revisión (Transferencias)
+    pending_payments = Payment.query.filter_by(
+        condominium_id=condominium_id, 
+        status='PENDING_REVIEW'
+    ).order_by(Payment.created_at.asc()).all()
+    
+    # Historial de pagos procesados (Últimos 50)
+    history_payments = Payment.query.filter(
+        Payment.condominium_id == condominium_id,
+        Payment.status != 'PENDING_REVIEW'
+    ).order_by(Payment.created_at.desc()).limit(50).all()
+    
+    return render_template('admin/finanzas.html', 
+                           condominium=condo, 
+                           pending_payments=pending_payments,
+                           history_payments=history_payments)
+
+@admin_bp.route('/admin/pagos/aprobar/<int:payment_id>', methods=['POST'])
+@jwt_required()
+def aprobar_pago(payment_id):
+    payment = Payment.query.get_or_404(payment_id)
+    current_user = get_current_user()
+    
+    # Validar permisos
+    condo = Condominium.query.get(payment.condominium_id)
+    if not is_authorized_admin_for_condo(current_user, condo):
+        flash("No autorizado para aprobar este pago.", "error")
+        return redirect(url_for('user.dashboard'))
+        
+    payment.status = 'APPROVED'
+    payment.reviewed_by = current_user.id
+    payment.review_date = datetime.utcnow()
+    payment.review_notes = request.form.get('notes', 'Aprobado manualmente')
+    
+    db.session.commit()
+    flash(f"Pago de ${payment.amount} aprobado exitosamente.", "success")
+    return redirect(url_for('admin.finanzas', condominium_id=condo.id))
+
+@admin_bp.route('/admin/pagos/rechazar/<int:payment_id>', methods=['POST'])
+@jwt_required()
+def rechazar_pago(payment_id):
+    payment = Payment.query.get_or_404(payment_id)
+    current_user = get_current_user()
+    
+    condo = Condominium.query.get(payment.condominium_id)
+    if not is_authorized_admin_for_condo(current_user, condo):
+        flash("No autorizado.", "error")
+        return redirect(url_for('user.dashboard'))
+        
+    payment.status = 'REJECTED'
+    payment.reviewed_by = current_user.id
+    payment.review_date = datetime.utcnow()
+    payment.review_notes = request.form.get('notes', 'Rechazado por administración')
+    
+    db.session.commit()
+    flash("Pago rechazado.", "warning")
+    return redirect(url_for('admin.finanzas', condominium_id=condo.id))
+
+@admin_bp.route('/admin/comprobante/<filename>')
+@jwt_required()
+def ver_comprobante(filename):
+    import os
+    from flask import send_from_directory
+    upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'payments')
+    return send_from_directory(upload_folder, filename)
+
+@admin_bp.route('/admin/condominio/<int:condominium_id>/personalizar', methods=['POST'])
+@condominium_admin_required
+def personalizar_condominio(condominium_id):
+    """
+    Permite subir el logo y personalizar colores del condominio.
+    """
+    condo = Condominium.query.get_or_404(condominium_id)
+    
+    # 1. Obtener o crear config
+    from app.models import CondominiumConfig
+    config = CondominiumConfig.query.get(condo.subdomain)
+    if not config:
+        config = CondominiumConfig(tenant=condo.subdomain, commercial_name=condo.name)
+        db.session.add(config)
+        
+    # 2. Procesar Color
+    primary_color = request.form.get('primary_color')
+    if primary_color:
+        config.primary_color = primary_color
+        
+    # 3. Procesar Logo
+    if 'logo_file' in request.files:
+        file = request.files['logo_file']
+        if file.filename != '':
+            import os
+            from werkzeug.utils import secure_filename
+            
+            # Validar extensión
+            allowed_extensions = {'.png', '.jpg', '.jpeg', '.gif', '.webp'}
+            ext = os.path.splitext(file.filename)[1].lower()
+            
+            if ext in allowed_extensions:
+                filename = secure_filename(f"logo_{condo.id}_{int(datetime.utcnow().timestamp())}{ext}")
+                upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'logos')
+                
+                # Guardar archivo
+                file.save(os.path.join(upload_folder, filename))
+                
+                # Actualizar config
+                config.logo_url = f"uploads/logos/{filename}"
+            else:
+                flash("Formato de imagen no válido.", "error")
+                return redirect(url_for('admin.admin_condominio_panel', condominium_id=condo.id))
+
+    try:
+        db.session.commit()
+        flash("Personalización actualizada correctamente.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error al guardar: {str(e)}", "error")
+        
+    return redirect(url_for('admin.admin_condominio_panel', condominium_id=condo.id))

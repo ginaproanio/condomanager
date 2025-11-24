@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Solicitar Demo - CondoManager{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-lg">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <h2 class="text-primary fw-bold">
+                            <i class="fas fa-rocket me-2"></i>Solicita una Demo
+                        </h2>
+                        <p class="text-muted">
+                            Prueba CondoManager GRATIS por 15 días como Administrador.
+                            <br>Tendrás tu propio entorno privado.
+                        </p>
+                    </div>
+
+                    {% include '_messages.html' %}
+
+                    <form method="POST" action="{{ url_for('public.demo_request') }}">
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Nombre</label>
+                                <input type="text" class="form-control" name="first_name" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Apellido</label>
+                                <input type="text" class="form-control" name="last_name" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Correo Electrónico (Corporativo o Personal)</label>
+                            <input type="email" class="form-control" name="email" required>
+                            <div class="form-text">Te enviaremos las credenciales de acceso a este correo.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Cédula / Identificación</label>
+                            <input type="text" class="form-control" name="cedula" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Celular (con WhatsApp)</label>
+                            <input type="text" class="form-control" name="cellphone" placeholder="Ej: 0991234567" required>
+                            <div class="form-text">
+                                <i class="fas fa-mobile-alt me-1"></i>
+                                Enviaremos un código SMS de validación (Simulado).
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">Contraseña para tu cuenta</label>
+                            <input type="password" class="form-control" name="password" required>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-paper-plane me-2"></i>Crear Mi Demo Ahora
+                            </button>
+                        </div>
+                        
+                        <div class="text-center mt-4">
+                            <small class="text-muted">Al solicitar la demo aceptas nuestros términos y condiciones.</small>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

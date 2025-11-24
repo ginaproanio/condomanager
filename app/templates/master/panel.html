@@ -104,16 +104,16 @@
                                 </div>
                             </div>
 
-                            <!-- Tarjeta de Comunicaciones (WhatsApp) - Placeholder -->
+                            <!-- Tarjeta de Comunicaciones (WhatsApp) -->
                             <div class="col-md-4">
-                                <div class="card h-100 shadow-sm border-secondary opacity-75">
+                                <div class="card h-100 shadow-sm border-primary">
                                     <div class="card-body text-center d-flex flex-column">
-                                        <i class="fab fa-whatsapp fa-3x text-secondary mb-3"></i>
+                                        <i class="fab fa-whatsapp fa-3x text-primary mb-3"></i>
                                         <h5 class="card-title">Comunicaciones</h5>
-                                        <p class="card-text">Sincronización y envíos masivos por WhatsApp (Próximamente).</p>
-                                        <button class="btn btn-outline-secondary mt-auto" disabled>
-                                            <i class="fas fa-comment-dots me-2"></i>No disponible
-                                        </button>
+                                        <p class="card-text">Sincronización y envíos masivos por WhatsApp.</p>
+                                        <a href="{{ url_for('master.master_comunicaciones') }}" class="btn btn-outline-primary mt-auto">
+                                            <i class="fas fa-comment-dots me-2"></i>Ir a Comunicaciones
+                                        </a>
                                     </div>
                                 </div>
                             </div>

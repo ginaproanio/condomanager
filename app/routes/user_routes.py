@@ -7,6 +7,8 @@ from app.auth import get_current_user
 from app.models import db, User, Document, Condominium, Unit, DocumentSignature, Payment # Importar DocumentSignature
 import hashlib
 from datetime import datetime, timedelta
+import os
+from werkzeug.utils import secure_filename
 
 # Librerías para validación criptográfica
 from cryptography.hazmat.primitives.serialization import pkcs12
@@ -153,6 +155,72 @@ def pagos():
                            config=config, 
                            condominium=condominium,
                            user=user)
+
+@user_bp.route('/pagos/reportar', methods=['POST'])
+@jwt_required()
+def reportar_pago():
+    user = get_current_user()
+    
+    # Validar que pertenezca a un condominio
+    condo = None
+    if user.unit and user.unit.condominium_id:
+        condo = Condominium.query.get(user.unit.condominium_id)
+    elif user.tenant:
+        condo = Condominium.query.filter_by(subdomain=user.tenant).first()
+    
+    if not condo:
+        flash("No tienes un condominio asignado para reportar pagos.", "error")
+        return redirect(url_for('user.pagos'))
+
+    # Validar archivo
+    if 'proof_file' not in request.files:
+        flash('No se subió ningún archivo.', 'error')
+        return redirect(url_for('user.pagos'))
+    
+    file = request.files['proof_file']
+    if file.filename == '':
+        flash('No seleccionaste ningún archivo.', 'error')
+        return redirect(url_for('user.pagos'))
+        
+    if file:
+        filename = secure_filename(f"{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{user.id}_{file.filename}")
+        upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'payments')
+        os.makedirs(upload_folder, exist_ok=True)
+        
+        file_path = os.path.join(upload_folder, filename)
+        file.save(file_path)
+        
+        # Crear registro de pago
+        # El monto puede venir con comas, las reemplazamos por puntos
+        amount_str = request.form.get('amount', '0').replace(',', '.')
+        try:
+            amount = float(amount_str)
+        except ValueError:
+            amount = 0.0
+            
+        new_payment = Payment(
+            amount=amount,
+            amount_with_tax=amount, # Asumimos exento de IVA por ahora para transferencias de alícuotas
+            currency='USD',
+            description=request.form.get('description'),
+            status='PENDING_REVIEW',
+            payment_method='TRANSFER',
+            proof_of_payment=filename,
+            user_id=user.id,
+            condominium_id=condo.id,
+            unit_id=user.unit_id if user.unit_id else None,
+            created_at=datetime.utcnow()
+        )
+        
+        try:
+            db.session.add(new_payment)
+            db.session.commit()
+            flash('Comprobante subido correctamente. Tu pago está en revisión por la administración.', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error al guardar el reporte: {str(e)}', 'error')
+            
+    return redirect(url_for('user.reportes'))
 
 @user_bp.route('/reportes')
 @jwt_required()

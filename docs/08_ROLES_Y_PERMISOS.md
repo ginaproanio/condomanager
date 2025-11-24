@@ -1,5 +1,5 @@
 # Roles y Permisos del Sistema
-Versión: 1.2.0 (Actualizado: Noviembre 2025)
+Versión: 1.4.0 (Actualizado: Noviembre 2025)
 
 ## Filosofía de Permisos
 El sistema opera bajo un modelo de permisos acumulativos. Si un usuario tiene múltiples roles (ej. `ADMIN` y `PRESIDENTE`), sus permisos son la suma de todos sus roles. El acceso a funcionalidades específicas, como los módulos, se concede si CUALQUIERA de sus roles activos se lo permite.
@@ -20,24 +20,39 @@ La directiva del condominio (compuesta por roles especiales) elige a un `ADMINIS
     - **Gestión de Estado Global:** Pone un módulo en estado `MAINTENANCE` para toda la plataforma. Esto bloquea el acceso incluso si el condominio lo ha pagado.
     - **Gestión de Estado Específico:** Registra períodos de mantenimiento para un módulo en un condominio específico, dejando un historial auditable.
 - **Documentos Propios:** El MASTER tiene su propio módulo de "Documentos" para gestionar contratos, términos de servicio y comunicados de la plataforma, independiente de los condominios.
+- **Sandbox:** El MASTER reside en un condominio de pruebas ("Sandbox") para sus configuraciones personales (como WhatsApp).
 
 ### 1.2 ADMINISTRADOR
 - Gestión completa de **un único condominio específico** al que está asignado (vía `tenant` y validación de `Condominium.admin_user_id`).
 - Acceso a su panel de gestión a través de `/admin/condominio/<id>`.
-- **Reportería Operativa:** Acceso a `/admin/condominio/<id>/reportes` para descargar listados de residentes (incluyendo datos de contacto sensibles para garita) y estados de ocupación.
+- **Reportería Operativa:** Acceso a `/admin/condominio/<id>/reportes` para descargar listados de **propietarios** (incluyendo datos de contacto sensibles para garita) y estados de ocupación.
 - **Gestión de Comunicaciones:** Configuración exclusiva del proveedor de WhatsApp (Gateway QR o Meta API) para su condominio.
+- **Gestión Financiera (Pagos):**
+    - Configuración de pasarela PayPhone para cobros automáticos.
+    - Validación manual de pagos por transferencia (conciliación bancaria).
+    - Visualización de historial de transacciones.
 - Aprobación y rechazo de usuarios para su `tenant`.
 - Creación y gestión de unidades para su condominio.
 - **Gestión de Directiva:** Es el único rol autorizado para asignar y revocar Roles Especiales (`UserSpecialRole`) a los vecinos.
 - **Módulo "Firmas & Comunicados"**: Si está activado, puede crear, firmar y enviar documentos oficiales.
 
-### 1.3 USUARIO
+### 1.3 USUARIO / PROPIETARIO
 - Acceso básico a unidades asignadas.
-- **Historial Personal:** Acceso a `/reportes` para ver su historial de documentos firmados digitalmente.
+- **Historial Personal:** Acceso a `/reportes` para ver su historial de documentos firmados digitalmente y sus pagos realizados.
 - Interacción con servicios básicos del condominio.
+- **Pagos:** Puede realizar pagos con tarjeta (PayPhone) o subir comprobantes de transferencia.
 - **Módulo "Firmas & Comunicados"**:
     - **Nivel Básico (Gratis):** Acceso de solo lectura al repositorio de documentos públicos.
     - **Nivel Premium:** No tiene acceso a la gestión/creación. Solo recibe y visualiza los documentos que le son enviados o firma peticiones públicas.
+
+### 1.4 USUARIO DEMO (Nuevo)
+- **Origen:** Creado automáticamente a través de `/solicitar-demo`.
+- **Rol:** `ADMIN`.
+- **Condominio:** Se le asigna un condominio temporal en estado `DEMO` (ej: `demo-usuario-2023`).
+- **Limitaciones:**
+    - Tiene todas las capacidades de un ADMIN durante el período de prueba (15 días).
+    - No puede cambiar su subdominio ni acceder a otros condominios.
+    - Al expirar el período, el condominio pasa a estado `SUSPENDED` o `EXPIRED`.
 
 ## 2. Roles Especiales del Condominio
 
@@ -62,9 +77,9 @@ La directiva del condominio (compuesta por roles especiales) elige a un `ADMINIS
 ### 2.3 TESORERO
 **Descripción**: Responsable de supervisión financiera
 **Permisos**:
-- Acceso a módulo de recaudación
-- Supervisión de ingresos y gastos
-- Reportes financieros
+- Acceso a módulo de recaudación y conciliación de pagos.
+- Supervisión de ingresos y gastos.
+- Reportes financieros.
 
 ### 2.4 CONTADOR
 **Descripción**: Gestión contable del condominio
@@ -164,14 +179,14 @@ En el entorno de pruebas (Railway), la validación estricta de roles por subdomi
     1. **Rol Base:** Ser `ADMIN` del sistema para ese condominio.
     2. **Rol de Directiva 1:** Ser `PRESIDENTE` (vía `UserSpecialRole`).
     3. **Rol de Directiva 2:** Ser `TESORERO` (vía otra entrada en `UserSpecialRole`).
-    4. **Rol de Residente:** Tener una unidad asignada (`Unit`).
+    4. **Rol de Propietario:** Tener una unidad asignada (`Unit`).
 - **Permisos Acumulativos:** El sistema otorgará el "superset" de permisos. Si como `ADMIN` tiene acceso total, el hecho de ser `TESORERO` no le restará acceso, simplemente le dará atribuciones formales adicionales.
 - **El Administrador-Directivo:** Es un caso de uso válido y común que el Administrador del software sea también un miembro de la directiva.
 
 ### 7.2 Auditoría
 - Registro de quién asignó cada rol
 - Histórico de cambios en asignaciones
-- Trazabilidad de acciones por rol
+- Trazabilidad de acciones por rol (ej. quién aprobó un pago manual).
 
 ### 7.3 Marketplace y Módulos Especiales
 - Roles especiales pueden tener accesos adicionales según módulos contratados.

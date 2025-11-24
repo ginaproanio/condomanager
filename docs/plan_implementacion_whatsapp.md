@@ -62,7 +62,14 @@ El Administrador verá una pantalla de selección clara:
 *   Ruta de configuración `/configurar-whatsapp` implementada y funcional.
 *   Interfaz de Admin actualizada para guardar preferencias y tokens de Meta.
 
-### ❌ Fase 3: Integración de Proveedores (Futuro)
+### ✅ Fase 2.5: Comunicaciones del Master (Completado)
+*   Ruta `/master/comunicaciones` implementada.
+*   Integración con "Sandbox" para configuración de WhatsApp del Master.
+*   Lógica de envío a "Todos los Administradores" preparada.
+*   Activación de tarjeta "Comunicaciones" en el Panel Maestro.
+
+### ⏸️ Fase 3: Integración de Proveedores (STANDBY)
+**Estado:** Pausado hasta disponer de dominio real verificado para Meta API.
 *   Desplegar motor Waha (Gateway).
 *   Desarrollar integración real con Meta Business API.
 *   Implementar la lógica de "Cola de Mensajes" (Queue) en la base de datos para el modo Gateway.
