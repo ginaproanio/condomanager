@@ -45,9 +45,11 @@ def demo_request():
 
         try:
             # 1. Crear Condominio Demo
-            timestamp = datetime.utcnow().strftime('%Y%m%d%H%M')
+            # Usar timestamp con segundos y sufijo aleatorio para evitar colisiones de unicidad
+            timestamp = datetime.utcnow().strftime('%Y%m%d%H%M%S')
+            random_suffix = secrets.token_hex(2) # Agrega 4 caracteres hex aleatorios
             safe_name = "".join([c for c in first_name if c.isalnum()])
-            demo_subdomain = f"demo-{safe_name.lower()}-{timestamp}"
+            demo_subdomain = f"demo-{safe_name.lower()}-{timestamp}-{random_suffix}"
             
             # Token de validación simulado
             token = secrets.token_urlsafe(32)

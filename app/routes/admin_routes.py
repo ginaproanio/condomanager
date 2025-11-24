@@ -348,7 +348,34 @@ def rechazar_pago(payment_id):
 @jwt_required()
 def ver_comprobante(filename):
     import os
-    from flask import send_from_directory
+    from flask import send_from_directory, abort
+    
+    # 1. Buscar el pago asociado a este archivo para validar permisos
+    # En la DB se guarda como '/static/uploads/payments/filename' o similar, buscamos coincidencia parcial o exacta
+    # Asumimos que payment.proof_of_payment guarda 'uploads/payments/filename' o similar
+    
+    # Buscamos el pago que contenga este filename en su proof_of_payment
+    payment = Payment.query.filter(Payment.proof_of_payment.contains(filename)).first()
+    
+    if not payment:
+        abort(404)
+
+    current_user = get_current_user()
+    
+    # 2. Verificar Autorización
+    # A) Es el dueño del pago (Usuario que lo subió)
+    is_owner = (payment.user_id and current_user.id == payment.user_id)
+    
+    # B) Es administrador del condominio al que pertenece el pago
+    condo = Condominium.query.get(payment.condominium_id)
+    is_admin = is_authorized_admin_for_condo(current_user, condo)
+    
+    # C) Es MASTER
+    is_master = (current_user.role == 'MASTER')
+
+    if not (is_owner or is_admin or is_master):
+        abort(403)
+
     upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'payments')
     return send_from_directory(upload_folder, filename)
 
