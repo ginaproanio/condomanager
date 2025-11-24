@@ -85,6 +85,12 @@
                                 <i class="fas fa-wallet me-2 text-dark"></i>Finanzas
                             </button>
                         </li>
+                        <!-- NUEVA PESTAÑA CAJA CHICA -->
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="petty-cash-tab" data-bs-toggle="tab" data-bs-target="#petty-cash" type="button" role="tab" aria-controls="petty-cash" aria-selected="false">
+                                <i class="fas fa-cash-register me-2 text-danger"></i>Caja Chica
+                            </button>
+                        </li>
                         <!-- NUEVA PESTAÑA PERSONALIZACIÓN -->
                         <li class="nav-item" role="presentation">
                             <button class="nav-link" id="branding-tab" data-bs-toggle="tab" data-bs-target="#branding" type="button" role="tab" aria-controls="branding" aria-selected="false">
@@ -501,6 +507,34 @@
 
                                     <a href="{{ url_for('admin.finanzas', condominium_id=condominium.id) }}" class="btn btn-dark btn-lg mt-4 shadow-sm">
                                         <i class="fas fa-external-link-alt me-2"></i>Abrir Panel Financiero
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- PESTAÑA CAJA CHICA -->
+                        <div class="tab-pane fade" id="petty-cash" role="tabpanel" aria-labelledby="petty-cash-tab">
+                            <div class="card border-0 shadow-sm mb-4">
+                                <div class="card-header bg-danger text-white">
+                                    <h5 class="mb-0"><i class="fas fa-cash-register me-2"></i>Caja Chica y Gastos Menores</h5>
+                                </div>
+                                <div class="card-body text-center py-5">
+                                    <i class="fas fa-coins fa-5x text-danger mb-4"></i>
+                                    <h3>Control de Efectivo</h3>
+                                    <p class="lead text-muted">Registra gastos operativos del día a día y reposiciones de fondo.</p>
+                                    
+                                    <div class="row justify-content-center mt-4">
+                                        <div class="col-md-6">
+                                            <ul class="list-group text-start">
+                                                <li class="list-group-item border-0"><i class="fas fa-check text-success me-2"></i>Gastos de transporte y alimentación.</li>
+                                                <li class="list-group-item border-0"><i class="fas fa-check text-success me-2"></i>Compras de suministros menores.</li>
+                                                <li class="list-group-item border-0"><i class="fas fa-check text-success me-2"></i>Control de saldo en tiempo real.</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+
+                                    <a href="{{ url_for('petty_cash.index', condominium_id=condominium.id) }}" class="btn btn-danger btn-lg mt-4 shadow-sm">
+                                        <i class="fas fa-calculator me-2"></i>Gestionar Caja Chica
                                     </a>
                                 </div>
                             </div>

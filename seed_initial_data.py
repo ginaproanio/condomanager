@@ -28,12 +28,28 @@ def seed_initial_data():
                 "status": "ACTIVE"
             },
             {
-                "code": "billing",
-                "name": "Facturación y Cobranza",
-                "description": "Automatización de alícuotas, pasarela de pagos y conciliación.",
+                "code": "collections",
+                "name": "Gestión de Recaudación (Cobranza)",
+                "description": "Pasarela de pagos (PayPhone) y conciliación de transferencias.",
                 "base_price": 25.00,
                 "billing_cycle": "monthly",
                 "status": "ACTIVE"
+            },
+            {
+                "code": "accounting",
+                "name": "Contabilidad Condominial",
+                "description": "Asientos contables, balances y reportes financieros formales.",
+                "base_price": 30.00,
+                "billing_cycle": "monthly",
+                "status": "COMING_SOON"
+            },
+            {
+                "code": "petty_cash",
+                "name": "Caja Chica",
+                "description": "Gestión de gastos menores y reposición de fondos.",
+                "base_price": 5.00,
+                "billing_cycle": "monthly",
+                "status": "COMING_SOON"
             },
             {
                 "code": "requests",
@@ -50,6 +66,38 @@ def seed_initial_data():
                 "base_price": 10.00,
                 "billing_cycle": "monthly",
                 "status": "ACTIVE"
+            },
+            {
+                "code": "access_control",
+                "name": "Control de Accesos y Visitas",
+                "description": "Pre-registro de visitas y control de garita (IoT Ready).",
+                "base_price": 20.00,
+                "billing_cycle": "monthly",
+                "status": "COMING_SOON"
+            },
+            {
+                "code": "marketplace",
+                "name": "Marketplace Inmobiliario",
+                "description": "Publicación de propiedades en venta/arriendo por propietarios.",
+                "base_price": 10.00,
+                "billing_cycle": "monthly",
+                "status": "COMING_SOON"
+            },
+            {
+                "code": "procurement",
+                "name": "Club de Compras (B2B)",
+                "description": "Compra centralizada de suministros con descuentos mayoristas.",
+                "base_price": 0.00,
+                "billing_cycle": "monthly",
+                "status": "COMING_SOON"
+            },
+            {
+                "code": "ad_server",
+                "name": "Red Publicitaria Local",
+                "description": "Monetización mediante anuncios locales en el dashboard.",
+                "base_price": 0.00,
+                "billing_cycle": "monthly",
+                "status": "COMING_SOON"
             }
         ]
 

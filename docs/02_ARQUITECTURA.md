@@ -47,6 +47,7 @@ Sistema multi-condominio implementado inicialmente para "Punta Blanca", diseñad
 │   │   │   # - /master/modules: Catálogo global de módulos.
 │   │   ├── document_routes.py # Rutas para el módulo "Firmas & Comunicados" (Freemium).
 │   │   ├── payment_routes.py  # Endpoints para callbacks y proceso de pagos.
+│   │   ├── petty_cash_routes.py # Rutas para el módulo de Caja Chica.
 │   │   ├── api_routes.py    # Endpoints de la API REST.
 │   │   └── dev_routes.py    # Rutas para desarrollo y depuración.
 │   ├── static/         # Archivos estáticos (CSS, JS, imágenes).
@@ -153,16 +154,18 @@ Cuando se despliegue en un dominio real (ej: `condomanager.com`) con certificado
 - **Estrategia:** Multi-Driver (Gateway QR / Meta API).
 - **Modelos:** Uso de campos JSON en `Condominium` para flexibilidad de credenciales.
 
-#### 5.5.5 Módulo de Pagos (Recaudación)
-- **Estado:** ✅ Implementado (PayPhone + Transferencias).
-- **Propósito:** Gestión financiera descentralizada (Multi-Merchant).
-- **Modelo `Payment`:**
-    - Registra transacciones.
-    - `payment_method`: 'PAYPHONE' (Auto) o 'TRANSFER' (Manual).
-    - `status`: 'APPROVED', 'PENDING_REVIEW', 'REJECTED'.
-    - Auditoría: `reviewed_by`, `review_notes`.
+#### 5.5.5 Módulo de Recaudación (Cobranza) - `collections`
+- **Estado:** ✅ Implementado (Base de Pagos).
+- **Propósito:** Recibir y conciliar dinero (PayPhone, Transferencias).
+- **Detalle:** Ver `docs/11_MODULOS_FINANCIEROS.md`.
 
-#### 5.5.6 AuditLog (Propuesto)
+#### 5.5.6 Módulo de Caja Chica - `petty_cash`
+- **Estado:** ✅ Implementado (Registro de Movimientos).
+- **Propósito:** Gestión de gastos menores e ingresos operativos.
+- **Modelo `PettyCashTransaction`**:
+    - Atributos: `description`, `amount` (positivo/negativo), `transaction_date`, `category`, `receipt_url`, `created_by`.
+
+#### 5.5.7 AuditLog (Propuesto)
 - **Propósito:** Registrar acciones clave en el sistema para trazabilidad y seguridad.
 - **Estado:** ❌ Faltante.
 
@@ -184,10 +187,10 @@ Esta sección documenta funcionalidades identificadas en las reglas de negocio (
 - **Objetivo:** Módulo de notificaciones masivas por WhatsApp/Email.
 - **Estado:** 🚧 Parcial (Configuración lista, falta motor de envío).
 
-### 7.3 Nuevos Módulos (IoT y Comercial)
-Consultar `docs/10_MODULOS_FUTUROS.md` para el detalle de:
-1.  **Módulo de Control de Accesos y Registro de Visitas (IoT Ready).**
-2.  **Módulo de Marketplace Inmobiliario (Venta/Arriendo).**
+### 7.3 Nuevos Módulos (IoT, Comercial y Financiero)
+1.  **Control de Accesos (IoT)**: Ver `docs/10_MODULOS_FUTUROS.md`.
+2.  **Marketplace Inmobiliario**: Ver `docs/10_MODULOS_FUTUROS.md`.
+3.  **Ecosistema Financiero (Contabilidad, Procurement, AdServer)**: Ver `docs/11_MODULOS_FINANCIEROS.md`.
 
 ## 8. Consideraciones para Futuras Mejoras
 - **Modularización:** La estructura actual es adecuada, pero a medida que el proyecto crezca, se puede evaluar una mayor modularización (ej. `app/api/v1/`, `app/core/`) para desacoplar componentes.

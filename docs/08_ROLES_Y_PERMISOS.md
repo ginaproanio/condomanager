@@ -1,5 +1,5 @@
 # Roles y Permisos del Sistema
-Versión: 1.4.0 (Actualizado: Noviembre 2025)
+Versión: 1.5.0 (Actualizado: Noviembre 2025)
 
 ## Filosofía de Permisos
 El sistema opera bajo un modelo de permisos acumulativos. Si un usuario tiene múltiples roles (ej. `ADMIN` y `PRESIDENTE`), sus permisos son la suma de todos sus roles. El acceso a funcionalidades específicas, como los módulos, se concede si CUALQUIERA de sus roles activos se lo permite.
@@ -27,10 +27,11 @@ La directiva del condominio (compuesta por roles especiales) elige a un `ADMINIS
 - Acceso a su panel de gestión a través de `/admin/condominio/<id>`.
 - **Reportería Operativa:** Acceso a `/admin/condominio/<id>/reportes` para descargar listados de **propietarios** (incluyendo datos de contacto sensibles para garita) y estados de ocupación.
 - **Gestión de Comunicaciones:** Configuración exclusiva del proveedor de WhatsApp (Gateway QR o Meta API) para su condominio.
-- **Gestión Financiera (Pagos):**
+- **Gestión Financiera (Pagos, Recaudación y Caja Chica):**
     - Configuración de pasarela PayPhone para cobros automáticos.
     - Validación manual de pagos por transferencia (conciliación bancaria).
-    - Visualización de historial de transacciones.
+    - Gestión del módulo de **Caja Chica** (ingreso de gastos menores y reposiciones).
+    - Visualización de historial de transacciones y balances.
 - Aprobación y rechazo de usuarios para su `tenant`.
 - Creación y gestión de unidades para su condominio.
 - **Gestión de Directiva:** Es el único rol autorizado para asignar y revocar Roles Especiales (`UserSpecialRole`) a los vecinos.
@@ -44,6 +45,8 @@ La directiva del condominio (compuesta por roles especiales) elige a un `ADMINIS
 - **Módulo "Firmas & Comunicados"**:
     - **Nivel Básico (Gratis):** Acceso de solo lectura al repositorio de documentos públicos.
     - **Nivel Premium:** No tiene acceso a la gestión/creación. Solo recibe y visualiza los documentos que le son enviados o firma peticiones públicas.
+- **Módulo Marketplace (Futuro):** Podrá publicar anuncios de venta/arriendo previo pago.
+- **Módulo Accesos (Futuro):** Podrá pre-registrar visitas y generar códigos QR.
 
 ### 1.4 USUARIO DEMO (Nuevo)
 - **Origen:** Creado automáticamente a través de `/solicitar-demo`.
@@ -78,15 +81,15 @@ La directiva del condominio (compuesta por roles especiales) elige a un `ADMINIS
 **Descripción**: Responsable de supervisión financiera
 **Permisos**:
 - Acceso a módulo de recaudación y conciliación de pagos.
-- Supervisión de ingresos y gastos.
+- Supervisión de ingresos y gastos (Caja Chica).
 - Reportes financieros.
 
 ### 2.4 CONTADOR
 **Descripción**: Gestión contable del condominio
 **Permisos**:
-- Acceso completo al módulo de contabilidad
+- Acceso completo al módulo de contabilidad (Futuro).
 - Gestión de asientos contables
-- Generación de reportes financieros
+- Generación de reportes financieros formales.
 
 ### 2.5 VOCAL
 **Descripción**: Miembro de directiva con funciones específicas

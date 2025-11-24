@@ -300,3 +300,21 @@ class Payment(db.Model):
     reviewer = db.relationship('User', foreign_keys=[reviewed_by], backref='reviewed_payments')
     unit = db.relationship('Unit', backref='payments')
     condominium = db.relationship('Condominium', backref='payments')
+
+# --- MÓDULO DE CAJA CHICA ---
+class PettyCashTransaction(db.Model):
+    __tablename__ = 'petty_cash_transactions'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    description = db.Column(db.String(255), nullable=False)
+    amount = db.Column(db.Numeric(10, 2), nullable=False) # Positivo=Ingreso, Negativo=Gasto
+    transaction_date = db.Column(db.DateTime, default=datetime.utcnow)
+    category = db.Column(db.String(50), nullable=False) # 'REPOSICION', 'TRANSPORTE', 'SUMINISTROS', 'ALIMENTACION', 'OTROS'
+    receipt_url = db.Column(db.String(500)) # Ruta de la imagen del recibo
+    
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    condominium_id = db.Column(db.Integer, db.ForeignKey('condominiums.id'), nullable=False)
+    
+    user = db.relationship('User', backref='petty_cash_entries')
+    condominium = db.relationship('Condominium', backref='petty_cash_entries')
+

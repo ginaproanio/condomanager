@@ -34,34 +34,48 @@ Este módulo permitirá a los **Propietarios** autorizar el ingreso de visitas d
 
 ---
 
-## 2. Módulo de Marketplace Inmobiliario (Venta y Arriendo)
+## 2. Módulo de Marketplace Inmobiliario (Modelo Sindicado)
 
-Este módulo convierte a CondoManager en una herramienta comercial, permitiendo a los propietarios listar sus propiedades disponibles y darles visibilidad automática.
+**Concepto de Negocio:** CondoManager actúa como la fuente de inventario verificado (Headless CMS). El propietario paga por publicar, y el anuncio se visualiza centralizadamente en el portal externo **ecoinmobiliaria.ec**.
 
-### Funcionalidades Clave
-1.  **Publicación de Propiedad (Propietario/Agente):**
-    *   Opción en el perfil del propietario: "Poner mi Unidad en Venta/Arriendo".
-    *   Formulario de detalles: Precio, Fotos, Características (automáticas desde el registro de la unidad), Contacto.
-    *   Estado: *Borrador, Pendiente de Aprobación (Admin), Publicado*.
+### Flujo de Valor (Cerrando el Círculo)
+1.  **Captura:** El propietario, desde su perfil en CondoManager, carga su propiedad para venta o arriendo (ya que el sistema ya conoce la unidad, m2, ubicación, etc., la carga es simplificada).
+2.  **Monetización:** El anuncio se crea en estado `PENDING_PAYMENT`. El usuario paga una tarifa única (Pay-per-post) usando la pasarela PayPhone integrada.
+3.  **Sindicación:** Una vez pagado, CondoManager expone los datos de la propiedad a través de una **API Pública (Feed JSON)**.
+4.  **Visualización:** El portal externo `ecoinmobiliaria.ec` consume esta API y muestra los anuncios al público general.
 
-2.  **Catálogo Público (Frontend):**
-    *   Sección pública en el sitio web del condominio (ej. `mifinca.condomanager.com/propiedades`).
-    *   Filtros de búsqueda (Venta, Arriendo, Precio, Habitaciones).
-    *   Formulario de contacto directo con el propietario o administrador.
+### Funcionalidades Técnicas
+1.  **Gestión de Anuncios (Backend CondoManager):**
+    *   Modelo `MarketplaceListing`: `unit_id`, `price`, `type` (SALE/RENT), `photos` (URLs), `description`, `payment_status`, `valid_until`.
+    *   Integración con módulo de Pagos para cobrar la "Tarifa de Publicación".
 
-3.  **Gestión Administrativa:**
-    *   El administrador puede aprobar o rechazar publicaciones para mantener la calidad.
-    *   Posibilidad de destacar propiedades (feature freemium/premium).
+2.  **API de Sindicación (Feed):**
+    *   Endpoint: `GET /api/v1/marketplace/feed`
+    *   Seguridad: Token de API (API Key) para que solo `ecoinmobiliaria.ec` pueda consumir los datos.
+    *   Payload:
+        ```json
+        [
+          {
+            "id": 123,
+            "condominium_location": {"lat": -0.12, "lng": -78.45, "city": "Quito"},
+            "type": "VENTA",
+            "price": 150000,
+            "features": {"m2": 120, "rooms": 3},
+            "contact": {"whatsapp": "+59399...", "email": "propietario@..."},
+            "images": ["url1.jpg", "url2.jpg"]
+          }
+        ]
+        ```
 
-4.  **Integración con Perfil Comercial:**
-    *   Los agentes inmobiliarios (Perfil Comercial) pueden tener acceso a este inventario para ofrecerlo a clientes externos.
-
-### Impacto en el Negocio
-*   Valor agregado para el propietario (facilidad para monetizar su activo).
-*   Posible fuente de ingresos para la administración o la plataforma (comisión o costo por publicación destacada).
+### Beneficios del Modelo
+*   **Inventario Real:** A diferencia de otros portales, aquí sabemos que la unidad existe y el usuario es realmente el propietario o administrador.
+*   **Ingresos Adicionales:** Generación de cash-flow por cada publicación.
+*   **Ecosistema:** Fortalece la marca `ecoinmobiliaria.ec` con oferta exclusiva.
 
 ---
 
 ## Estado de Desarrollo
-Estos módulos se encuentran en fase de **Diseño y Especificación**. Su implementación dependerá de la hoja de ruta priorizada por la gerencia del proyecto.
-
+Estos módulos se encuentran en fase de **Diseño y Especificación**. Su implementación requerirá:
+1.  Creación de tablas en Base de Datos.
+2.  Desarrollo de Endpoints API REST.
+3.  Integración (en el caso del Marketplace) con el desarrollo web de `ecoinmobiliaria.ec`.
