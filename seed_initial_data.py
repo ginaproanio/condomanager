@@ -186,6 +186,15 @@ def seed_initial_data():
                     primary_color="#6f42c1" # Morado Developer
                 )
                 db.session.add(viz_config)
+            
+            # Configuración de Pagos Global (SaaS) para el Master
+            sandbox.payment_config = {
+                "payphone_global": {
+                    "app_id": "APP_SAAS_TEST",
+                    "token": "TOK_SAAS_TEST"
+                }
+            }
+            db.session.add(sandbox)
         
         # Asegurar que el Master apunta al Sandbox
         if master.tenant != sandbox_subdomain:
@@ -257,6 +266,7 @@ def seed_initial_data():
                 city="Cumbayá",
                 country="Ecuador",
                 subdomain=demo_subdomain,
+                document_code_prefix="ALGA", # NUEVO: Prefijo para documentos
                 status='ACTIVO',
                 admin_user_id=admin_user.id,
                 created_by=master.id,
@@ -276,6 +286,23 @@ def seed_initial_data():
                     primary_color="#28a745" # Verde Naturaleza
                 )
                 db.session.add(viz_config)
+
+            # ------------------------------------------
+            # 3.0 CONFIGURACIÓN DE MÓDULOS (Nueva Lógica)
+            # ------------------------------------------
+            # Simular que Algarrobos tiene contratado el módulo de Comunicaciones Masivas
+            # usando la nueva tabla CondominiumModule
+            print("   ... Configurando Módulos Personalizados...")
+            comms_module = models.Module.query.filter_by(code='communications').first()
+            if comms_module:
+                condo_module_config = models.CondominiumModule(
+                    condominium_id=algarrobos.id,
+                    module_id=comms_module.id,
+                    status='ACTIVE',
+                    price_override=12.50, # Precio personalizado (base era 10.00)
+                    pricing_type='per_module'
+                )
+                db.session.add(condo_module_config)
 
             # ------------------------------------------
             # 3.1 UNIDADES Y RESIDENTES
