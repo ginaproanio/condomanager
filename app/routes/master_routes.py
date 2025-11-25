@@ -964,15 +964,39 @@ def configure_condo_modules(condo_id):
         return redirect(url_for('public.login'))
     
     condo = Condominium.query.get_or_404(condo_id)
+    
+    # 1. Obtener TODOS los módulos globales
     all_modules = models.Module.query.order_by(models.Module.name).all()
     
+    # 2. Filtrar SOLO los módulos que el condominio tiene "contratados" (legacy flags)
+    # Esto asegura que solo se personalicen los módulos que realmente usan.
+    active_modules = []
+    for mod in all_modules:
+        is_active_in_condo = False
+        
+        # Mapeo entre código de módulo y flag en Condominium
+        if mod.code == 'documents' and condo.has_documents_module:
+            is_active_in_condo = True
+        elif mod.code == 'billing' and condo.has_billing_module:
+            is_active_in_condo = True
+        elif mod.code == 'requests' and condo.has_requests_module:
+            is_active_in_condo = True
+        # Para módulos nuevos que no tienen flag legacy, asumimos que si existen en la tabla CondominiumModule están activos
+        # O si no tienen flag legacy, los mostramos siempre para permitir su activación futura via esta pantalla
+        elif mod.code not in ['documents', 'billing', 'requests']:
+             # Lógica futura: Permitir activar módulos nuevos desde aquí
+             is_active_in_condo = True 
+             
+        if is_active_in_condo:
+            active_modules.append(mod)
+
     # Get existing configurations
     configs = models.CondominiumModule.query.filter_by(condominium_id=condo.id).all()
     module_configs = {c.module_id: c for c in configs}
     
     return render_template('master/configure_condo_modules.html', 
                            user=user, condo=condo, 
-                           all_modules=all_modules, 
+                           all_modules=active_modules, # Pasamos solo los filtrados
                            module_configs=module_configs)
 
 @master_bp.route('/master/condominios/guardar-config-modulo/<int:condo_id>', methods=['POST'])
