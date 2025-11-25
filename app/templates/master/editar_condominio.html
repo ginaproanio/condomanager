@@ -132,6 +132,14 @@
                                 </select>
                             </div>
                         </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="document_code_prefix" class="form-label">Prefijo de Documentos (Alias)</label>
+                                <input type="text" class="form-control" id="document_code_prefix" name="document_code_prefix" value="{{ condo.document_code_prefix or '' }}" placeholder="Ej: PUNTA, ALGA (Máx 5 letras)" maxlength="5" style="text-transform:uppercase">
+                                <div class="form-text">Se usará para numerar oficios (Ej: OF20251230<strong>PUNTA</strong>0001).</div>
+                            </div>
+                        </div>
 
                         <hr class="my-4">
                         <div class="d-flex justify-content-between align-items-center mb-3">
