@@ -76,7 +76,7 @@ def admin_condominio_panel(condominium_id):
                            active_special_roles=active_special_roles,
                            now_date=now_date)
 
-@admin_bp.route('/admin/usuarios/roles_especiales', methods=['POST'])
+@admin_bp.route('/admin/condominio/<int:condominium_id>/usuarios/roles_especiales', methods=['POST'])
 @condominium_admin_required
 def asignar_rol_especial(condominium_id):
     """
@@ -421,6 +421,9 @@ def personalizar_condominio(condominium_id):
             if ext in allowed_extensions:
                 filename = secure_filename(f"logo_{condo.id}_{int(datetime.utcnow().timestamp())}{ext}")
                 upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'logos')
+                
+                # Crear directorio si no existe
+                os.makedirs(upload_folder, exist_ok=True)
                 
                 # Guardar archivo
                 file.save(os.path.join(upload_folder, filename))
