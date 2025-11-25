@@ -971,6 +971,11 @@ def configure_condo_modules(condo_id):
     # 2. Filtrar SOLO los módulos que el condominio tiene "contratados" (legacy flags)
     # Esto asegura que solo se personalicen los módulos que realmente usan.
     active_modules = []
+    
+    # Obtener configuraciones existentes para módulos nuevos
+    existing_configs = models.CondominiumModule.query.filter_by(condominium_id=condo.id).all()
+    configured_module_ids = [c.module_id for c in existing_configs]
+
     for mod in all_modules:
         is_active_in_condo = False
         
@@ -981,11 +986,10 @@ def configure_condo_modules(condo_id):
             is_active_in_condo = True
         elif mod.code == 'requests' and condo.has_requests_module:
             is_active_in_condo = True
-        # Para módulos nuevos que no tienen flag legacy, asumimos que si existen en la tabla CondominiumModule están activos
-        # O si no tienen flag legacy, los mostramos siempre para permitir su activación futura via esta pantalla
-        elif mod.code not in ['documents', 'billing', 'requests']:
-             # Lógica futura: Permitir activar módulos nuevos desde aquí
-             is_active_in_condo = True 
+        # Para módulos nuevos, si ya tienen una configuración creada, los mostramos
+        elif mod.id in configured_module_ids:
+             is_active_in_condo = True
+        # Si es un módulo nuevo sin flag y sin configuración, NO se muestra por defecto (debe activarse primero)
              
         if is_active_in_condo:
             active_modules.append(mod)
