@@ -92,6 +92,12 @@ def iniciar_pago():
         
         # Redirigir a la pasarela
         redirect_url = response.get('payWithCard')
+        
+        if not redirect_url:
+            current_app.logger.error(f"PayPhone Error: Respuesta inválida sin URL de redirección: {response}")
+            flash("Error de comunicación con la pasarela de pagos. Por favor intenta nuevamente.", "error")
+            return redirect(url_for('user.pagos'))
+            
         return redirect(redirect_url)
         
     except Exception as e:
