@@ -32,9 +32,13 @@ def demo_request():
         email = request.form.get('email', '').strip().lower()
         cedula = request.form.get('cedula', '').strip()
         cellphone = request.form.get('cellphone', '').strip()
-        password = request.form.get('password')
+        password = request.form.get('password', '')
 
         # Validaciones básicas
+        if not password:
+            flash("La contraseña es obligatoria.", "warning")
+            return redirect(url_for('public.demo_request'))
+            
         if User.query.filter_by(email=email).first():
             flash("Este correo ya está registrado. Por favor inicia sesión.", "warning")
             return redirect(url_for('public.login'))
@@ -134,11 +138,15 @@ def register():
         cedula = request.form.get('cedula', '').strip()
         first_name = request.form.get('first_name', '').strip()
         last_name = request.form.get('last_name', '').strip()
-        password = request.form.get('password')
+        password = request.form.get('password', '')
         cellphone = request.form.get('cellphone', '').strip()
         birth_date_str = request.form.get('birth_date')
         city = request.form.get('city', '').strip()
         country = request.form.get('country', '').strip()
+
+        if not password:
+            flash("La contraseña es obligatoria.", "danger")
+            return render_template('auth/registro.html', config=config, **request.form)
 
         if User.query.filter_by(email=email).first():
             flash("El correo electrónico ya está registrado.", "danger")
