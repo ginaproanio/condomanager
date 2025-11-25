@@ -486,7 +486,7 @@ def manage_bank_account():
         account_id = request.form.get('account_id_db')
         
         if account_id: # Editar
-            account = PlatformBankAccount.query.get_or_404(account_id)
+            account = PlatformBankAccount.query.get_or_404(int(account_id))
             flash('Cuenta bancaria actualizada correctamente.', 'success')
         else: # Crear
             account = PlatformBankAccount()
@@ -518,7 +518,7 @@ def delete_bank_account(account_id):
         return redirect('/dashboard')
         
     try:
-        account = PlatformBankAccount.query.get_or_404(account_id)
+        account = PlatformBankAccount.query.get_or_404(int(account_id))
         db.session.delete(account)
         db.session.commit()
         flash('Cuenta bancaria eliminada correctamente.', 'success')
