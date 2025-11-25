@@ -77,7 +77,7 @@ def reports():
                 
                 writer.writerow([
                     c.id, 
-                    c.legal_name or c.name, 
+                    c.legal_name, 
                     c.ruc, 
                     c.get_full_address(), 
                     c.latitude, 
