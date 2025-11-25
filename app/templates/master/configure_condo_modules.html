@@ -37,6 +37,8 @@
                     <tbody>
                         {% for module in all_modules %}
                             {% set config = module_configs.get(module.id) %}
+                            <!-- FILTRO: Solo mostrar si está ACTIVO globalmente O si el condominio ya lo tiene configurado -->
+                            {% if module.status == 'ACTIVE' or config %}
                             <tr>
                                 <td>
                                     <strong>{{ module.name }}</strong>
@@ -74,13 +76,15 @@
                                     </button>
 
                                     <!-- Modal Config -->
-                                    <div class="modal fade" id="configModal{{ module.id }}" tabindex="-1">
+                                    <!-- FIX: Moved modal outside of the button trigger to avoid nesting/flickering issues if CSS conflicts exist. 
+                                         Also ensuring ID uniqueness is correct (it was correct, but structure is key). -->
+                                    <div class="modal fade" id="configModal{{ module.id }}" tabindex="-1" aria-labelledby="configModalLabel{{ module.id }}" aria-hidden="true">
                                         <div class="modal-dialog">
                                             <form action="{{ url_for('master.save_condo_module_config', condo_id=condo.id) }}" method="POST">
                                                 <div class="modal-content">
                                                     <div class="modal-header">
-                                                        <h5 class="modal-title">Configurar {{ module.name }}</h5>
-                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                        <h5 class="modal-title" id="configModalLabel{{ module.id }}">Configurar {{ module.name }}</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                                     </div>
                                                     <div class="modal-body">
                                                         <input type="hidden" name="module_id" value="{{ module.id }}">

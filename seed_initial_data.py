@@ -308,7 +308,7 @@ def seed_initial_data():
                 db.session.add(unit)
                 db.session.flush()
 
-                # Crear Residente
+                # Crear Residente Activo
                 residente = models.User(
                     cedula=f'17000000{idx+2}',
                     email=f"{nombre.lower()}.{apellido.lower()}@example.com",
@@ -325,6 +325,36 @@ def seed_initial_data():
                 db.session.add(residente)
                 db.session.flush()
                 users_objects.append(residente)
+
+            # ------------------------------------------
+            # 3.1.5 USUARIOS PENDIENTES Y RECHAZADOS (Para pruebas del Master)
+            # ------------------------------------------
+            print("   ... Generando Usuarios Pendientes/Rechazados...")
+            
+            pending_user = models.User(
+                cedula='1755555555',
+                email='pendiente@example.com',
+                first_name='Pedro',
+                last_name='Pendiente',
+                password_hash=hashlib.sha256('123456'.encode()).hexdigest(),
+                role='USER',
+                status='pending',
+                tenant=demo_subdomain,
+                cellphone='0999999999'
+            )
+            
+            rejected_user = models.User(
+                cedula='1744444444',
+                email='rechazado@example.com',
+                first_name='Roberto',
+                last_name='Rechazado',
+                password_hash=hashlib.sha256('123456'.encode()).hexdigest(),
+                role='USER',
+                status='rejected',
+                tenant=demo_subdomain,
+                cellphone='0988888888'
+            )
+            db.session.add_all([pending_user, rejected_user])
 
             # ------------------------------------------
             # 3.2 DIRECTIVA (Roles Especiales)
