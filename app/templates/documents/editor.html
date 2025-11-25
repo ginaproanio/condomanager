@@ -19,12 +19,24 @@
                     {% include '_messages.html' %}
 
                     <form method="POST">
-                        <!-- Título -->
-                        <div class="mb-4">
-                            <label for="title" class="form-label fw-bold">Título del Documento</label>
-                            <input type="text" class="form-control form-control-lg" id="title" name="title" 
-                                   placeholder="Ej: Acta de Asamblea Extraordinaria - Nov 2025" 
-                                   value="{{ doc.title if doc else '' }}" required>
+                        <!-- Título y Tipo -->
+                        <div class="row mb-4">
+                            <div class="col-md-3">
+                                <label for="document_type" class="form-label fw-bold">Tipo de Documento</label>
+                                <select class="form-select form-select-lg" id="document_type" name="document_type">
+                                    <option value="OF" {% if doc and doc.document_type == 'OF' %}selected{% endif %}>Oficio (OF)</option>
+                                    <option value="ME" {% if doc and doc.document_type == 'ME' %}selected{% endif %}>Memorando (ME)</option>
+                                    <option value="CI" {% if doc and doc.document_type == 'CI' %}selected{% endif %}>Circular (CI)</option>
+                                    <option value="AC" {% if doc and doc.document_type == 'AC' %}selected{% endif %}>Acta (AC)</option>
+                                    <option value="NO" {% if doc and doc.document_type == 'NO' %}selected{% endif %}>Notificación (NO)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-9">
+                                <label for="title" class="form-label fw-bold">Título del Documento</label>
+                                <input type="text" class="form-control form-control-lg" id="title" name="title" 
+                                       placeholder="Ej: Convocatoria a Asamblea Extraordinaria" 
+                                       value="{{ doc.title if doc else '' }}" required>
+                            </div>
                         </div>
 
                         <!-- Editor de Contenido -->

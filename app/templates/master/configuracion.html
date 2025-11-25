@@ -5,7 +5,7 @@
 {% block content %}
 <div class="container py-5">
     <div class="row justify-content-center">
-        <div class="col-lg-8">
+        <div class="col-lg-10">
             
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2 class="text-primary mb-0"><i class="fas fa-cogs me-2"></i>Configuración de Plataforma</h2>
@@ -21,86 +21,72 @@
                 Esta configuración aplica a nivel global para la plataforma SaaS (CondoManager).
             </div>
 
-            <!-- Configuración de Recaudación SaaS -->
+            <!-- Configuración de Recaudación SaaS (NUEVO DISEÑO CRUD) -->
             <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-white">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
                     <h5 class="mb-0 text-success"><i class="fas fa-university me-2"></i>Cuentas Bancarias (Recaudación SaaS)</h5>
+                    <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#bankAccountModal" onclick="resetBankModal()">
+                        <i class="fas fa-plus me-2"></i>Agregar Cuenta
+                    </button>
                 </div>
                 <div class="card-body">
                     <p class="text-muted small">
-                        Datos bancarios que se mostrarán a los condominios para el pago de su suscripción a la plataforma.
+                        Administre las cuentas bancarias donde la plataforma recibe los pagos de las suscripciones. Puede registrar múltiples cuentas según necesite.
                     </p>
-                    <form method="POST">
-                        <input type="hidden" name="config_type" value="bank_account">
-                        
-                        <h6 class="fw-bold text-primary border-bottom pb-2">Cuenta Principal</h6>
-                        <div class="row g-3 mb-4">
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Banco</label>
-                                <input type="text" class="form-control" name="bank_name" value="{{ config.get('bank_name', '') }}" placeholder="Ej: Banco Pichincha">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Tipo de Cuenta</label>
-                                <select class="form-select" name="account_type">
-                                    <option value="Corriente" {% if config.get('account_type') == 'Corriente' %}selected{% endif %}>Corriente</option>
-                                    <option value="Ahorros" {% if config.get('account_type') == 'Ahorros' %}selected{% endif %}>Ahorros</option>
-                                </select>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label fw-bold">Número de Cuenta</label>
-                                <input type="text" class="form-control" name="account_number" value="{{ config.get('account_number', '') }}" placeholder="XXXXXXXXXX">
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label fw-bold">Nombre del Titular</label>
-                                <input type="text" class="form-control" name="account_holder" value="{{ config.get('account_holder', '') }}" placeholder="Razón Social o Nombre">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">RUC / Cédula</label>
-                                <input type="text" class="form-control" name="account_id" value="{{ config.get('account_id', '') }}">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Correo de Confirmación</label>
-                                <input type="email" class="form-control" name="account_email" value="{{ config.get('account_email', '') }}">
-                            </div>
+                    
+                    {% if bank_accounts %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Banco</th>
+                                    <th>Tipo</th>
+                                    <th>Número</th>
+                                    <th>Titular</th>
+                                    <th>Estado</th>
+                                    <th class="text-end">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for account in bank_accounts %}
+                                <tr>
+                                    <td class="fw-bold">{{ account.bank_name }}</td>
+                                    <td>{{ account.account_type }}</td>
+                                    <td class="font-monospace">{{ account.account_number }}</td>
+                                    <td>
+                                        {{ account.account_holder }}<br>
+                                        <small class="text-muted">{{ account.account_id }}</small>
+                                    </td>
+                                    <td>
+                                        {% if account.is_active %}
+                                            <span class="badge bg-success">Activa</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inactiva</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <button class="btn btn-outline-primary btn-sm me-1" 
+                                                onclick='editBankAccount({{ account.id }}, {{ account|tojson }})'
+                                                data-bs-toggle="modal" data-bs-target="#bankAccountModal">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <form action="{{ url_for('master.delete_bank_account', account_id=account.id) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Está seguro de eliminar esta cuenta?');">
+                                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-piggy-bank fa-3x mb-3 opacity-50"></i>
+                            <p>No hay cuentas bancarias registradas. Agregue una para comenzar a recaudar.</p>
                         </div>
-
-                        <h6 class="fw-bold text-secondary border-bottom pb-2 mt-4">Cuenta Secundaria (Opcional)</h6>
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Banco</label>
-                                <input type="text" class="form-control" name="bank_name_2" value="{{ config.get('bank_name_2', '') }}" placeholder="Ej: Banco Guayaquil">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Tipo de Cuenta</label>
-                                <select class="form-select" name="account_type_2">
-                                    <option value="Corriente" {% if config.get('account_type_2') == 'Corriente' %}selected{% endif %}>Corriente</option>
-                                    <option value="Ahorros" {% if config.get('account_type_2') == 'Ahorros' %}selected{% endif %}>Ahorros</option>
-                                </select>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label fw-bold">Número de Cuenta</label>
-                                <input type="text" class="form-control" name="account_number_2" value="{{ config.get('account_number_2', '') }}">
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label fw-bold">Nombre del Titular</label>
-                                <input type="text" class="form-control" name="account_holder_2" value="{{ config.get('account_holder_2', '') }}">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">RUC / Cédula</label>
-                                <input type="text" class="form-control" name="account_id_2" value="{{ config.get('account_id_2', '') }}">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Correo de Confirmación</label>
-                                <input type="email" class="form-control" name="account_email_2" value="{{ config.get('account_email_2', '') }}">
-                            </div>
-                        </div>
-
-                        <div class="d-grid mt-4">
-                            <button type="submit" class="btn btn-success">
-                                <i class="fas fa-save me-2"></i>Guardar Datos Bancarios
-                            </button>
-                        </div>
-                    </form>
+                    {% endif %}
                 </div>
             </div>
 
@@ -178,15 +164,96 @@
                 </div>
             </div>
 
-            <!-- Accesos Directos -->
-            <div class="text-center mt-5">
-                <p class="text-muted">¿Buscas configurar tu perfil personal (foto, redes sociales)?</p>
-                <a href="{{ url_for('user.perfil') }}" class="btn btn-outline-info">
-                    <i class="fas fa-user-circle me-2"></i>Ir a Mi Perfil Personal
-                </a>
-            </div>
-
         </div>
     </div>
 </div>
+
+<!-- Modal para Gestión de Cuentas Bancarias -->
+<div class="modal fade" id="bankAccountModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('master.manage_bank_account') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="bankModalTitle">Agregar Cuenta Bancaria</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="account_id_db" id="modalAccountId">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Banco</label>
+                        <input type="text" class="form-control" name="bank_name" id="modalBankName" required placeholder="Ej: Banco Pichincha">
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Tipo de Cuenta</label>
+                            <select class="form-select" name="account_type" id="modalAccountType">
+                                <option value="Corriente">Corriente</option>
+                                <option value="Ahorros">Ahorros</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Número</label>
+                            <input type="text" class="form-control" name="account_number" id="modalAccountNumber" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Titular de la Cuenta</label>
+                        <input type="text" class="form-control" name="account_holder" id="modalAccountHolder" required>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">RUC / Cédula</label>
+                            <input type="text" class="form-control" name="account_id" id="modalAccountIdDoc">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Email Confirmación</label>
+                            <input type="email" class="form-control" name="account_email" id="modalAccountEmail">
+                        </div>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="is_active" id="modalIsActive" checked>
+                        <label class="form-check-label" for="modalIsActive">
+                            Cuenta Activa
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Cuenta</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function resetBankModal() {
+        document.getElementById('bankModalTitle').textContent = 'Agregar Cuenta Bancaria';
+        document.getElementById('modalAccountId').value = '';
+        document.getElementById('modalBankName').value = '';
+        document.getElementById('modalAccountType').value = 'Corriente';
+        document.getElementById('modalAccountNumber').value = '';
+        document.getElementById('modalAccountHolder').value = '';
+        document.getElementById('modalAccountIdDoc').value = '';
+        document.getElementById('modalAccountEmail').value = '';
+        document.getElementById('modalIsActive').checked = true;
+    }
+
+    function editBankAccount(id, data) {
+        document.getElementById('bankModalTitle').textContent = 'Editar Cuenta Bancaria';
+        document.getElementById('modalAccountId').value = id;
+        document.getElementById('modalBankName').value = data.bank_name;
+        document.getElementById('modalAccountType').value = data.account_type;
+        document.getElementById('modalAccountNumber').value = data.account_number;
+        document.getElementById('modalAccountHolder').value = data.account_holder;
+        document.getElementById('modalAccountIdDoc').value = data.account_id;
+        document.getElementById('modalAccountEmail').value = data.account_email;
+        document.getElementById('modalIsActive').checked = data.is_active;
+    }
+</script>
 {% endblock %}

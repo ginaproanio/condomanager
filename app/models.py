@@ -2,8 +2,19 @@ from app.extensions import db
 from sqlalchemy import Boolean, Date     # ← ESTA LÍNEA ES LA CLAVE FINAL
 from datetime import datetime
 
-def get_tenant_default():
-    return 'puntablanca'
+# --- CONFIGURACIÓN GLOBAL DE PLATAFORMA ---
+class PlatformBankAccount(db.Model):
+    __tablename__ = 'platform_bank_accounts'
+    id = db.Column(db.Integer, primary_key=True)
+    bank_name = db.Column(db.String(100), nullable=False)
+    account_type = db.Column(db.String(50), nullable=False) # Ahorros, Corriente
+    account_number = db.Column(db.String(50), nullable=False)
+    account_holder = db.Column(db.String(100), nullable=False)
+    account_id = db.Column(db.String(50)) # Cédula/RUC
+    account_email = db.Column(db.String(100))
+    
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 # 1. USER (primero, para que las FK lo encuentren)
 class User(db.Model):
@@ -86,6 +97,7 @@ class Condominium(db.Model):
     latitude = db.Column(db.Float)
     longitude = db.Column(db.Float)
     subdomain = db.Column(db.String(100), unique=True)
+    document_code_prefix = db.Column(db.String(10)) # Prefijo para documentos (ej: PUNTA, ALGA)
     status = db.Column(db.String(30), default='PENDIENTE_APROBACION')
     billing_day = db.Column(db.Integer, default=1)
     grace_days = db.Column(db.Integer, default=5)
@@ -232,6 +244,10 @@ class Document(db.Model):
     collect_signatures_from_residents = db.Column(db.Boolean, default=False)
     public_signature_link = db.Column(db.String(100), unique=True)
     signature_count = db.Column(db.Integer, default=0)
+    
+    # Nomenclatura Oficial
+    document_code = db.Column(db.String(50), unique=True) # Ej: OF20251230PUNTA0001
+    document_type = db.Column(db.String(20), default='OF') # OF (Oficio), ME (Memorando), CI (Circular), AC (Acta)
 
     def generate_public_link(self):
         if not self.public_signature_link:

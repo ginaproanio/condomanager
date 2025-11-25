@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Auditoría de Documentos Global{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <a href="{{ url_for('master.reports') }}" class="btn btn-outline-secondary mb-2">
+                <i class="fas fa-arrow-left me-2"></i>Volver a Reportes
+            </a>
+            <h2 class="text-primary mb-0"><i class="fas fa-file-contract me-2"></i>Auditoría Global de Documentos</h2>
+        </div>
+        <div class="badge bg-secondary p-2">
+            Total: {{ documents|length }}
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Código / Tipo</th>
+                            <th>Título</th>
+                            <th>Condominio</th>
+                            <th>Creado Por</th>
+                            <th>Fecha</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for doc in documents %}
+                        <tr>
+                            <td>{{ doc.id }}</td>
+                            <td>
+                                {% if doc.document_code %}
+                                    <span class="badge bg-dark">{{ doc.document_code }}</span>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                                <br>
+                                <small class="text-muted">{{ doc.document_type|default('OF') }}</small>
+                            </td>
+                            <td>{{ doc.title }}</td>
+                            <td>
+                                {% if doc.condominium %}
+                                    {{ doc.condominium.name }}
+                                {% else %}
+                                    <span class="badge bg-info">PLATAFORMA (MASTER)</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ doc.created_by.email }}<br>
+                                <small class="text-muted">{{ doc.created_by.role }}</small>
+                            </td>
+                            <td>{{ doc.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                {% if doc.status == 'signed' %}
+                                    <span class="badge bg-success">Firmado</span>
+                                {% elif doc.status == 'draft' %}
+                                    <span class="badge bg-secondary">Borrador</span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark">{{ doc.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('document.view', doc_id=doc.id) }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

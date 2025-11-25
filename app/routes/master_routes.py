@@ -6,7 +6,7 @@ from flask_jwt_extended import jwt_required
 from sqlalchemy import or_
 from sqlalchemy.orm.attributes import flag_modified
 from app.auth import get_current_user
-from app.models import Condominium, User, CondominiumConfig, Unit
+from app.models import Condominium, User, CondominiumConfig, Unit, PlatformBankAccount
 from app import db, models
 from datetime import datetime, timedelta
 import io
@@ -422,30 +422,15 @@ def master_configuracion():
         return redirect(url_for('master.master_panel'))
 
     # Cargar configuración existente
-    # Usamos el campo 'notes' como un JSON improvisado o 'whatsapp_config' si queremos reutilizar
-    # Pero lo ideal es usar payment_config para el banco y whatsapp_config para meta.
     
     current_payment_config = target_condo.payment_config or {}
     current_whatsapp_config = target_condo.whatsapp_config or {}
     
+    # --- NUEVO: Cargar Cuentas Bancarias desde la tabla ---
+    bank_accounts = PlatformBankAccount.query.filter_by(is_active=True).all()
+    
     # Unificar para la vista
     config_data = {
-        # Banco Principal
-        'bank_name': current_payment_config.get('saas_bank_account', {}).get('bank_name', ''),
-        'account_type': current_payment_config.get('saas_bank_account', {}).get('account_type', ''),
-        'account_number': current_payment_config.get('saas_bank_account', {}).get('account_number', ''),
-        'account_holder': current_payment_config.get('saas_bank_account', {}).get('account_holder', ''),
-        'account_id': current_payment_config.get('saas_bank_account', {}).get('account_id', ''),
-        'account_email': current_payment_config.get('saas_bank_account', {}).get('account_email', ''),
-        
-        # Banco Secundario
-        'bank_name_2': current_payment_config.get('saas_bank_account_2', {}).get('bank_name', ''),
-        'account_type_2': current_payment_config.get('saas_bank_account_2', {}).get('account_type', ''),
-        'account_number_2': current_payment_config.get('saas_bank_account_2', {}).get('account_number', ''),
-        'account_holder_2': current_payment_config.get('saas_bank_account_2', {}).get('account_holder', ''),
-        'account_id_2': current_payment_config.get('saas_bank_account_2', {}).get('account_id', ''),
-        'account_email_2': current_payment_config.get('saas_bank_account_2', {}).get('account_email', ''),
-
         # PayPhone Global (SaaS)
         'payphone_app_id': current_payment_config.get('payphone_global', {}).get('app_id', ''),
         'payphone_token': current_payment_config.get('payphone_global', {}).get('token', ''),
@@ -459,39 +444,7 @@ def master_configuracion():
     if request.method == 'POST':
         config_type = request.form.get('config_type')
         
-        if config_type == 'bank_account':
-            # Actualizar datos bancarios en payment_config
-            updated_payment_config = dict(current_payment_config)
-            
-            # Principal
-            updated_payment_config['saas_bank_account'] = {
-                'bank_name': request.form.get('bank_name'),
-                'account_type': request.form.get('account_type'),
-                'account_number': request.form.get('account_number'),
-                'account_holder': request.form.get('account_holder'),
-                'account_id': request.form.get('account_id'),
-                'account_email': request.form.get('account_email')
-            }
-            
-            # Secundario (Opcional)
-            if request.form.get('bank_name_2'):
-                updated_payment_config['saas_bank_account_2'] = {
-                    'bank_name': request.form.get('bank_name_2'),
-                    'account_type': request.form.get('account_type_2'),
-                    'account_number': request.form.get('account_number_2'),
-                    'account_holder': request.form.get('account_holder_2'),
-                    'account_id': request.form.get('account_id_2'),
-                    'account_email': request.form.get('account_email_2')
-                }
-            else:
-                 # Si se borra, eliminar del config
-                 updated_payment_config.pop('saas_bank_account_2', None)
-            
-            target_condo.payment_config = updated_payment_config
-            flag_modified(target_condo, "payment_config")
-            flash("Datos bancarios de la plataforma actualizados.", "success")
-
-        elif config_type == 'payphone_global':
+        if config_type == 'payphone_global':
              updated_payment_config = dict(current_payment_config)
              updated_payment_config['payphone_global'] = {
                  'app_id': request.form.get('payphone_app_id'),
@@ -519,7 +472,61 @@ def master_configuracion():
             db.session.rollback()
             flash(f"Error al guardar: {e}", "error")
 
-    return render_template('master/configuracion.html', user=user, config=config_data)
+    return render_template('master/configuracion.html', user=user, config=config_data, bank_accounts=bank_accounts)
+
+@master_bp.route('/master/configuracion/cuenta-bancaria', methods=['POST'])
+@jwt_required()
+def manage_bank_account():
+    user = get_current_user()
+    if not user or user.role != 'MASTER':
+        flash("Acceso denegado.", "error")
+        return redirect('/dashboard')
+
+    try:
+        account_id = request.form.get('account_id_db')
+        
+        if account_id: # Editar
+            account = PlatformBankAccount.query.get_or_404(account_id)
+            flash('Cuenta bancaria actualizada correctamente.', 'success')
+        else: # Crear
+            account = PlatformBankAccount()
+            db.session.add(account)
+            flash('Cuenta bancaria agregada correctamente.', 'success')
+        
+        account.bank_name = request.form.get('bank_name')
+        account.account_type = request.form.get('account_type')
+        account.account_number = request.form.get('account_number')
+        account.account_holder = request.form.get('account_holder')
+        account.account_id = request.form.get('account_id')
+        account.account_email = request.form.get('account_email')
+        account.is_active = 'is_active' in request.form
+        
+        db.session.commit()
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al guardar la cuenta bancaria: {str(e)}', 'error')
+        
+    return redirect(url_for('master.master_configuracion'))
+
+@master_bp.route('/master/configuracion/cuenta-bancaria/<int:account_id>/eliminar', methods=['POST'])
+@jwt_required()
+def delete_bank_account(account_id):
+    user = get_current_user()
+    if not user or user.role != 'MASTER':
+        flash("Acceso denegado.", "error")
+        return redirect('/dashboard')
+        
+    try:
+        account = PlatformBankAccount.query.get_or_404(account_id)
+        db.session.delete(account)
+        db.session.commit()
+        flash('Cuenta bancaria eliminada correctamente.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al eliminar la cuenta: {str(e)}', 'error')
+        
+    return redirect(url_for('master.master_configuracion'))
 
 @master_bp.route('/master/usuarios/reaprobar/<int:user_id>', methods=['POST'])
 @jwt_required()
@@ -1122,6 +1129,18 @@ def configure_condo_modules(condo_id):
                            user=user, condo=condo, 
                            all_modules=active_modules, # Pasamos solo los filtrados
                            module_configs=module_configs)
+
+@master_bp.route('/master/document-audit', methods=['GET'])
+@jwt_required()
+def master_document_audit():
+    user = get_current_user()
+    if not user or user.role != 'MASTER':
+        flash("Acceso denegado.", "error")
+        return redirect('/dashboard')
+        
+    # Listar todos los documentos del sistema
+    documents = models.Document.query.order_by(models.Document.created_at.desc()).all()
+    return render_template('master/document_audit.html', user=user, documents=documents)
 
 @master_bp.route('/master/condominios/guardar-config-modulo/<int:condo_id>', methods=['POST'])
 @jwt_required()

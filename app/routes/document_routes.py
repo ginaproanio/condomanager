@@ -129,6 +129,7 @@ def create_or_edit_logic(current_user, doc_id=None):
     if request.method == 'POST':
         title = request.form['title']
         content = request.form['content']
+        doc_type = request.form.get('document_type', 'OF') # Tipo seleccionado o default 'OF'
         requires_sig = 'requires_signature' in request.form
         collect_sigs = 'collect_signatures' in request.form
 
@@ -143,14 +144,15 @@ def create_or_edit_logic(current_user, doc_id=None):
             # Generar código oficial
             new_code = None
             if user_condo:
-                new_code = generate_document_code(user_condo)
+                new_code = generate_document_code(user_condo, doc_type=doc_type)
 
             doc = Document(
                 title=title,
                 content=content,
                 created_by_id=current_user.id,
                 condominium_id=condo_id,
-                document_code=new_code
+                document_code=new_code,
+                document_type=doc_type
             )
             db.session.add(doc)
             
@@ -161,6 +163,8 @@ def create_or_edit_logic(current_user, doc_id=None):
         else:
             doc.title = title
             doc.content = content
+            # No permitimos cambiar el tipo de documento una vez creado para mantener la integridad del secuencial
+            # doc.document_type = doc_type 
             flash("Documento actualizado.", "success")
 
         doc.requires_signature = requires_sig
