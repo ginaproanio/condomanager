@@ -571,6 +571,7 @@ def master_importar_admins_csv():
             errors = []
             import hashlib
 
+            import secrets
             for row in csv_reader:
                 if User.query.filter_by(email=row['email']).first() or User.query.filter_by(cedula=row['cedula']).first():
                     errors.append(f"Usuario con email {row['email']} o cédula {row['cedula']} ya existe.")
@@ -578,6 +579,9 @@ def master_importar_admins_csv():
 
                 password = row.get('password')
                 pwd_hash = hashlib.sha256(password.encode()).hexdigest() if password else None
+                
+                # Generar token para evitar colisiones UNIQUE en NULL
+                verification_token = secrets.token_urlsafe(32)
 
                 new_admin = User(
                     first_name=row['first_name'],
@@ -589,7 +593,8 @@ def master_importar_admins_csv():
                     country=row.get('country', 'Ecuador'),
                     password_hash=pwd_hash,
                     role='ADMIN',
-                    status='active'
+                    status='active',
+                    verification_token=verification_token
                 )
                 db.session.add(new_admin)
                 created_count += 1
@@ -632,6 +637,9 @@ def master_usuarios_crear():
 
         birth_date_str = request.form.get('birth_date')
         birth_date = datetime.strptime(birth_date_str, '%Y-%m-%d').date() if birth_date_str else None
+        
+        import secrets
+        verification_token = secrets.token_urlsafe(32)
 
         new_user = User(
             first_name=request.form.get('first_name'),
@@ -644,7 +652,8 @@ def master_usuarios_crear():
             city=request.form.get('city'),
             country=request.form.get('country', 'Ecuador'),
             role=request.form.get('role'),
-            status='active' # Creado por MASTER, se activa directamente
+            status='active', # Creado por MASTER, se activa directamente
+            verification_token=verification_token
         )
 
         condominium_id = request.form.get('condominium_id')
@@ -769,6 +778,7 @@ def manage_module_catalog():
                          try:
                              module.maintenance_end = datetime.strptime(end_date_str, '%Y-%m-%dT%H:%M:%S')
                          except:
+                             db.session.rollback() # IMPORTANTE: Revertir cambios parciales
                              flash('Formato de fecha de fin de mantenimiento inválido.', 'warning')
                              return redirect(url_for('master.manage_module_catalog'))
                 

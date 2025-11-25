@@ -87,7 +87,11 @@ def iniciar_pago():
         )
         
         # Guardar el ID de PayPhone
-        payment.payphone_transaction_id = str(response.get('paymentId'))
+        payment_id_api = response.get('paymentId')
+        if not payment_id_api:
+             raise ValueError("La pasarela no devolvió un paymentId válido.")
+             
+        payment.payphone_transaction_id = str(payment_id_api)
         db.session.commit()
         
         # Redirigir a la pasarela
