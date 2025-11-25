@@ -7,32 +7,43 @@
     .hero {
         min-height: 75vh;
         display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        text-align: center;
-        padding: 2rem;
+        align-items: center; /* Centra verticalmente el contenido */
     }
 
     h1.hero-title {
-        font-size: clamp(2.5rem, 6vw, 4rem);
+        font-size: clamp(2.5rem, 5vw, 4rem); /* Ajuste fluido del título */
+        line-height: 1.2;
     }
 
     p.hero-subtitle {
-        font-size: clamp(1.1rem, 3vw, 1.6rem);
-        max-width: 900px;
-        margin: 1.5rem auto;
-        line-height: 1.5;
+        font-size: clamp(1.1rem, 2.5vw, 1.5rem); /* Ajuste fluido del subtítulo */
+        max-width: 600px; /* Limita el ancho para mejor lectura */
+        margin-bottom: 2rem;
+        line-height: 1.6;
     }
 
+    /* Ajustes específicos para pantallas muy grandes */
     @media (min-width: 1400px) {
-        h1.hero-title { font-size: 4rem; }
-        p.hero-subtitle { font-size: 1.6rem; }
+        h1.hero-title { font-size: 3.5rem; }
+        p.hero-subtitle { font-size: 1.4rem; }
     }
 
+    /* Ajustes para móviles */
     @media (max-width: 768px) {
-        h1.hero-title { font-size: 2.5rem; }
-        p.hero-subtitle { font-size: 1.1rem; }
+        .hero {
+            text-align: center; /* En móvil sí se ve bien centrado */
+            padding-top: 4rem;
+            padding-bottom: 4rem;
+        }
+        
+        .d-grid {
+            justify-content: center;
+        }
+
+        p.hero-subtitle {
+            margin-left: auto;
+            margin-right: auto;
+        }
     }
 </style>
 
