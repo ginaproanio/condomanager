@@ -10,7 +10,9 @@
                 <h1 class="text-primary">
                     <i class="fas fa-cog me-2"></i>Panel de Administración
                 </h1>
-                <span class="badge bg-primary fs-6">Punta Blanca</span>
+                {% if current_user and current_user.condominium %}
+                <span class="badge bg-primary fs-6">{{ current_user.condominium.name }}</span>
+                {% endif %}
             </div>
 
             {% if error %}
