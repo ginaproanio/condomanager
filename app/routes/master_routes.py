@@ -310,6 +310,10 @@ def master_manage_user():
             return redirect(url_for('master.master_usuarios'))
         
         condo = Condominium.query.get(condominium_id)
+        if not condo:
+            flash('Condominio no encontrado.', 'error')
+            return redirect(url_for('master.master_usuarios'))
+            
         user_to_manage.tenant = condo.subdomain
         # user_to_manage.condominium_id = condo.id # ELIMINADO: Este campo no existe en User
         user_to_manage.status = 'active'
@@ -382,7 +386,11 @@ def master_usuarios_editar(user_id):
         # --- Fin de la lógica actualizada ---
         
         # user_to_edit.condominium_id = int(condominium_id) if condominium_id else None # ELIMINADO: Este campo no existe en User
-        user_to_edit.tenant = Condominium.query.get(condominium_id).subdomain if condominium_id else None
+        if condominium_id:
+            condo = Condominium.query.get(condominium_id)
+            user_to_edit.tenant = condo.subdomain if condo else None
+        else:
+            user_to_edit.tenant = None
 
         db.session.commit()
         flash(f'Usuario {user_to_edit.name} actualizado correctamente.', 'success')
@@ -650,8 +658,11 @@ def master_usuarios_crear():
         condominium_id = request.form.get('condominium_id')
         if condominium_id:
             condo = Condominium.query.get(condominium_id)
-            # new_user.condominium_id = condo.id # ELIMINADO: Este campo no existe en User
-            new_user.tenant = condo.subdomain
+            if condo:
+                # new_user.condominium_id = condo.id # ELIMINADO: Este campo no existe en User
+                new_user.tenant = condo.subdomain
+            else:
+                flash(f"Advertencia: Condominio con ID {condominium_id} no encontrado. El usuario se creó sin asignar condominio.", "warning")
 
         db.session.add(new_user)
         db.session.commit()
@@ -1152,6 +1163,12 @@ def save_condo_module_config(condo_id):
     
     condo = Condominium.query.get_or_404(condo_id)
     module_id = request.form.get('module_id')
+    if module_id:
+        try:
+            module_id = int(module_id)
+        except ValueError:
+            flash("ID de módulo inválido", "error")
+            return redirect(url_for('master.configure_condo_modules', condo_id=condo.id))
     
     config = models.CondominiumModule.query.filter_by(condominium_id=condo.id, module_id=module_id).first()
     if not config:
