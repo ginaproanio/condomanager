@@ -240,7 +240,8 @@ def reportar_pago():
             flash(f'Error al guardar el reporte: {str(e)}', 'error')
             return redirect(url_for('user.pagos'))
             
-    return redirect(url_for('user.reportes'))
+    # Fallback redirect if request method is not POST (should be handled by @route methods)
+    return redirect(url_for('user.pagos'))
 
 @user_bp.route('/reportes')
 @jwt_required()
