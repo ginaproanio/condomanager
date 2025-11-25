@@ -273,10 +273,6 @@ def master_usuarios():
     # Esto asegura que los usuarios 'USER' (residentes) NUNCA sean accesibles por el Master
     base_query = base_query.filter(User.role.in_(['ADMIN', 'MASTER']))
 
-    # FILTRO DE SEGURIDAD: MASTER solo ve ADMIN y MASTER
-    # Esto asegura que los usuarios 'USER' (residentes) NUNCA sean accesibles por el Master
-    base_query = base_query.filter(User.role.in_(['ADMIN', 'MASTER']))
-
     # Lógica para GET (mostrar las listas de usuarios)
     pending_users = base_query.filter_by(status='pending').order_by(User.created_at.desc()).all()
     active_users = base_query.filter_by(status='active').order_by(User.created_at.desc()).all()
