@@ -63,15 +63,20 @@ Este proyecto sigue convenciones de código y documentación para asegurar clari
 - [04_DATABASE.md](./docs/04_DATABASE.md): Estructura y gestión de base de datos
 - [05_INSTALACION.md](./docs/05_INSTALACION.md): Guía de instalación general
 
-### 3.2 Documentación de Despliegue y Operaciones
+### 3.2 Diseño y Estilo (NUEVO)
+- **[design.md](./docs/design.md): Sistema de Diseño, Guía de Estilos y Estándares de UI.** (Lectura obligatoria para Frontend)
+
+### 3.3 Documentación de Despliegue y Operaciones
 - [06_DEPLOYMENT.md](./docs/06_DEPLOYMENT.md): Guía de despliegue en producción
 - [07_MONITORING.md](./docs/07_MONITORING.md): Sistema de monitoreo y logs
 - [08_ROLES_Y_PERMISOS.md](./docs/08_ROLES_Y_PERMISOS.md): Gestión de roles y permisos
+- [10_MODULOS_FUTUROS.md](./docs/10_MODULOS_FUTUROS.md): Marketplace y Módulos Avanzados
+- [11_MODULOS_FINANCIEROS.md](./docs/11_MODULOS_FINANCIEROS.md): Estrategia Financiera y Monetización
 
-### 3.3 Documentación Específica por Sistema Operativo
+### 3.4 Documentación Específica por Sistema Operativo
 - [WINDOWS_SETUP.md](./docs/WINDOWS_SETUP.md): Guía específica para Windows
 
-### 3.4 Documentación de Control de Versiones
+### 3.5 Documentación de Control de Versiones
 - [CHANGELOG.md](./docs/CHANGELOG.md): Historial de cambios
 - [ROADMAP.md](./docs/ROADMAP.md): Plan de desarrollo futuro
 

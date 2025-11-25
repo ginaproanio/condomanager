@@ -24,7 +24,7 @@
             <!-- Configuración de Recaudación SaaS -->
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-white">
-                    <h5 class="mb-0 text-success"><i class="fas fa-university me-2"></i>Cuenta Bancaria (Recaudación SaaS)</h5>
+                    <h5 class="mb-0 text-success"><i class="fas fa-university me-2"></i>Cuentas Bancarias (Recaudación SaaS)</h5>
                 </div>
                 <div class="card-body">
                     <p class="text-muted small">
@@ -33,7 +33,8 @@
                     <form method="POST">
                         <input type="hidden" name="config_type" value="bank_account">
                         
-                        <div class="row g-3">
+                        <h6 class="fw-bold text-primary border-bottom pb-2">Cuenta Principal</h6>
+                        <div class="row g-3 mb-4">
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">Banco</label>
                                 <input type="text" class="form-control" name="bank_name" value="{{ config.get('bank_name', '') }}" placeholder="Ej: Banco Pichincha">
@@ -63,9 +64,74 @@
                             </div>
                         </div>
 
+                        <h6 class="fw-bold text-secondary border-bottom pb-2 mt-4">Cuenta Secundaria (Opcional)</h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Banco</label>
+                                <input type="text" class="form-control" name="bank_name_2" value="{{ config.get('bank_name_2', '') }}" placeholder="Ej: Banco Guayaquil">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Tipo de Cuenta</label>
+                                <select class="form-select" name="account_type_2">
+                                    <option value="Corriente" {% if config.get('account_type_2') == 'Corriente' %}selected{% endif %}>Corriente</option>
+                                    <option value="Ahorros" {% if config.get('account_type_2') == 'Ahorros' %}selected{% endif %}>Ahorros</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Número de Cuenta</label>
+                                <input type="text" class="form-control" name="account_number_2" value="{{ config.get('account_number_2', '') }}">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Nombre del Titular</label>
+                                <input type="text" class="form-control" name="account_holder_2" value="{{ config.get('account_holder_2', '') }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">RUC / Cédula</label>
+                                <input type="text" class="form-control" name="account_id_2" value="{{ config.get('account_id_2', '') }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Correo de Confirmación</label>
+                                <input type="email" class="form-control" name="account_email_2" value="{{ config.get('account_email_2', '') }}">
+                            </div>
+                        </div>
+
                         <div class="d-grid mt-4">
                             <button type="submit" class="btn btn-success">
                                 <i class="fas fa-save me-2"></i>Guardar Datos Bancarios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- PayPhone Global -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0 text-warning text-dark"><i class="fas fa-credit-card me-2"></i>PayPhone Global (Cobros SaaS)</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small">
+                        Credenciales de PayPhone para que la plataforma (Master) cobre automáticamente a los condominios (Clientes).
+                    </p>
+                    <form method="POST">
+                        <input type="hidden" name="config_type" value="payphone_global">
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">PayPhone App ID</label>
+                            <input type="text" class="form-control font-monospace" name="payphone_app_id" value="{{ config.get('payphone_app_id', '') }}">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">PayPhone Token</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-key"></i></span>
+                                <input type="password" class="form-control font-monospace" name="payphone_token" value="{{ config.get('payphone_token', '') }}">
+                            </div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-save me-2"></i>Guardar Credenciales PayPhone
                             </button>
                         </div>
                     </form>

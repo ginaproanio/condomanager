@@ -45,39 +45,118 @@ def reports():
     # Usuarios con roles de gestión (ADMIN o MASTER)
     management_users = User.query.filter(or_(User.role=='ADMIN', User.role=='MASTER')).count()
     
-    # Módulos activos (conteo simple)
-    docs_module_active = Condominium.query.filter_by(has_documents_module=True).count()
+    # Métrica de Mora / Deuda (Pagos pendientes de revisión o rechazados)
+    # En un sistema real, esto sumaría facturas vencidas. Aquí sumamos pagos en estado 'PENDING_REVIEW' o 'REJECTED'
+    # como proxy de "Atención requerida".
+    pending_payments_count = models.Payment.query.filter_by(status='PENDING_REVIEW').count()
+    
+    # Documentos Totales (Métrica real solicitada)
+    total_docs = models.Document.query.count()
     
     # Lógica de exportación (POST)
     if request.method == 'POST':
         action = request.form.get('action')
         
         if action == 'export_condos':
+            # ... (existing code) ...
             output = io.StringIO()
             writer = csv.writer(output)
-            # Cabeceras
-            writer.writerow(['ID', 'Nombre Legal', 'Nombre Comercial', 'RUC', 'Estado', 'Subdominio', 'Admin Email', 'Mód. Documentos', 'Fecha Creación'])
+            # Cabeceras Detalladas
+            writer.writerow(['ID', 'Nombre Legal', 'RUC', 'Dirección Completa', 'Latitud', 'Longitud', 'Celular Admin', 'Administrador', 'Estado', 'Módulos Activos'])
             
-            condos = Condominium.query.order_by(Condominium.created_at.desc()).all()
+            condos = Condominium.query.order_by(Condominium.name).all()
             for c in condos:
-                admin_email = c.admin_user.email if c.admin_user else 'Sin Asignar'
+                admin_name = c.admin_user.name if c.admin_user else 'N/A'
+                admin_cell = c.admin_user.cellphone if c.admin_user else 'N/A'
+                
+                # Determinar módulos activos
+                active_modules_list = []
+                if c.has_documents_module: active_modules_list.append("Documentos")
+                if c.has_billing_module: active_modules_list.append("Cobranza")
+                if c.has_requests_module: active_modules_list.append("Requerimientos")
+                
                 writer.writerow([
                     c.id, 
-                    c.legal_name or c.name, 
-                    c.name, 
+                    c.legal_name, 
                     c.ruc, 
-                    c.status, 
-                    c.subdomain, 
-                    admin_email, 
-                    'ACTIVO' if c.has_documents_module else 'NO',
-                    c.created_at.strftime('%Y-%m-%d') if c.created_at else ''
+                    c.get_full_address(), 
+                    c.latitude, 
+                    c.longitude, 
+                    admin_cell, 
+                    admin_name,
+                    c.status,
+                    ", ".join(active_modules_list)
+                ])
+            
+            output.seek(0)
+            return Response(
+                output.getvalue().encode('utf-8-sig'), 
+                mimetype="text/csv",
+                headers={"Content-Disposition": f"attachment;filename=reporte_condominios_detallado_{datetime.now().strftime('%Y%m%d')}.csv"}
+            )
+
+        elif action == 'export_admins':
+            output = io.StringIO()
+            writer = csv.writer(output)
+            writer.writerow(['Condominio', 'RUC Condominio', 'Nombre Admin', 'Email Admin', 'Celular Admin', 'Cédula Admin'])
+            
+            admins = User.query.filter_by(role='ADMIN').all()
+            for admin in admins:
+                # Buscar condominios de este admin
+                condos_managed = Condominium.query.filter_by(admin_user_id=admin.id).all()
+                
+                for condo in condos_managed:
+                     writer.writerow([
+                        condo.name,
+                        condo.ruc,
+                        admin.name,
+                        admin.email,
+                        admin.cellphone,
+                        admin.cedula
+                    ])
+                
+                if not condos_managed:
+                    writer.writerow([
+                        "Sin Asignar",
+                        "N/A",
+                        admin.name,
+                        admin.email,
+                        admin.cellphone,
+                        admin.cedula
+                    ])
+            
+            output.seek(0)
+            return Response(
+                output.getvalue().encode('utf-8-sig'), 
+                mimetype="text/csv",
+                headers={"Content-Disposition": f"attachment;filename=reporte_administradores_por_condominio_{datetime.now().strftime('%Y%m%d')}.csv"}
+            )
+
+        elif action == 'export_payments':
+            output = io.StringIO()
+            writer = csv.writer(output)
+            writer.writerow(['ID Pago', 'Fecha', 'Condominio', 'Usuario', 'Unidad', 'Monto', 'Método', 'Estado', 'Referencia'])
+            
+            # Últimos 1000 pagos o filtro por fecha si se implementara
+            payments = models.Payment.query.order_by(models.Payment.created_at.desc()).limit(5000).all()
+            for p in payments:
+                writer.writerow([
+                    p.id,
+                    p.created_at.strftime('%Y-%m-%d'),
+                    p.condominium.name if p.condominium else 'N/A',
+                    p.user.name if p.user else 'N/A',
+                    p.unit.property_number if p.unit else 'N/A',
+                    p.amount,
+                    p.payment_method,
+                    p.status,
+                    p.reference
                 ])
                 
             output.seek(0)
             return Response(
-                output.getvalue().encode('utf-8-sig'), # UTF-8 BOM para Excel en español
+                output.getvalue().encode('utf-8-sig'), 
                 mimetype="text/csv",
-                headers={"Content-Disposition": f"attachment;filename=reporte_condominios_{datetime.now().strftime('%Y%m%d')}.csv"}
+                headers={"Content-Disposition": f"attachment;filename=reporte_pagos_global_{datetime.now().strftime('%Y%m%d')}.csv"}
             )
             
         elif action == 'export_users':
@@ -113,7 +192,8 @@ def reports():
                                'inactive_condos': inactive_condos,
                                'total_users': total_users,
                                'management_users': management_users,
-                               'docs_module_active': docs_module_active
+                               'pending_payments': pending_payments_count,
+                               'total_docs': total_docs
                            })
 
 @master_bp.route('/master/condominios', methods=['GET'])
@@ -354,13 +434,25 @@ def master_configuracion():
     
     # Unificar para la vista
     config_data = {
-        # Banco (guardado en payment_config bajo la clave 'saas_bank_account')
+        # Banco Principal
         'bank_name': current_payment_config.get('saas_bank_account', {}).get('bank_name', ''),
         'account_type': current_payment_config.get('saas_bank_account', {}).get('account_type', ''),
         'account_number': current_payment_config.get('saas_bank_account', {}).get('account_number', ''),
         'account_holder': current_payment_config.get('saas_bank_account', {}).get('account_holder', ''),
         'account_id': current_payment_config.get('saas_bank_account', {}).get('account_id', ''),
         'account_email': current_payment_config.get('saas_bank_account', {}).get('account_email', ''),
+        
+        # Banco Secundario
+        'bank_name_2': current_payment_config.get('saas_bank_account_2', {}).get('bank_name', ''),
+        'account_type_2': current_payment_config.get('saas_bank_account_2', {}).get('account_type', ''),
+        'account_number_2': current_payment_config.get('saas_bank_account_2', {}).get('account_number', ''),
+        'account_holder_2': current_payment_config.get('saas_bank_account_2', {}).get('account_holder', ''),
+        'account_id_2': current_payment_config.get('saas_bank_account_2', {}).get('account_id', ''),
+        'account_email_2': current_payment_config.get('saas_bank_account_2', {}).get('account_email', ''),
+
+        # PayPhone Global (SaaS)
+        'payphone_app_id': current_payment_config.get('payphone_global', {}).get('app_id', ''),
+        'payphone_token': current_payment_config.get('payphone_global', {}).get('token', ''),
         
         # Meta (guardado en whatsapp_config)
         'meta_phone_id': current_whatsapp_config.get('phone_id', ''),
@@ -373,7 +465,10 @@ def master_configuracion():
         
         if config_type == 'bank_account':
             # Actualizar datos bancarios en payment_config
-            new_bank_data = {
+            updated_payment_config = dict(current_payment_config)
+            
+            # Principal
+            updated_payment_config['saas_bank_account'] = {
                 'bank_name': request.form.get('bank_name'),
                 'account_type': request.form.get('account_type'),
                 'account_number': request.form.get('account_number'),
@@ -381,13 +476,34 @@ def master_configuracion():
                 'account_id': request.form.get('account_id'),
                 'account_email': request.form.get('account_email')
             }
-            # Preservar otros datos de payment_config si existen
-            updated_payment_config = dict(current_payment_config)
-            updated_payment_config['saas_bank_account'] = new_bank_data
+            
+            # Secundario (Opcional)
+            if request.form.get('bank_name_2'):
+                updated_payment_config['saas_bank_account_2'] = {
+                    'bank_name': request.form.get('bank_name_2'),
+                    'account_type': request.form.get('account_type_2'),
+                    'account_number': request.form.get('account_number_2'),
+                    'account_holder': request.form.get('account_holder_2'),
+                    'account_id': request.form.get('account_id_2'),
+                    'account_email': request.form.get('account_email_2')
+                }
+            else:
+                 # Si se borra, eliminar del config
+                 updated_payment_config.pop('saas_bank_account_2', None)
             
             target_condo.payment_config = updated_payment_config
             flag_modified(target_condo, "payment_config")
             flash("Datos bancarios de la plataforma actualizados.", "success")
+
+        elif config_type == 'payphone_global':
+             updated_payment_config = dict(current_payment_config)
+             updated_payment_config['payphone_global'] = {
+                 'app_id': request.form.get('payphone_app_id'),
+                 'token': request.form.get('payphone_token')
+             }
+             target_condo.payment_config = updated_payment_config
+             flag_modified(target_condo, "payment_config")
+             flash("Credenciales globales de PayPhone actualizadas.", "success")
 
         elif config_type == 'meta_api':
             # Actualizar datos de Meta en whatsapp_config
