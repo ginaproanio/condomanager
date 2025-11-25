@@ -25,6 +25,40 @@ ALLOWED_EXTENSIONS = {'pdf'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+def generate_document_code(condo, doc_type="OF"):
+    """
+    Genera código secuencial: {TYPE}{YYYYMMDD}{PREFIX}{SEQ}
+    Ej: OF20251230PUNTA0001
+    """
+    prefix = condo.document_code_prefix
+    if not prefix:
+        # Fallback: primeros 4 chars del subdominio o nombre
+        source = condo.subdomain or condo.name or "DOCS"
+        prefix = source[:4].upper()
+    
+    date_str = datetime.now().strftime('%Y%m%d')
+    
+    # Buscar el último documento de este condominio que coincida con el patrón del día
+    # Usamos like con el patrón base para encontrar el último secuencial
+    base_pattern = f"{doc_type}{date_str}{prefix}%"
+    
+    last_doc = Document.query.filter_by(condominium_id=condo.id)\
+        .filter(Document.document_code.like(base_pattern))\
+        .order_by(Document.document_code.desc())\
+        .first()
+        
+    if last_doc and last_doc.document_code:
+        try:
+            # Extraer los últimos 4 dígitos
+            last_seq = int(last_doc.document_code[-4:])
+            new_seq = last_seq + 1
+        except:
+            new_seq = 1
+    else:
+        new_seq = 1
+        
+    return f"{doc_type}{date_str}{prefix}{new_seq:04d}"
+
 def generate_unsigned_pdf(doc):
     """Genera un PDF simple a partir del contenido del documento."""
     from reportlab.pdfgen import canvas
@@ -37,6 +71,12 @@ def generate_unsigned_pdf(doc):
     p.setFont("Helvetica-Bold", 16)
     p.drawCentredString(width / 2.0, height - 50, doc.title)
     
+    # Agregamos la referencia y fecha
+    p.setFont("Helvetica", 10)
+    if doc.document_code:
+        p.drawRightString(width - 40, height - 30, f"Ref: {doc.document_code}")
+    p.drawRightString(width - 40, height - 45, f"Fecha: {datetime.now().strftime('%Y-%m-%d')}")
+
     p.setFont("Helvetica", 11)
     text = p.beginText(40, height - 100)
     # Simplificado: para HTML real, se necesita una librería como WeasyPrint
@@ -90,14 +130,20 @@ def create_or_edit_logic(current_user, doc_id=None):
                 flash("Error de integridad: Usuario sin condominio asignado.", "error")
                 return redirect(url_for('document.index'))
 
+            # Generar código oficial
+            new_code = None
+            if user_condo:
+                new_code = generate_document_code(user_condo)
+
             doc = Document(
                 title=title,
                 content=content,
                 created_by_id=current_user.id,
-                condominium_id=condo_id
+                condominium_id=condo_id,
+                document_code=new_code
             )
             db.session.add(doc)
-            flash("Documento creado correctamente.", "success")
+            flash(f"Documento creado correctamente. Código: {new_code}", "success")
         else:
             doc.title = title
             doc.content = content
@@ -120,7 +166,9 @@ def create_or_edit_logic(current_user, doc_id=None):
 @login_required
 def index(current_user):
     # 1. Obtener el condominio del usuario
-    condominium = Condominium.query.filter_by(subdomain=current_user.tenant).first()
+    condominium = None
+    if current_user.tenant:
+        condominium = Condominium.query.filter_by(subdomain=current_user.tenant).first()
     
     # 2. Determinar si tiene acceso PREMIUM (Módulo activado)
     has_premium_access = False
@@ -166,7 +214,10 @@ def edit(current_user, doc_id):
 def view(current_user, doc_id):
     # Asegurar que pertenece al condominio del usuario
     doc = Document.query.get_or_404(doc_id)
-    user_condo = Condominium.query.filter_by(subdomain=current_user.tenant).first()
+    
+    user_condo = None
+    if current_user.tenant:
+        user_condo = Condominium.query.filter_by(subdomain=current_user.tenant).first()
     
     if not user_condo or doc.condominium_id != user_condo.id:
         abort(403)
@@ -178,7 +229,10 @@ def view(current_user, doc_id):
 @login_required
 def download_unsigned(current_user, doc_id):
     doc = Document.query.get_or_404(doc_id)
-    user_condo = Condominium.query.filter_by(subdomain=current_user.tenant).first()
+    
+    user_condo = None
+    if current_user.tenant:
+        user_condo = Condominium.query.filter_by(subdomain=current_user.tenant).first()
     
     if not user_condo or doc.condominium_id != user_condo.id:
         abort(403)
@@ -192,7 +246,10 @@ def download_unsigned(current_user, doc_id):
 def sign(current_user, doc_id):
     doc = Document.query.get_or_404(doc_id)
     # Validación manual de tenant (seguridad extra)
-    user_condo = Condominium.query.filter_by(subdomain=current_user.tenant).first()
+    user_condo = None
+    if current_user.tenant:
+        user_condo = Condominium.query.filter_by(subdomain=current_user.tenant).first()
+        
     if not user_condo or doc.condominium_id != user_condo.id:
         abort(403)
 
@@ -227,7 +284,10 @@ def view_signatures_status(current_user, doc_id):
     doc = Document.query.get_or_404(doc_id)
     
     # Seguridad: Verificar condominio
-    condo = Condominium.query.filter_by(subdomain=current_user.tenant).first()
+    condo = None
+    if current_user.tenant:
+        condo = Condominium.query.filter_by(subdomain=current_user.tenant).first()
+        
     # Permitir si es el dueño del condominio o si es MASTER
     if current_user.role != 'MASTER':
         if not condo or (doc.condominium_id and doc.condominium_id != condo.id):
@@ -264,7 +324,10 @@ def view_signatures_status(current_user, doc_id):
 def send(current_user, doc_id):
     doc = Document.query.get_or_404(doc_id)
     
-    user_condo = Condominium.query.filter_by(subdomain=current_user.tenant).first()
+    user_condo = None
+    if current_user.tenant:
+        user_condo = Condominium.query.filter_by(subdomain=current_user.tenant).first()
+        
     if not user_condo or doc.condominium_id != user_condo.id:
         abort(403)
         
