@@ -132,6 +132,11 @@ def callback_pago():
         return redirect(url_for('user.dashboard'))
 
     condominium = Condominium.query.get(payment.condominium_id)
+    
+    if not condominium:
+        flash("Error crítico: Condominio no encontrado para esta transacción.", "error")
+        return redirect(url_for('user.dashboard'))
+        
     payphone = PayPhoneService(condominium)
     
     try:
