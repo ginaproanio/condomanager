@@ -1,5 +1,5 @@
 from app.extensions import db
-from sqlalchemy import Boolean, Date     # ← ESTA LÍNEA ES LA CLAVE FINAL
+from sqlalchemy import Boolean, Date
 from datetime import datetime
 
 # --- CONFIGURACIÓN GLOBAL DE PLATAFORMA ---
@@ -118,6 +118,9 @@ class Condominium(db.Model):
     # Cada condominio actúa como su propio comercio
     payment_provider = db.Column(db.String(20), default='PAYPHONE') # Por defecto Ecuador
     payment_config = db.Column(db.JSON, default={}) # Almacena token, id, secret propios del condominio
+
+    # --- Configuración de Firmas Electrónicas (Nuevo) ---
+    signature_provider_config = db.Column(db.JSON, default={}) # Almacena API keys de Uanataca/Nexxit por tenant
 
     # FK corregidas a 'users.id'
     admin_user_id = db.Column(db.Integer, db.ForeignKey('users.id', name='fk_condominium_admin_user'))
@@ -248,6 +251,9 @@ class Document(db.Model):
     # Nomenclatura Oficial
     document_code = db.Column(db.String(50), unique=True) # Ej: OF20251230PUNTA0001
     document_type = db.Column(db.String(20), default='OF') # OF (Oficio), ME (Memorando), CI (Circular), AC (Acta)
+    
+    # Nuevo: ID de flujo externo (Uanataca/Nexxit)
+    external_flow_id = db.Column(db.String(100))
 
     def generate_public_link(self):
         if not self.public_signature_link:
@@ -373,4 +379,3 @@ class PettyCashTransaction(db.Model):
     
     user = db.relationship('User', backref='petty_cash_entries')
     condominium = db.relationship('Condominium', backref='petty_cash_entries')
-

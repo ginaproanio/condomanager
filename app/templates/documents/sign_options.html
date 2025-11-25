@@ -40,11 +40,20 @@
                 </div>
             </div>
 
-            <!-- Opción 2: Firma Electrónica (Placeholder para Fase 2) -->
-            <div class="card border-0 shadow-sm bg-light opacity-75">
-                <div class="card-body p-4 text-center">
-                    <h5 class="text-muted"><i class="fas fa-certificate me-2"></i>Opción 2: Firma Electrónica (.p12)</h5>
-                    <p class="mb-0 text-muted small">Próximamente disponible para usuarios con certificado digital configurado.</p>
+            <!-- Opción 2: Firma Electrónica (Uanataca) -->
+            <div class="card border-0 shadow-sm mb-4 bg-light">
+                 <div class="card-body p-4">
+                    <h4 class="mb-3 text-primary"><i class="fas fa-file-signature me-2"></i>Opción 2: Firma Electrónica (Uanataca)</h4>
+                    <p>Si no dispones de firma electrónica personal, utiliza nuestro servicio integrado para estampar una firma válida.</p>
+                    
+                    <form method="POST">
+                        <input type="hidden" name="action" value="request_uanataca">
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg text-white">
+                                <i class="fas fa-paper-plane me-2"></i>Solicitar Firma Electrónica
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
 

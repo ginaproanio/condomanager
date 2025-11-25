@@ -1,18 +1,20 @@
 # app/routes/document_routes.py
 from flask import (
     Blueprint, render_template, request, flash, redirect, url_for,
-    send_file, current_app, abort, make_response
+    send_file, current_app, abort, make_response, jsonify
 )
 from flask_jwt_extended import jwt_required
 from app import db
 from app.models import Document, DocumentSignature, User, Condominium, ResidentSignature, UserSpecialRole
 from app.decorators import login_required, module_required
+from app.utils.signature_service import SignatureServiceFactory
 from werkzeug.utils import secure_filename
 import os
 import uuid
 from datetime import datetime
 import io
 import csv
+import json
 
 document_bp = Blueprint('document', __name__, url_prefix='/documentos')
 
@@ -271,30 +273,133 @@ def sign(current_user, doc_id):
     if not user_condo or doc.condominium_id != user_condo.id:
         abort(403)
 
-    if request.method == 'POST' and request.form.get('action') == 'upload_physical':
-        file = request.files.get('signed_file')
-        if not file or file.filename == '':
-            flash("No se seleccionó ningún archivo.", "danger")
-            return redirect(request.url)
-        
-        if allowed_file(file.filename):
-            filename = secure_filename(f"{uuid.uuid4().hex}_{file.filename}")
-            path = os.path.join(UPLOAD_FOLDER, 'signed', filename)
-            file.save(path)
+    if request.method == 'POST':
+        action = request.form.get('action')
 
-            doc.pdf_signed_path = os.path.join('static', 'uploads', 'documents', 'signed', filename)
-            doc.signature_type = 'physical'
-            doc.status = 'signed'
+        # --- OPCIÓN 1: SUBIDA MANUAL (FÍSICA) ---
+        if action == 'upload_physical':
+            file = request.files.get('signed_file')
+            if not file or file.filename == '':
+                flash("No se seleccionó ningún archivo.", "danger")
+                return redirect(request.url)
             
-            sig = DocumentSignature(document_id=doc.id, user_id=current_user.id, signature_type='physical', ip_address=request.remote_addr)
-            db.session.add(sig)
-            db.session.commit()
-            flash("¡Documento firmado físicamente y subido con éxito!", "success")
-            return redirect(url_for('document.view', doc_id=doc.id))
-        else:
-            flash("Solo se permiten archivos PDF.", "danger")
+            if allowed_file(file.filename):
+                filename = secure_filename(f"{uuid.uuid4().hex}_{file.filename}")
+                path = os.path.join(UPLOAD_FOLDER, 'signed', filename)
+                file.save(path)
+
+                doc.pdf_signed_path = os.path.join('static', 'uploads', 'documents', 'signed', filename)
+                doc.signature_type = 'physical'
+                doc.status = 'signed'
+                
+                sig = DocumentSignature(document_id=doc.id, user_id=current_user.id, signature_type='physical', ip_address=request.remote_addr)
+                db.session.add(sig)
+                db.session.commit()
+                flash("¡Documento firmado físicamente y subido con éxito!", "success")
+                return redirect(url_for('document.view', doc_id=doc.id))
+            else:
+                flash("Solo se permiten archivos PDF.", "danger")
+
+        # --- OPCIÓN 2: FIRMA ELECTRÓNICA CON UANATACA / NEXXIT ---
+        elif action == 'request_uanataca':
+            service = SignatureServiceFactory.get_provider(user_condo)
+            if not service:
+                flash("El servicio de firma electrónica no está configurado para este condominio.", "error")
+                return redirect(request.url)
+            
+            # Asegurar que el PDF sin firmar existe
+            if not doc.pdf_unsigned_path or not os.path.exists(os.path.join('app', doc.pdf_unsigned_path)):
+                generate_unsigned_pdf(doc)
+            
+            pdf_abs_path = os.path.join('app', doc.pdf_unsigned_path)
+            
+            try:
+                result = service.create_flow(pdf_abs_path, current_user, doc.title)
+                
+                # Extraer flowId de la respuesta (puede variar, asumimos 'id' o '_id' o similar)
+                # Postman example suggests structure might be complex, but usually top-level or data key
+                # Ajuste según lo que observemos en logs si falla
+                flow_id = result.get('id') or result.get('_id') or result.get('flowId') 
+                
+                # Fallback: si no encontramos ID obvio, guardamos todo el JSON como string si es corto, 
+                # o intentamos parsear data si existe
+                if not flow_id and 'data' in result:
+                    flow_id = result['data'].get('id')
+
+                if flow_id:
+                    doc.external_flow_id = str(flow_id)
+                    db.session.commit()
+                    flash("Solicitud de firma enviada. Por favor verifica tu correo o espera la confirmación.", "success")
+                    return redirect(url_for('document.view', doc_id=doc.id)) # Redirigimos a View para polling
+                else:
+                    current_app.logger.error(f"Respuesta inesperada del proveedor de firma: {result}")
+                    flash("Error al iniciar el flujo: Respuesta irreconocible del proveedor.", "error")
+
+            except Exception as e:
+                flash(f"Error al conectar con el servicio de firma: {str(e)}", "error")
 
     return render_template('documents/sign_options.html', doc=doc)
+
+@document_bp.route('/<int:doc_id>/verificar-uanataca', methods=['POST'])
+@login_required
+def check_uanataca_status(current_user, doc_id):
+    """
+    Endpoint AJAX para verificar si el documento ya fue firmado en el proveedor externo.
+    """
+    doc = Document.query.get_or_404(doc_id)
+    
+    if not doc.external_flow_id:
+        return jsonify({"status": "error", "message": "No hay flujo activo"}), 400
+        
+    user_condo = Condominium.query.filter_by(subdomain=current_user.tenant).first() if current_user.tenant else None
+    service = SignatureServiceFactory.get_provider(user_condo)
+    
+    if not service:
+         return jsonify({"status": "error", "message": "Servicio de firma no configurado"}), 500
+
+    try:
+        details = service.get_flow_details(doc.external_flow_id)
+        
+        # Lógica heurística para detectar éxito
+        signed_file_path = None
+        
+        # 1. Buscar en lista de archivos
+        if 'files' in details:
+            for file in details['files']:
+                # A veces status es 'signed', a veces hay un path de firmado explícito
+                if file.get('status') == 'signed' or file.get('signedPath'):
+                     signed_file_path = file.get('signedPath') or file.get('path')
+                     break
+        
+        # 2. Si el estado general es completado y no encontramos path explícito, tomamos el primero
+        if not signed_file_path and (details.get('status') == 'completed' or details.get('state') == 'completed'):
+             if 'files' in details and len(details['files']) > 0:
+                 signed_file_path = details['files'][0].get('path')
+
+        if signed_file_path:
+            # Descargar
+            file_content = service.download_file(signed_file_path)
+            
+            filename = f"{uuid.uuid4().hex}_{secure_filename(doc.title)}.pdf"
+            local_path = os.path.join(UPLOAD_FOLDER, 'signed', filename)
+            
+            with open(local_path, 'wb') as f:
+                f.write(file_content)
+                
+            doc.pdf_signed_path = os.path.join('static', 'uploads', 'documents', 'signed', filename)
+            doc.signature_type = 'uanataca'
+            doc.status = 'signed'
+            
+            sig = DocumentSignature(document_id=doc.id, user_id=current_user.id, signature_type='uanataca', ip_address=request.remote_addr)
+            db.session.add(sig)
+            db.session.commit()
+            
+            return jsonify({"status": "success", "message": "Documento firmado correctamente"})
+            
+        return jsonify({"status": "pending", "message": "Esperando firma..."})
+        
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @document_bp.route('/<int:doc_id>/estado-firmas')
 @login_required

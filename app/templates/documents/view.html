@@ -92,12 +92,57 @@
 
                     <!-- 2. Gestionar Firma (Solo si requiere y no está firmado) -->
                     {% if doc.requires_signature and doc.status != 'signed' and doc.status != 'sent' %}
-                    <a href="{{ url_for('document.sign', doc_id=doc.id) }}" class="list-group-item list-group-item-action py-3 list-group-item-warning">
-                        <div class="d-flex w-100 justify-content-between">
-                            <h6 class="mb-1 text-warning-emphasis"><i class="fas fa-file-signature me-2"></i>Gestionar Firma</h6>
-                        </div>
-                        <small class="text-muted">Firmar física o digitalmente.</small>
-                    </a>
+                        {% if doc.external_flow_id %}
+                            <div class="list-group-item py-3 bg-light">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1 text-info"><i class="fas fa-spinner fa-spin me-2"></i>Firma en Proceso</h6>
+                                </div>
+                                <p class="small text-muted mb-2">Esperando firma electrónica externa.</p>
+                                <button id="btnCheckStatus" class="btn btn-sm btn-outline-info w-100" onclick="checkSignatureStatus()">
+                                    <i class="fas fa-sync-alt me-1"></i>Verificar Estado
+                                </button>
+                                <div id="statusMsg" class="small mt-2"></div>
+                            </div>
+                            <script>
+                                function checkSignatureStatus() {
+                                    const btn = document.getElementById('btnCheckStatus');
+                                    const msg = document.getElementById('statusMsg');
+                                    btn.disabled = true;
+                                    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Verificando...';
+                                    
+                                    fetch("{{ url_for('document.check_uanataca_status', doc_id=doc.id) }}", {
+                                        method: 'POST',
+                                        headers: { 
+                                            'Content-Type': 'application/json'
+                                            // CSRF header can be added here if needed
+                                        } 
+                                    })
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.status === 'success') {
+                                            msg.innerHTML = '<span class="text-success fw-bold">¡Firmado! Recargando...</span>';
+                                            setTimeout(() => window.location.reload(), 1000);
+                                        } else {
+                                            msg.innerHTML = '<span class="text-warning">' + data.message + '</span>';
+                                            btn.disabled = false;
+                                            btn.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Verificar Estado';
+                                        }
+                                    })
+                                    .catch(error => {
+                                        msg.innerHTML = '<span class="text-danger">Error de conexión.</span>';
+                                        btn.disabled = false;
+                                        btn.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Verificar Estado';
+                                    });
+                                }
+                            </script>
+                        {% else %}
+                            <a href="{{ url_for('document.sign', doc_id=doc.id) }}" class="list-group-item list-group-item-action py-3 list-group-item-warning">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1 text-warning-emphasis"><i class="fas fa-file-signature me-2"></i>Gestionar Firma</h6>
+                                </div>
+                                <small class="text-muted">Firmar física o digitalmente.</small>
+                            </a>
+                        {% endif %}
                     {% endif %}
 
                     <!-- 3. Editar (Solo si es borrador) -->
