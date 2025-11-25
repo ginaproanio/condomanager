@@ -104,6 +104,18 @@
                                 </select>
                             </div>
                             <div class="col-md-6 mb-3">
+                                <label for="billing_contact_id" class="form-label">Contacto de Facturación <span class="text-muted small">(Si no hay RUC)</span></label>
+                                <select class="form-select" id="billing_contact_id" name="billing_contact_id">
+                                    <option value="">-- Usar datos del Administrador --</option>
+                                    {% for admin in administradores %}
+                                        <option value="{{ admin.id }}" {% if condo.billing_contact_id == admin.id %}selected{% endif %}>{{ admin.name }} ({{ admin.email }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
                                 <label for="subdomain" class="form-label">Subdominio (Tenant)</label>
                                 <div class="input-group">
                                     <span class="input-group-text">https://</span>
@@ -111,9 +123,6 @@
                                     <span class="input-group-text">.condomanager.com</span>
                                 </div>
                             </div>
-                        </div>
-                        
-                        <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="status" class="form-label">Estado</label>
                                 <select class="form-select" id="status" name="status">
@@ -128,29 +137,12 @@
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h5 class="mb-0"><i class="fas fa-puzzle-piece me-2"></i>Módulos y Condiciones Comerciales</h5>
                             <a href="{{ url_for('master.configure_condo_modules', condo_id=condo.id) }}" class="btn btn-primary">
-                                <i class="fas fa-cogs me-2"></i>Personalizar Módulos
+                                <i class="fas fa-cogs me-2"></i>Personalizar Módulos y Precios
                             </a>
                         </div>
-                        <p class="text-muted small">Utiliza el botón de personalización para definir precios y condiciones específicas. Los interruptores abajo son para activación rápida de funcionalidades legacy.</p>
+                        <p class="text-muted small">Utiliza el botón de personalización para definir precios, condiciones específicas y activación de módulos.</p>
 
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" role="switch" id="has_documents_module" name="has_documents_module" {% if condo.has_documents_module %}checked{% endif %}>
-                            <label class="form-check-label" for="has_documents_module">
-                                <strong>Módulo "Firmas & Comunicados"</strong> (Estado: ✅ Implementado)
-                            </label>
-                        </div>
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" role="switch" id="has_billing_module" name="has_billing_module" {% if condo.has_billing_module %}checked{% endif %}>
-                            <label class="form-check-label" for="has_billing_module">
-                                <strong>Módulo "Facturación"</strong> (Estado: ❌ No Implementado)
-                            </label>
-                        </div>
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" role="switch" id="has_requests_module" name="has_requests_module" {% if condo.has_requests_module %}checked{% endif %}>
-                            <label class="form-check-label" for="has_requests_module">
-                                <strong>Módulo "Requerimientos"</strong> (Estado: ❌ No Implementado)
-                            </label>
-                        </div>
+                        <!-- Eliminados interruptores legacy para evitar discrepancias -->
 
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
                             <a href="{{ url_for('master.master_condominios') }}" class="btn btn-secondary">

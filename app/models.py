@@ -111,6 +111,7 @@ class Condominium(db.Model):
     admin_user_id = db.Column(db.Integer, db.ForeignKey('users.id', name='fk_condominium_admin_user'))
     legal_representative_id = db.Column(db.Integer, db.ForeignKey('users.id', name='fk_condominium_legal_rep')) # Representante Legal
     created_by = db.Column(db.Integer, db.ForeignKey('users.id', name='fk_condominium_creator'))
+    billing_contact_id = db.Column(db.Integer, db.ForeignKey('users.id', name='fk_condominium_billing_contact')) # Contacto de Facturación
 
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
@@ -119,6 +120,7 @@ class Condominium(db.Model):
     legal_representative = db.relationship('User', foreign_keys=[legal_representative_id], backref='legal_condominiums')
     admin_user = db.relationship('User', foreign_keys=[admin_user_id], backref='admin_condominiums')
     creator = db.relationship('User', foreign_keys=[created_by], backref='created_condominiums')
+    billing_contact = db.relationship('User', foreign_keys=[billing_contact_id], backref='billing_condominiums')
     units = db.relationship('Unit', backref='condominium', lazy=True, cascade='all, delete-orphan')
 
     def get_full_address(self):

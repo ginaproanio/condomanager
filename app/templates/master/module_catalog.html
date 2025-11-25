@@ -39,11 +39,20 @@
                         <tr>
                             <td><strong>{{ module.name }}</strong><br><small class="text-muted">{{ module.description }}</small></td>
                             <td><code>{{ module.code }}</code></td>
-                            <td>${{ "%.2f"|format(module.base_price) }}</td>
+                            <td>
+                                ${{ "%.2f"|format(module.base_price) }} 
+                                <small class="text-muted d-block">
+                                    {% if module.pricing_type == 'per_user' %}
+                                        /usuario
+                                    {% else %}
+                                        /módulo
+                                    {% endif %}
+                                </small>
+                            </td>
                             <td>{{ module.billing_cycle|title }}</td>
                             <td>
                                 {% if module.status == 'ACTIVE' %}
-                                    <span class="badge bg-success">Activo</span>
+                                    <span class="badge bg-success">Desarrollado</span>
                                 {% elif module.status == 'MAINTENANCE' %}
                                     <span class="badge bg-warning text-dark">Mantenimiento</span>
                                 {% else %}

@@ -189,6 +189,9 @@ def master_usuarios():
             User.cedula.ilike(search_term)
         ))
 
+    # FILTRO DE SEGURIDAD: MASTER solo ve ADMIN y MASTER
+    base_query = base_query.filter(User.role.in_(['ADMIN', 'MASTER']))
+
     # Lógica para GET (mostrar las listas de usuarios)
     pending_users = base_query.filter_by(status='pending').order_by(User.created_at.desc()).all()
     active_users = base_query.filter_by(status='active').order_by(User.created_at.desc()).all()
@@ -760,11 +763,16 @@ def editar_condominio(condo_id):
             if admin_id_input:
                 condo_to_edit.admin_user_id = int(admin_id_input)
 
+            # Contacto de Facturación (Opcional)
+            billing_contact_input = request.form.get('billing_contact_id')
+            if billing_contact_input:
+                condo_to_edit.billing_contact_id = int(billing_contact_input)
+            else:
+                condo_to_edit.billing_contact_id = None
+
             # --- LÓGICA PARA ACTUALIZAR MÓDULOS ---
-            # Un checkbox enviado en un formulario tiene valor "on" si está marcado, y no existe si no está marcado.
-            condo_to_edit.has_documents_module = 'has_documents_module' in request.form
-            condo_to_edit.has_billing_module = 'has_billing_module' in request.form
-            condo_to_edit.has_requests_module = 'has_requests_module' in request.form
+            # Los interruptores legacy han sido eliminados para evitar discrepancias.
+            # Ahora la configuración se hace exclusivamente vía 'configure_condo_modules'.
             
             db.session.commit()
             flash('Condominio actualizado exitosamente.', 'success')
