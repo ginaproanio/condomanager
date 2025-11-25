@@ -70,7 +70,7 @@ def module_required(module_name):
             # 1. Verificar estado GLOBAL del módulo en el catálogo (Tabla Module)
             # Usamos el 'code' (ej. 'documents') para buscar el módulo.
             global_module = Module.query.filter_by(code=module_name).first()
-            if global_module and global_module.status == 'MAINTENANCE':
+            if global_module and global_module.maintenance_mode:
                 flash(f"El módulo '{global_module.name}' está temporalmente en mantenimiento por mejoras en la plataforma.", "warning")
                 return redirect(url_for('user.dashboard'))
  
@@ -159,10 +159,8 @@ def condominium_admin_required(f):
                 flash("No tienes autorización para acceder a este panel de administración.", "error")
                 return redirect(url_for('user.dashboard'))
         
-        # Limpieza: Quitamos 'current_user' de kwargs para no romper la función final
-        # ya que la mayoría de rutas no esperan recibir este argumento.
-        if 'current_user' in kwargs:
-            del kwargs['current_user']
-
+        # No eliminamos 'current_user' de kwargs, ya que la vista podría necesitarlo
+        # y el patrón estándar de login_required lo provee.
+        
         return f(*args, **kwargs)
     return decorated_function

@@ -508,7 +508,7 @@ def public_signature_thanks(public_link):
 def download_signatures(current_user, doc_id):
     doc = Document.query.get_or_404(doc_id)
     
-    user_condo = Condominium.query.filter_by(subdomain=current_user.tenant).first()
+    user_condo = Condominium.query.filter_by(subdomain=current_user.tenant).first() if current_user.tenant else None
     if not user_condo or doc.condominium_id != user_condo.id:
         abort(403)
 
