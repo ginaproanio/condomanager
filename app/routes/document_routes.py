@@ -88,12 +88,22 @@ def generate_unsigned_pdf(doc):
     
     buffer.seek(0)
     filename = f"{uuid.uuid4().hex}.pdf"
+    
+    # CORRECCIÓN: Asegurar que la ruta relativa no duplique 'app'
+    # UPLOAD_FOLDER es 'app/static/uploads/documents'
     path = os.path.join(UPLOAD_FOLDER, 'unsigned', filename)
+    
+    # Asegurar directorio
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    
     with open(path, 'wb') as f:
         f.write(buffer.getvalue())
     
+    # Guardamos la ruta relativa para servirla después (sin 'app/' al inicio)
     doc.pdf_unsigned_path = os.path.join('static', 'uploads', 'documents', 'unsigned', filename)
     db.session.commit()
+    
+    return doc.pdf_unsigned_path
 
 # ==================== LÓGICA REUTILIZABLE ====================
 
@@ -143,7 +153,11 @@ def create_or_edit_logic(current_user, doc_id=None):
                 document_code=new_code
             )
             db.session.add(doc)
-            flash(f"Documento creado correctamente. Código: {new_code}", "success")
+            
+            if new_code:
+                flash(f"Documento creado correctamente. Código: {new_code}", "success")
+            else:
+                flash("Documento creado correctamente.", "success")
         else:
             doc.title = title
             doc.content = content
