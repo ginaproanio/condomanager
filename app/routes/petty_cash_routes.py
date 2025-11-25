@@ -3,7 +3,7 @@ from flask_jwt_extended import jwt_required
 from app.models import db, Condominium, PettyCashTransaction
 from app.auth import get_current_user
 from app.decorators import condominium_admin_required
-from datetime import datetime
+import datetime
 import os
 from werkzeug.utils import secure_filename
 
@@ -24,12 +24,12 @@ def index(condominium_id):
     balance = sum(t.amount for t in transactions)
     
     # Fecha actual para el input date
-    now_date = datetime.utcnow().strftime('%Y-%m-%d')
+    now_date = datetime.datetime.utcnow().strftime('%Y-%m-%d')
     
     return render_template('admin/petty_cash.html', 
                            condominium=condo, 
                            transactions=transactions, 
-                           balance=balance,
+                           balance=balance, 
                            now_date=now_date)
 
 @petty_cash_bp.route('/admin/condominio/<int:condominium_id>/caja-chica/nuevo', methods=['POST'])
@@ -58,16 +58,16 @@ def nuevo_movimiento(condominium_id):
         else:
             amount = abs(amount) # Asegurar positivo
             
-        tx_date = datetime.utcnow()
+        tx_date = datetime.datetime.utcnow()
         if date_str:
-            tx_date = datetime.strptime(date_str, '%Y-%m-%d')
+            tx_date = datetime.datetime.strptime(date_str, '%Y-%m-%d')
             
         # Procesar archivo
         receipt_url = None
         if 'receipt_file' in request.files:
             file = request.files['receipt_file']
             if file.filename != '':
-                filename = secure_filename(f"petty_{condominium_id}_{int(datetime.utcnow().timestamp())}_{file.filename}")
+                filename = secure_filename(f"petty_{condominium_id}_{int(datetime.datetime.utcnow().timestamp())}_{file.filename}")
                 upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'petty_cash')
                 os.makedirs(upload_folder, exist_ok=True)
                 file.save(os.path.join(upload_folder, filename))

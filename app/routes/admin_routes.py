@@ -360,7 +360,7 @@ def ver_comprobante(filename):
     # Se asume que proof_of_payment almacena la ruta relativa (ej: 'uploads/payments/archivo.png')
     # o el nombre del archivo. Ajustar según cómo se guarde en la DB.
     # Para mayor seguridad, usamos endswith o buscamos exactitud si se guarda solo el nombre.
-    payment = Payment.query.filter(Payment.proof_of_payment.endswith(filename)).first()
+    payment = Payment.query.filter(Payment.proof_of_payment.isnot(None), Payment.proof_of_payment.endswith(filename)).first()
     
     if not payment:
         abort(404)

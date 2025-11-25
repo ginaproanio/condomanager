@@ -71,7 +71,7 @@ def create_app():
     @jwt.user_lookup_loader
     def user_lookup_callback(_jwt_header, jwt_data):
         identity = jwt_data["sub"]  # "sub" es el ID del usuario
-        return models.User.query.get(identity)
+        return models.User.query.get(int(identity))
 
     with app.app_context():
         from . import routes
