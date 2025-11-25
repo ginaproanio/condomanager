@@ -105,7 +105,7 @@ def asignar_rol_especial(condominium_id):
         # UserSpecialRole.query.filter_by(user_id=user_id, condominium_id=condominium_id, role=role, is_active=True).update({'is_active': False})
 
         new_role = UserSpecialRole(
-            user_id=user_id,
+            user_id=int(user_id),
             condominium_id=condominium_id,
             role=role,
             assigned_by=get_current_user().id,

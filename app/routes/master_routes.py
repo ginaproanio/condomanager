@@ -301,7 +301,7 @@ def master_manage_user():
 
     action = request.form.get('action')
     user_id = request.form.get('user_id')
-    user_to_manage = User.query.get_or_404(user_id)
+    user_to_manage = User.query.get_or_404(int(user_id))
 
     if action == 'assign_and_approve':
         condominium_id = request.form.get('condominium_id')
@@ -309,7 +309,7 @@ def master_manage_user():
             flash('Debe seleccionar un condominio para asignar y aprobar.', 'error')
             return redirect(url_for('master.master_usuarios'))
         
-        condo = Condominium.query.get(condominium_id)
+        condo = Condominium.query.get(int(condominium_id))
         user_to_manage.tenant = condo.subdomain
         # user_to_manage.condominium_id = condo.id # ELIMINADO: Este campo no existe en User
         user_to_manage.status = 'active'
