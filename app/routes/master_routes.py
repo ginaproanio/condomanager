@@ -687,7 +687,7 @@ def crear_condominio():
                 status='ACTIVO', # Corregido: El MASTER crea condominios activos directamente.
                 admin_user_id=int(admin_id),
                 created_by=user.id,
-                document_code_prefix=request.form.get('document_code_prefix', '').upper() or None
+                document_code_prefix=request.form.get('document_code_prefix', '').strip().upper() or None
             )
             db.session.add(new_condo)
             db.session.commit()
@@ -889,9 +889,9 @@ def editar_condominio(condo_id):
                 condo_to_edit.billing_contact_id = None
                 
             # Prefijo de Documentos
-            prefix_input = request.form.get('document_code_prefix')
+            prefix_input = request.form.get('document_code_prefix', '').strip().upper()
             if prefix_input:
-                condo_to_edit.document_code_prefix = prefix_input.strip().upper()
+                condo_to_edit.document_code_prefix = prefix_input
             else:
                 condo_to_edit.document_code_prefix = None
 
