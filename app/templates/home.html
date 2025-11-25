@@ -5,35 +5,35 @@
 {% block content %}
 <style>
     .hero {
-        min-height: 75vh;
-        display: flex;
-        align-items: center; /* Centra verticalmente el contenido */
+        /* Eliminamos min-height fijo grande para reducir espacio azul excesivo */
+        min-height: auto; 
+        padding-top: 3rem;
+        padding-bottom: 3rem;
     }
 
     h1.hero-title {
-        font-size: clamp(2.5rem, 5vw, 4rem); /* Ajuste fluido del título */
+        /* Reducción significativa del tamaño de letra */
+        font-size: clamp(2rem, 3.5vw, 3rem); 
         line-height: 1.2;
     }
 
     p.hero-subtitle {
-        font-size: clamp(1.1rem, 2.5vw, 1.5rem); /* Ajuste fluido del subtítulo */
-        max-width: 600px; /* Limita el ancho para mejor lectura */
+        font-size: 1.2rem;
+        max-width: 600px; 
         margin-bottom: 2rem;
-        line-height: 1.6;
+        line-height: 1.5;
     }
 
-    /* Ajustes específicos para pantallas muy grandes */
+    /* Ajustes específicos para pantallas muy grandes para evitar gigantismo */
     @media (min-width: 1400px) {
-        h1.hero-title { font-size: 3.5rem; }
-        p.hero-subtitle { font-size: 1.4rem; }
+        h1.hero-title { font-size: 3rem; }
+        .hero { padding-top: 5rem; padding-bottom: 5rem; }
     }
 
     /* Ajustes para móviles */
     @media (max-width: 768px) {
         .hero {
-            text-align: center; /* En móvil sí se ve bien centrado */
-            padding-top: 4rem;
-            padding-bottom: 4rem;
+            text-align: center;
         }
         
         .d-grid {
