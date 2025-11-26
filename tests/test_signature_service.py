@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import patch, MagicMock
 from app.utils.signature_service import NexxitOneshotProvider, SignatureServiceFactory
 from app.models import User, Condominium
+import os
 
 class TestNexxitOneshotProvider(unittest.TestCase):
     def setUp(self):
@@ -42,8 +43,9 @@ class TestNexxitOneshotProvider(unittest.TestCase):
         response = self.service.get_flow_details("flow_123")
         self.assertEqual(response['status'], "completed")
 
+    @patch.dict(os.environ, {'PUNTABLANCA_NEXXIT_KEY': 'env_key_123'})
     def test_factory_method(self):
-        # Test fallback for Punta Blanca
+        # Test fallback for Punta Blanca using Env Var
         condo = MagicMock()
         condo.subdomain = "puntablanca"
         condo.signature_provider_config = None
@@ -51,7 +53,7 @@ class TestNexxitOneshotProvider(unittest.TestCase):
         service = SignatureServiceFactory.get_provider(condo)
         self.assertIsNotNone(service)
         self.assertIsInstance(service, NexxitOneshotProvider)
-        self.assertEqual(service.api_key, "508f23a8cc4806b35687f696e9ac601c4556a53453d709b2a1a13e3d221d22ad")
+        self.assertEqual(service.api_key, "env_key_123")
         
         # Test no config and other subdomain
         condo.subdomain = "other"

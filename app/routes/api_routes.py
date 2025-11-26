@@ -1,9 +1,9 @@
-from flask import Blueprint, jsonify, request, make_response, url_for, current_app
+from flask import Blueprint, jsonify, request, make_response, url_for, current_app, g
 from flask_jwt_extended import jwt_required, create_access_token, set_access_cookies, current_user
 from app.auth import get_current_user
 from app.models import Condominium, User, Unit
-from app.tenant import get_tenant
 from app import db, models
+from app.extensions import limiter
 import hashlib
 from datetime import timedelta
 import traceback
@@ -11,6 +11,7 @@ import traceback
 api_bp = Blueprint('api', __name__, url_prefix='/api')
 
 @api_bp.route('/auth/login', methods=['POST'])
+@limiter.limit("5 per minute")  # Prevenir brute force
 def api_login():
     """
     Endpoint de la API para el login de usuarios.
@@ -28,7 +29,7 @@ def api_login():
 
         # --- SOLUCIÓN DE INGENIERÍA: AUTENTICACIÓN POR TENANT ---
         # 1. Obtener el tenant del subdominio actual.
-        tenant = get_tenant()
+        tenant = g.condominium.subdomain if g.condominium else None
         current_app.logger.info(f"Login attempt for {email} on tenant: {tenant}")
 
         # 2. La autenticación AHORA exige que el email, password Y tenant coincidan.
@@ -74,7 +75,7 @@ def api_login():
                 })
                 set_access_cookies(response, access_token)
                 return response
-
+        
         response = jsonify({
             "status": "success", 
             "message": "Login exitoso", 

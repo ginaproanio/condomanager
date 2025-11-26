@@ -1,41 +1,32 @@
 from flask import (
     Blueprint, render_template, redirect,
-    current_app, flash, Response, jsonify, request, url_for, session
+    current_app, flash, Response, jsonify, request, url_for, session, g
 )
 from flask_jwt_extended import jwt_required
 from sqlalchemy import or_
 from sqlalchemy.orm.attributes import flag_modified
+from sqlalchemy.orm import joinedload # Optimización N+1
 from app.auth import get_current_user
 from app.models import Condominium, User, CondominiumConfig, Unit, PlatformBankAccount
 from app import db, models
 from datetime import datetime, timedelta
 import io
 import csv
+from app.decorators import master_required
 
 master_bp = Blueprint('master', __name__)
 
 @master_bp.route('/master')
-@jwt_required()
-def master_panel():
-    user = get_current_user()
-    if not user or user.role != 'MASTER':
-        flash("Acceso denegado – Se requiere rol MASTER", "error")
-        return redirect('/dashboard')
-    
-    from app.tenant import get_tenant
-    tenant = get_tenant()
-    config = current_app.get_tenant_config(tenant)
+@master_required
+def master_panel(current_user):
+    condominium = g.condominium
+    config = current_app.get_tenant_config(condominium.subdomain if condominium else None)
     all_users = User.query.all()
-    return render_template('master/panel.html', user=user, config=config, all_users=all_users)
+    return render_template('master/panel.html', user=current_user, config=config, all_users=all_users)
 
 @master_bp.route('/master/reports', methods=['GET', 'POST'])
-@jwt_required()
-def reports():
-    user = get_current_user()
-    if not user or user.role != 'MASTER':
-        flash("Acceso denegado.", "error")
-        return redirect('/dashboard')
-
+@master_required
+def reports(current_user):
     # Generación de estadísticas en tiempo real
     total_condos = Condominium.query.count()
     active_condos = Condominium.query.filter_by(status='ACTIVO').count()
@@ -64,7 +55,11 @@ def reports():
             # Cabeceras Detalladas
             writer.writerow(['ID', 'Nombre Legal', 'RUC', 'Dirección Completa', 'Latitud', 'Longitud', 'Celular Admin', 'Administrador', 'Estado', 'Módulos Activos'])
             
-            condos = Condominium.query.order_by(Condominium.name).all()
+            # OPTIMIZACIÓN: Eager load del admin_user
+            condos = Condominium.query.order_by(Condominium.name)\
+                .options(joinedload(Condominium.admin_user))\
+                .all()
+                
             for c in condos:
                 admin_name = c.admin_user.name if c.admin_user else 'N/A'
                 admin_cell = c.admin_user.cellphone if c.admin_user else 'N/A'
@@ -103,6 +98,8 @@ def reports():
             admins = User.query.filter_by(role='ADMIN').all()
             for admin in admins:
                 # Buscar condominios de este admin
+                # Nota: Esto sigue siendo N+1 pero es un reporte administrativo de bajo volumen.
+                # Para optimizarlo requeriría refactorizar modelos para tener backref explícito
                 condos_managed = Condominium.query.filter_by(admin_user_id=admin.id).all()
                 
                 for condo in condos_managed:
@@ -137,8 +134,12 @@ def reports():
             writer = csv.writer(output)
             writer.writerow(['ID Pago', 'Fecha', 'Condominio', 'Usuario', 'Unidad', 'Monto', 'Método', 'Estado', 'Referencia'])
             
-            # Últimos 1000 pagos o filtro por fecha si se implementara
-            payments = models.Payment.query.order_by(models.Payment.created_at.desc()).limit(5000).all()
+            # Últimos 5000 pagos
+            # OPTIMIZACIÓN: Eager load de relaciones críticas
+            payments = models.Payment.query.order_by(models.Payment.created_at.desc())\
+                .options(joinedload(models.Payment.condominium), joinedload(models.Payment.user), joinedload(models.Payment.unit))\
+                .limit(5000).all()
+                
             for p in payments:
                 writer.writerow([
                     p.id,
@@ -185,7 +186,7 @@ def reports():
             )
 
     return render_template('master/reports.html', 
-                           user=user,
+                           user=current_user,
                            stats={
                                'total_condos': total_condos,
                                'active_condos': active_condos,
@@ -197,13 +198,8 @@ def reports():
                            })
 
 @master_bp.route('/master/condominios', methods=['GET'])
-@jwt_required()
-def master_condominios():
-    user = get_current_user()
-    if not user or user.role != 'MASTER':
-        flash("Acceso denegado – Se requiere rol MASTER", "error")
-        return redirect('/dashboard')
-
+@master_required
+def master_condominios(current_user):
     search_query = request.args.get('q', '')
     query = Condominium.query
 
@@ -218,20 +214,15 @@ def master_condominios():
         ))
 
     all_condominiums = query.order_by(Condominium.created_at.desc()).all()
-    return render_template('master/condominios.html', user=user, all_condominiums=all_condominiums, search_query=search_query)
+    return render_template('master/condominios.html', user=current_user, all_condominiums=all_condominiums, search_query=search_query)
 
 @master_bp.route('/supervise/<int:condominium_id>', methods=['GET'])
-@jwt_required()
-def supervise_condominium(condominium_id):
+@master_required
+def supervise_condominium(current_user, condominium_id):
     """
     Muestra un panel de supervisión de solo lectura para un condominio específico.
     Accesible solo para el rol MASTER.
     """
-    user = get_current_user()
-    if not user or user.role != 'MASTER':
-        flash('Acceso no autorizado.', 'danger')
-        return redirect(url_for('public.login'))
-
     condominium = db.session.get(Condominium, condominium_id)
     if not condominium:
         flash('Condominio no encontrado.', 'danger')
@@ -245,18 +236,13 @@ def supervise_condominium(condominium_id):
     }
 
     return render_template('master/supervise_condominium.html', 
-                           user=user, 
+                           user=current_user, 
                            condominium=condominium, 
                            stats=stats)
 
 @master_bp.route('/master/usuarios', methods=['GET'])
-@jwt_required()
-def master_usuarios():
-    user = get_current_user()
-    if not user or user.role != 'MASTER':
-        flash("Acceso denegado – Se requiere rol MASTER", "error")
-        return redirect('/dashboard')
-
+@master_required
+def master_usuarios(current_user):
     search_query = request.args.get('q', '')
     base_query = User.query
 
@@ -282,7 +268,7 @@ def master_usuarios():
 
     return render_template(
         'master/usuarios.html',
-        user=user,
+        user=current_user,
         pending_users=pending_users,
         active_users=active_users,
         rejected_users=rejected_users,
@@ -292,13 +278,8 @@ def master_usuarios():
     )
 
 @master_bp.route('/master/usuarios/manage', methods=['POST'])
-@jwt_required()
-def master_manage_user():
-    user = get_current_user()
-    if not user or user.role != 'MASTER':
-        flash("Acceso denegado.", "error")
-        return redirect(url_for('public.login'))
-
+@master_required
+def master_manage_user(current_user):
     action = request.form.get('action')
     user_id = request.form.get('user_id')
     user_to_manage = User.query.get_or_404(int(user_id))
@@ -329,7 +310,7 @@ def master_manage_user():
             subdomain=demo_subdomain,
             status='DEMO',
             admin_user_id=user_to_manage.id,
-            created_by=user.id,
+            created_by=current_user.id,
             # Podríamos añadir una fecha de expiración
             # expiration_date=datetime.utcnow() + timedelta(days=15) 
         )
@@ -352,13 +333,8 @@ def master_manage_user():
     return redirect(url_for('master.master_usuarios'))
 
 @master_bp.route('/master/usuarios/editar/<int:user_id>', methods=['GET', 'POST'])
-@jwt_required()
-def master_usuarios_editar(user_id):
-    current_user = get_current_user()
-    if not current_user or current_user.role != 'MASTER':
-        flash("Acceso denegado.", "error")
-        return redirect(url_for('public.login'))
-
+@master_required
+def master_usuarios_editar(current_user, user_id):
     user_to_edit = User.query.get_or_404(user_id)
     all_condominiums = Condominium.query.order_by(Condominium.name).all()
 
@@ -391,31 +367,27 @@ def master_usuarios_editar(user_id):
     return render_template('master/editar_usuario.html', user=current_user, user_to_edit=user_to_edit, all_condominiums=all_condominiums)
 
 @master_bp.route('/master/usuarios/eliminar/<int:user_id>', methods=['POST'])
-@jwt_required()
-def master_usuarios_eliminar(user_id):
+@master_required
+def master_usuarios_eliminar(current_user, user_id):
     # Placeholder para la lógica de eliminación
     flash(f"Funcionalidad para eliminar usuario {user_id} no implementada.", "info")
     return redirect(url_for('master.master_usuarios'))
 
 @master_bp.route('/master/configuracion', methods=['GET', 'POST'])
-@jwt_required()
-def master_configuracion():
+@master_required
+def master_configuracion(current_user):
     """
     Panel de configuración global de la plataforma (Banco, APIs, etc.)
     Usa el condominio 'sandbox' como almacén de esta configuración global.
     """
-    user = get_current_user()
-    if not user or user.role != 'MASTER':
-        flash("Acceso denegado – Se requiere rol MASTER", "error")
-        return redirect('/dashboard')
-
     # Usamos el condominio 'sandbox' o el tenant del master para guardar esta config
     # En un sistema más grande, esto iría en una tabla 'PlatformConfig'
     target_condo = None
-    if user.tenant:
-        target_condo = Condominium.query.filter_by(subdomain=user.tenant).first()
+    if current_user.tenant:
+        target_condo = Condominium.query.filter_by(subdomain=current_user.tenant).first()
     if not target_condo:
-        target_condo = Condominium.query.filter_by(subdomain='sandbox').first()
+        # ARQUITECTURA ROBUSTA: Buscar por entorno interno, no por nombre 'sandbox'
+        target_condo = Condominium.query.filter_by(environment='internal').first()
     
     if not target_condo:
         flash("No se encontró un entorno (Sandbox) para guardar la configuración.", "error")
@@ -472,16 +444,11 @@ def master_configuracion():
             db.session.rollback()
             flash(f"Error al guardar: {e}", "error")
 
-    return render_template('master/configuracion.html', user=user, config=config_data, bank_accounts=bank_accounts)
+    return render_template('master/configuracion.html', user=current_user, config=config_data, bank_accounts=bank_accounts)
 
 @master_bp.route('/master/configuracion/cuenta-bancaria', methods=['POST'])
-@jwt_required()
-def manage_bank_account():
-    user = get_current_user()
-    if not user or user.role != 'MASTER':
-        flash("Acceso denegado.", "error")
-        return redirect('/dashboard')
-
+@master_required
+def manage_bank_account(current_user):
     try:
         account_id = request.form.get('account_id_db')
         
@@ -510,13 +477,8 @@ def manage_bank_account():
     return redirect(url_for('master.master_configuracion'))
 
 @master_bp.route('/master/configuracion/cuenta-bancaria/<int:account_id>/eliminar', methods=['POST'])
-@jwt_required()
-def delete_bank_account(account_id):
-    user = get_current_user()
-    if not user or user.role != 'MASTER':
-        flash("Acceso denegado.", "error")
-        return redirect('/dashboard')
-        
+@master_required
+def delete_bank_account(current_user, account_id):
     try:
         account = PlatformBankAccount.query.get_or_404(int(account_id))
         db.session.delete(account)
@@ -529,13 +491,8 @@ def delete_bank_account(account_id):
     return redirect(url_for('master.master_configuracion'))
 
 @master_bp.route('/master/usuarios/reaprobar/<int:user_id>', methods=['POST'])
-@jwt_required()
-def master_usuarios_reaprobar(user_id):
-    user = get_current_user()
-    if not user or user.role != 'MASTER':
-        flash("Acceso denegado.", "error")
-        return redirect(url_for('public.login'))
-
+@master_required
+def master_usuarios_reaprobar(current_user, user_id):
     user_to_reapprove = User.query.get_or_404(user_id)
     if user_to_reapprove:
         user_to_reapprove.status = 'pending' # Lo devolvemos a pendiente para que el MASTER decida qué hacer
@@ -547,13 +504,8 @@ def master_usuarios_reaprobar(user_id):
     return redirect(url_for('master.master_usuarios'))
 
 @master_bp.route('/master/usuarios/importar_admins', methods=['POST'])
-@jwt_required()
-def master_importar_admins_csv():
-    user = get_current_user()
-    if not user or user.role != 'MASTER':
-        flash("Acceso denegado.", "error")
-        return redirect(url_for('master.master_usuarios'))
-
+@master_required
+def master_importar_admins_csv(current_user):
     if 'csv_file' not in request.files:
         flash('No se encontró el archivo en la solicitud.', 'error')
         return redirect(url_for('master.master_usuarios'))
@@ -570,8 +522,8 @@ def master_importar_admins_csv():
             created_count = 0
             errors = []
             import hashlib
-
             import secrets
+            
             for row in csv_reader:
                 if User.query.filter_by(email=row['email']).first() or User.query.filter_by(cedula=row['cedula']).first():
                     errors.append(f"Usuario con email {row['email']} o cédula {row['cedula']} ya existe.")
@@ -611,13 +563,8 @@ def master_importar_admins_csv():
     return redirect(url_for('master.master_usuarios'))
 
 @master_bp.route('/master/usuarios/crear', methods=['GET', 'POST'])
-@jwt_required()
-def master_usuarios_crear():
-    user = get_current_user()
-    if not user or user.role != 'MASTER':
-        flash("Acceso denegado – Se requiere rol MASTER", "error")
-        return redirect('/dashboard')
-
+@master_required
+def master_usuarios_crear(current_user):
     all_condominiums = Condominium.query.order_by(Condominium.name).all()
 
     if request.method == 'POST':
@@ -626,10 +573,10 @@ def master_usuarios_crear():
 
         if User.query.filter_by(email=email).first():
             flash(f"El email '{email}' ya está registrado.", "error")
-            return render_template('master/crear_usuario.html', user=user, all_condominiums=all_condominiums, request_form=request.form)
+            return render_template('master/crear_usuario.html', user=current_user, all_condominiums=all_condominiums, request_form=request.form)
         if User.query.filter_by(cedula=cedula).first():
             flash(f"La cédula '{cedula}' ya está registrada.", "error")
-            return render_template('master/crear_usuario.html', user=user, all_condominiums=all_condominiums, request_form=request.form)
+            return render_template('master/crear_usuario.html', user=current_user, all_condominiums=all_condominiums, request_form=request.form)
 
         import hashlib
         password = request.form.get('password')
@@ -667,16 +614,11 @@ def master_usuarios_crear():
         flash(f'Usuario {new_user.name} creado exitosamente.', 'success')
         return redirect(url_for('master.master_usuarios'))
 
-    return render_template('master/crear_usuario.html', user=user, all_condominiums=all_condominiums, request_form={})
+    return render_template('master/crear_usuario.html', user=current_user, all_condominiums=all_condominiums, request_form={})
 
 @master_bp.route('/master/crear_condominio', methods=['GET', 'POST'])
-@jwt_required()
-def crear_condominio():
-    user = get_current_user()
-    if not user or user.role != 'MASTER':
-        flash("Acceso denegado – Se requiere rol MASTER", "error")
-        return redirect('/dashboard')
-
+@master_required
+def crear_condominio(current_user):
     if request.method == 'POST':
         try:
             # Asegurarse de que el admin_user_id es un entero
@@ -685,7 +627,7 @@ def crear_condominio():
                 # CORRECCIÓN: En lugar de redirigir, volvemos a renderizar la plantilla con un error.
                 flash('Debe seleccionar un administrador.', 'error')
                 administradores = User.query.filter(User.role.in_(['ADMIN', 'MASTER'])).all()
-                return render_template('master/crear_condominio.html', user=user, administradores=administradores, legal_representatives=administradores, request_form=request.form)
+                return render_template('master/crear_condominio.html', user=current_user, administradores=administradores, legal_representatives=administradores, request_form=request.form)
 
             new_condo = Condominium(
                 name=request.form.get('name'),
@@ -702,7 +644,7 @@ def crear_condominio():
                 subdomain=request.form.get('subdomain'),
                 status='ACTIVO', # Corregido: El MASTER crea condominios activos directamente.
                 admin_user_id=int(admin_id),
-                created_by=user.id,
+                created_by=current_user.id,
                 document_code_prefix=request.form.get('document_code_prefix', '').strip().upper() or None
             )
             db.session.add(new_condo)
@@ -720,25 +662,20 @@ def crear_condominio():
             current_app.logger.error(f"Error al crear el condominio: {e}")
             flash(f'Error al crear el condominio: {e}', 'error')
             administradores = User.query.filter(User.role.in_(['ADMIN', 'MASTER'])).order_by(User.first_name).all()
-            return render_template('master/crear_condominio.html', user=user, administradores=administradores, legal_representatives=administradores, request_form=request.form)
+            return render_template('master/crear_condominio.html', user=current_user, administradores=administradores, legal_representatives=administradores, request_form=request.form)
 
     # GET request
     administradores = User.query.filter(User.role.in_(['ADMIN', 'MASTER'])).order_by(User.first_name).all()
     legal_representatives = User.query.order_by(User.first_name).all()
-    return render_template('master/crear_condominio.html', user=user, administradores=administradores, legal_representatives=legal_representatives)
+    return render_template('master/crear_condominio.html', user=current_user, administradores=administradores, legal_representatives=legal_representatives)
 
 @master_bp.route('/master/modules', methods=['GET', 'POST'])
-@jwt_required()
-def manage_module_catalog():
+@master_required
+def manage_module_catalog(current_user):
     """
     Panel para que el MASTER gestione el catálogo global de módulos.
     Aquí se crean, editan y se pone en mantenimiento los módulos.
     """
-    user = get_current_user()
-    if not user or user.role != 'MASTER':
-        flash("Acceso denegado.", "error")
-        return redirect(url_for('public.login'))
-
     if request.method == 'POST':
         # Lógica para crear o editar un módulo del catálogo
         module_id = request.form.get('module_id')
@@ -797,16 +734,11 @@ def manage_module_catalog():
         return redirect(url_for('master.manage_module_catalog'))
 
     all_modules = db.session.query(models.Module).order_by(models.Module.name).all()
-    return render_template('master/module_catalog.html', user=user, all_modules=all_modules)
+    return render_template('master/module_catalog.html', user=current_user, all_modules=all_modules)
 
 @master_bp.route('/master/condominios/importar', methods=['POST'])
-@jwt_required()
-def master_importar_condos_csv():
-    user = get_current_user()
-    if not user or user.role != 'MASTER':
-        flash("Acceso denegado.", "error")
-        return redirect(url_for('master.master_condominios'))
-
+@master_required
+def master_importar_condos_csv(current_user):
     if 'csv_file' not in request.files:
         flash('No se encontró el archivo en la solicitud.', 'error')
         return redirect(url_for('master.master_condominios'))
@@ -836,7 +768,7 @@ def master_importar_condos_csv():
                 new_condo = Condominium(
                     name=row['name'], legal_name=row.get('legal_name'), email=row.get('email'), ruc=row['ruc'],
                     main_street=row['main_street'], cross_street=row['cross_street'], city=row['city'], country=row.get('country', 'Ecuador'),
-                    subdomain=row['subdomain'], status='ACTIVO', admin_user_id=admin.id, created_by=user.id
+                    subdomain=row['subdomain'], status='ACTIVO', admin_user_id=admin.id, created_by=current_user.id
                 )
                 db.session.add(new_condo)
                 created_count += 1
@@ -853,13 +785,8 @@ def master_importar_condos_csv():
     return redirect(url_for('master.master_condominios'))
 
 @master_bp.route('/master/condominios/editar/<int:condo_id>', methods=['GET', 'POST'])
-@jwt_required()
-def editar_condominio(condo_id):
-    user = get_current_user()
-    if not user or user.role != 'MASTER':
-        flash("Acceso denegado.", "error")
-        return redirect(url_for('public.login'))
-
+@master_required
+def editar_condominio(current_user, condo_id):
     condo_to_edit = Condominium.query.get_or_404(condo_id)
     administradores = User.query.filter(User.role.in_(['ADMIN', 'MASTER'])).all()
 
@@ -924,16 +851,12 @@ def editar_condominio(condo_id):
             current_app.logger.error(f"Error al editar el condominio: {e}")
             flash(f'Error al editar el condominio: {e}', 'error')
 
-    return render_template('master/editar_condominio.html', user=user, condo=condo_to_edit, administradores=administradores)
+    return render_template('master/editar_condominio.html', user=current_user, condo=condo_to_edit, administradores=administradores)
 
 
 @master_bp.route('/master/descargar-plantilla-unidades')
-@jwt_required()
-def descargar_plantilla_unidades():
-    user = get_current_user()
-    if not user or user.role != 'MASTER':
-        return jsonify({"error": "Acceso denegado"}), 403
-
+@master_required
+def descargar_plantilla_unidades(current_user):
     output = io.StringIO()
     writer = csv.writer(output)
     
@@ -958,13 +881,8 @@ def descargar_plantilla_unidades():
     )
 
 @master_bp.route('/master/condominios/inactivar/<int:condo_id>', methods=['POST'])
-@jwt_required()
-def inactivar_condominio(condo_id):
-    user = get_current_user()
-    if not user or user.role != 'MASTER':
-        flash("Acceso denegado.", "error")
-        return redirect(url_for('master.master_condominios'))
-
+@master_required
+def inactivar_condominio(current_user, condo_id):
     condo_to_inactivate = Condominium.query.get_or_404(condo_id)
     condo_to_inactivate.status = 'INACTIVO'
     db.session.commit()
@@ -974,25 +892,20 @@ def inactivar_condominio(condo_id):
 from app.services.whatsapp import WhatsAppService
 
 @master_bp.route('/master/comunicaciones', methods=['GET'])
-@jwt_required()
-def master_comunicaciones():
+@master_required
+def master_comunicaciones(current_user):
     """
     Panel de comunicaciones globales para el MASTER.
     """
-    user = get_current_user()
-    if not user or user.role != 'MASTER':
-        flash("Acceso denegado.", "error")
-        return redirect(url_for('public.login'))
-
     # Obtener el condominio "Sandbox" o donde resida el Master
-    # Lógica: Buscar por tenant del usuario, si no, buscar por subdomain 'sandbox'
+    # Lógica: Buscar por tenant del usuario, si no, buscar por environment 'internal'
     condominium = None
-    if user.tenant:
-        condominium = Condominium.query.filter_by(subdomain=user.tenant).first()
+    if current_user.tenant:
+        condominium = Condominium.query.filter_by(subdomain=current_user.tenant).first()
     
     if not condominium:
-        # Fallback: Buscar sandbox
-        condominium = Condominium.query.filter_by(subdomain='sandbox').first()
+        # Fallback: Buscar sandbox (internal)
+        condominium = Condominium.query.filter_by(environment='internal').first()
     
     if not condominium:
         flash("No se encontró un condominio base (Sandbox) para la configuración del Master.", "warning")
@@ -1007,26 +920,22 @@ def master_comunicaciones():
         whatsapp_status = ws.get_status()
 
     return render_template('master/comunicaciones.html', 
-                           user=user, 
+                           user=current_user, 
                            condominium=condominium, 
                            admins_count=admins_count,
                            status=whatsapp_status)
 
 @master_bp.route('/master/comunicaciones/qr', methods=['GET'])
-@jwt_required()
-def master_get_qr():
+@master_required
+def master_get_qr(current_user):
     """
     Retorna el QR para la conexión de WhatsApp.
     """
-    user = get_current_user()
-    if not user or user.role != 'MASTER':
-        return jsonify({"error": "Acceso denegado"}), 403
-
     condominium = None
-    if user.tenant:
-        condominium = Condominium.query.filter_by(subdomain=user.tenant).first()
+    if current_user.tenant:
+        condominium = Condominium.query.filter_by(subdomain=current_user.tenant).first()
     if not condominium:
-        condominium = Condominium.query.filter_by(subdomain='sandbox').first()
+        condominium = Condominium.query.filter_by(environment='internal').first()
         
     if not condominium:
          return jsonify({"error": "Condominio no encontrado"}), 404
@@ -1040,22 +949,17 @@ def master_get_qr():
     return jsonify({"qr": qr_data, "status": "SCAN_QR"})
 
 @master_bp.route('/master/configurar-whatsapp', methods=['POST'])
-@jwt_required()
-def configurar_whatsapp():
+@master_required
+def configurar_whatsapp(current_user):
     """
     Guarda la configuración del proveedor de WhatsApp para el MASTER.
     """
-    user = get_current_user()
-    if not user or user.role != 'MASTER':
-        flash("Acceso denegado.", "error")
-        return redirect(url_for('public.login'))
-
     # Determinar condominio del Master
     condo = None
-    if user.tenant:
-        condo = Condominium.query.filter_by(subdomain=user.tenant).first()
+    if current_user.tenant:
+        condo = Condominium.query.filter_by(subdomain=current_user.tenant).first()
     if not condo:
-        condo = Condominium.query.filter_by(subdomain='sandbox').first()
+        condo = Condominium.query.filter_by(environment='internal').first()
     
     if not condo:
         flash("Error crítico: No tienes un condominio asignado para guardar la configuración.", "error")
@@ -1093,13 +997,8 @@ def configurar_whatsapp():
     return redirect(url_for('master.master_comunicaciones'))
 
 @master_bp.route('/master/condominios/configurar-modulos/<int:condo_id>', methods=['GET'])
-@jwt_required()
-def configure_condo_modules(condo_id):
-    user = get_current_user()
-    if not user or user.role != 'MASTER':
-        flash("Acceso denegado.", "error")
-        return redirect(url_for('public.login'))
-    
+@master_required
+def configure_condo_modules(current_user, condo_id):
     condo = Condominium.query.get_or_404(condo_id)
     
     # 1. Obtener TODOS los módulos globales
@@ -1136,30 +1035,24 @@ def configure_condo_modules(condo_id):
     module_configs = {c.module_id: c for c in configs}
     
     return render_template('master/configure_condo_modules.html', 
-                           user=user, condo=condo, 
+                           user=current_user, condo=condo, 
                            all_modules=active_modules, # Pasamos solo los filtrados
                            module_configs=module_configs)
 
 @master_bp.route('/master/document-audit', methods=['GET'])
-@jwt_required()
-def master_document_audit():
-    user = get_current_user()
-    if not user or user.role != 'MASTER':
-        flash("Acceso denegado.", "error")
-        return redirect('/dashboard')
-        
+@master_required
+def master_document_audit(current_user):
     # Listar todos los documentos del sistema
-    documents = models.Document.query.order_by(models.Document.created_at.desc()).all()
-    return render_template('master/document_audit.html', user=user, documents=documents)
+    # OPTIMIZACIÓN: Eager load de relaciones
+    documents = models.Document.query.order_by(models.Document.created_at.desc())\
+        .options(joinedload(models.Document.condominium), joinedload(models.Document.created_by))\
+        .all()
+        
+    return render_template('master/document_audit.html', user=current_user, documents=documents)
 
 @master_bp.route('/master/condominios/guardar-config-modulo/<int:condo_id>', methods=['POST'])
-@jwt_required()
-def save_condo_module_config(condo_id):
-    user = get_current_user()
-    if not user or user.role != 'MASTER':
-        flash("Acceso denegado.", "error")
-        return redirect(url_for('public.login'))
-    
+@master_required
+def save_condo_module_config(current_user, condo_id):
     condo = Condominium.query.get_or_404(condo_id)
     module_id = request.form.get('module_id')
     

@@ -19,7 +19,7 @@ El desarrollo de este proyecto sigue un flujo de trabajo basado en GitOps, donde
 > 2.  `python seed_initial_data.py`: Ejecuta un script que siembra los datos iniciales (como el usuario MASTER) solo si la base de datos es nueva.
 
 ## 1. Convenciones del Proyecto
-Este proyecto sigue convenciones de código y documentación para asegurar claridad y mantenibilidad. Ver [docs/00_CONVENCIONES.md](./docs/00_CONVENCIONES.md) para más detalles.
+Este proyecto sigue convenciones de código y documentación para asegurar claridad y mantenibilidad. Ver [00_CONVENCIONES.md](./00_CONVENCIONES.md) para más detalles.
 
 > **IMPORTANTE**: Todo el código y los identificadores técnicos de este proyecto DEBEN estar en **inglés**, incluyendo:
 > - Nombres de variables, funciones, clases, atributos y métodos.
@@ -31,7 +31,7 @@ Este proyecto sigue convenciones de código y documentación para asegurar clari
 >
 > Excepciones permitidas:
 > > - **Texto visible para el usuario final**: El contenido de texto destinado a la interfaz de usuario (UI), como etiquetas en plantillas HTML, mensajes de `flash` o alertas, **debe estar en español**.
-> - Documentación de alto nivel (como este README) puede estar en español para claridad del equipo.
+> - Documentación de alto nivel (como este Índice) puede estar en español para claridad del equipo.
 
 ## 2. Estructura del Proyecto (INMUTABLE)
 
@@ -53,32 +53,42 @@ Este proyecto sigue convenciones de código y documentación para asegurar clari
 └── run.py                  # Punto de entrada para Gunicorn.
 ```
 
-## 3. Documentación Técnica
+## 3. Índice de Documentación Técnica
 
-### 3.1 Documentación Base
-- [00_CONVENCIONES.md](./docs/00_CONVENCIONES.md): Reglas y estándares del proyecto
-- [01_MANUAL_USUARIO.md](./docs/01_MANUAL_USUARIO.md): Manual de usuario detallado
-- [02_ARQUITECTURA.md](./docs/02_ARQUITECTURA.md): Diseño y especificaciones técnicas
-- [03_API.md](./docs/03_API.md): Documentación de endpoints
-- [04_DATABASE.md](./docs/04_DATABASE.md): Estructura y gestión de base de datos
-- [05_INSTALACION.md](./docs/05_INSTALACION.md): Guía de instalación general
+### 3.1 Arquitectura y Core
+- **[00_CONVENCIONES.md](./00_CONVENCIONES.md)**: Constitución Técnica (Reglas y Antipatrones).
+- **[01_INDICE.md](./01_INDICE.md)**: Este archivo (Mapa de navegación).
+- **[02_ARQUITECTURA.md](./02_ARQUITECTURA.md)**: Diseño de alto nivel, Multi-Tenancy y decisiones técnicas.
+- **[03_DATABASE.md](./03_DATABASE.md)**: Esquema de base de datos, modelos y migraciones.
+- **[04_API.md](./04_API.md)**: Referencia de Endpoints y flujos de datos.
+- **[05_INSTALACION.md](./05_INSTALACION.md)**: Guía de setup para desarrolladores.
+- **[06_DEPLOYMENT.md](./06_DEPLOYMENT.md)**: Guía de operaciones en Railway y Cloudflare.
 
-### 3.2 Diseño y Estilo (NUEVO)
-- **[design.md](./docs/design.md): Sistema de Diseño, Guía de Estilos y Estándares de UI.** (Lectura obligatoria para Frontend)
+### 3.2 Reglas de Negocio y Seguridad
+- **[07_REGLAS_NEGOCIO.md](./07_REGLAS_NEGOCIO.md)**: Lógica específica del dominio (Cobros, Multas, etc.).
+- **[08_ROLES_Y_PERMISOS.md](./08_ROLES_Y_PERMISOS.md)**: Matriz de accesos y perfiles de usuario.
 
-### 3.3 Documentación de Despliegue y Operaciones
-- [06_DEPLOYMENT.md](./docs/06_DEPLOYMENT.md): Guía de despliegue en producción
-- [07_MONITORING.md](./docs/07_MONITORING.md): Sistema de monitoreo y logs
-- [08_ROLES_Y_PERMISOS.md](./docs/08_ROLES_Y_PERMISOS.md): Gestión de roles y permisos
-- [10_MODULOS_FUTUROS.md](./docs/10_MODULOS_FUTUROS.md): Marketplace y Módulos Avanzados
-- [11_MODULOS_FINANCIEROS.md](./docs/11_MODULOS_FINANCIEROS.md): Estrategia Financiera y Monetización
+### 3.3 UI/UX
+- **[09_DESIGN_SYSTEM.md](./09_DESIGN_SYSTEM.md)**: Guía de estilos, componentes y estándares de interfaz.
 
-### 3.4 Documentación Específica por Sistema Operativo
-- [WINDOWS_SETUP.md](./docs/WINDOWS_SETUP.md): Guía específica para Windows
+### 3.4 Roadmap y Estrategia
+- **[10_MODULOS_FUTUROS.md](./10_MODULOS_FUTUROS.md)**: Roadmap de features (Marketplace, B2B).
+- **[11_MODULOS_FINANCIEROS.md](./11_MODULOS_FINANCIEROS.md)**: Estrategia de monetización.
 
-### 3.5 Documentación de Control de Versiones
-- [CHANGELOG.md](./docs/CHANGELOG.md): Historial de cambios
-- [ROADMAP.md](./docs/ROADMAP.md): Plan de desarrollo futuro
+### 3.5 Soporte
+- **[12_MANUAL_USUARIO.md](./12_MANUAL_USUARIO.md)**: Guía para administradores y usuarios finales.
+
+### 3.6 Planificación e Integraciones (Subcarpetas)
+- **Integraciones (`/docs/integrations/`)**:
+  - [Google Drive](./integrations/google_drive_integration.md)
+- **Planificación (`/docs/planning/`)**:
+  - [API Firmas OneShot](./planning/api_firmas_oneshot.md)
+  - [Módulo Firmas](./planning/firmasycom.md)
+  - [Implementación Pagos](./planning/plan_implementacion_pagos.md)
+  - [Implementación WhatsApp](./planning/plan_implementacion_whatsapp.md)
+
+### 3.7 Referencias
+- **`/docs/references/`**: Manuales externos y especificaciones.
 
 ## 4. Versionamiento
 Este proyecto sigue [Versionamiento Semántico](https://semver.org/lang/es/).

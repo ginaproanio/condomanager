@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Página No Encontrada - CondoManager{% endblock %}
+
+{% block content %}
+<div class="container mt-5 text-center">
+    <div class="error-page">
+        <h1 class="display-1 text-muted">404</h1>
+        <h2>Página No Encontrada</h2>
+        <p class="lead">{{ error or "El recurso que buscas no existe o ha sido movido." }}</p>
+        <a href="{{ url_for('public.home') }}" class="btn btn-primary mt-3">Volver al Inicio</a>
+    </div>
+</div>
+{% endblock %}
+

@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import requests
 import base64
 import json
+import os
 from flask import current_app
 
 # --- ABSTRACT STRATEGY ---
@@ -130,11 +131,12 @@ class SignatureServiceFactory:
             if condominium.signature_provider_config:
                 api_key = condominium.signature_provider_config.get('api_key')
             
-            # Fallback hardcoded para Punta Blanca
+            # Fallback securely for Punta Blanca using Environment Variable
             if not api_key and condominium.subdomain == 'puntablanca':
-                api_key = "508f23a8cc4806b35687f696e9ac601c4556a53453d709b2a1a13e3d221d22ad"
+                api_key = os.environ.get('PUNTABLANCA_NEXXIT_KEY')
             
             if api_key:
                 return NexxitOneshotProvider(api_key)
                 
         return None
+

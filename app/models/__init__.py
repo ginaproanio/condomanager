@@ -1,5 +1,6 @@
 from app.extensions import db
-from sqlalchemy import Boolean, Date
+from sqlalchemy import Boolean, Date, event
+from flask import g
 from datetime import datetime
 
 # --- CONFIGURACIÓN GLOBAL DE PLATAFORMA ---
@@ -56,14 +57,16 @@ class User(db.Model):
     signature_certificate = db.Column(db.LargeBinary) # Almacena el archivo .p12 encriptado
     signature_cert_password_hash = db.Column(db.String(255)) # Hash de la contraseña del certificado
 
+    # --- SEGURIDAD / TENANT (Semana 1, Día 3) ---
+    condominium_id = db.Column(db.Integer, db.ForeignKey('condominiums.id'), nullable=True)
+    condominium_rel = db.relationship('Condominium', foreign_keys=[condominium_id], backref='users')
+
     # --- Redes Sociales ---
     twitter_profile = db.Column(db.String(255))
     facebook_profile = db.Column(db.String(255))
     instagram_profile = db.Column(db.String(255))
     linkedin_profile = db.Column(db.String(255))
     tiktok_profile = db.Column(db.String(255))
-
-
 
 # 2. CONFIGURACIÓN CONDOMINIO
 class CondominiumConfig(db.Model):
@@ -99,6 +102,17 @@ class Condominium(db.Model):
     subdomain = db.Column(db.String(100), unique=True)
     document_code_prefix = db.Column(db.String(10)) # Prefijo para documentos (ej: PUNTA, ALGA)
     status = db.Column(db.String(30), default='PENDIENTE_APROBACION')
+    
+    # --- SEGURIDAD / ARQUITECTURA MULTI-ENTORNO (2025 STANDARD) ---
+    # environment: 'production' (clientes reales), 'demo' (pruebas públicas), 'internal' (maestro/sandbox)
+    environment = db.Column(db.String(20), default='production', nullable=False, server_default='production')
+    
+    # is_demo: Flag explícito para lógica rápida de frontend/limpieza
+    is_demo = db.Column(db.Boolean, default=False, nullable=False, server_default='false')
+
+    # is_internal: DEPRECADO (Mantener por compatibilidad breve, usar environment='internal')
+    is_internal = db.Column(db.Boolean, default=False, server_default='false') 
+
     billing_day = db.Column(db.Integer, default=1)
     grace_days = db.Column(db.Integer, default=5)
     trial_start_date = db.Column(Date)
@@ -121,6 +135,12 @@ class Condominium(db.Model):
 
     # --- Configuración de Firmas Electrónicas (Nuevo) ---
     signature_provider_config = db.Column(db.JSON, default={}) # Almacena API keys de Uanataca/Nexxit por tenant
+
+    # --- Integración Google Drive ---
+    drive_root_folder_id = db.Column(db.String(100))
+    drive_folders_map = db.Column(db.JSON, default={}) # Mapa { "Actas": "id_folder", ... }
+    drive_refresh_token = db.Column(db.String(500)) # Token de larga duración (encriptar en futuro)
+    drive_email = db.Column(db.String(100)) # Cuenta de Google conectada
 
     # FK corregidas a 'users.id'
     admin_user_id = db.Column(db.Integer, db.ForeignKey('users.id', name='fk_condominium_admin_user'))
@@ -379,3 +399,18 @@ class PettyCashTransaction(db.Model):
     
     user = db.relationship('User', backref='petty_cash_entries')
     condominium = db.relationship('Condominium', backref='petty_cash_entries')
+
+# --- EVENTOS DE INYECCIÓN DE TENANT ---
+
+@event.listens_for(db.session, 'before_flush')
+def auto_inject_tenant(session, flush_context, instances):
+    """
+    Auto-inyecta el ID del condominio actual en cualquier modelo nuevo que tenga 'condominium_id'
+    y no lo tenga asignado.
+    """
+    if hasattr(g, 'condominium') and g.condominium:
+        for obj in session.new:
+            if hasattr(obj, 'condominium_id'):
+                # Solo si no se ha asignado manualmente
+                if not obj.condominium_id:
+                    obj.condominium_id = g.condominium.id

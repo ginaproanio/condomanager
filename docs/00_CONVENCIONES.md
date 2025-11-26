@@ -1,70 +1,77 @@
-# 00. Convenciones del Proyecto
+# 00. Convenciones y Reglas Críticas del Proyecto
 
-Versión: 1.0 (2025-11-20)
-
-> **Propósito**: Este documento es la fuente de verdad única para todas las convenciones de código, nomenclatura y flujo de trabajo en el proyecto CondoManager. El cumplimiento de estas reglas es **obligatorio** para mantener la calidad, consistencia y mantenibilidad del código.
+> **Propósito**: Este documento es la **Constitución Técnica** de CondoManager-SaaS. Define las reglas inquebrantables de arquitectura y seguridad, así como las convenciones de estilo.
+>
+> **Cualquier PR que viole la Sección 1 será rechazado automáticamente.**
 
 ---
 
-## 1. Convención de Idioma (La Regla de Oro)
+# 🚨 ANTIPATRONES Y REGLAS DE SEGURIDAD (ZERO TOLERANCE)
 
-La regla más importante del proyecto es la separación de idiomas entre el código y la interfaz de usuario.
+**Cualquier PR que viole esta sección será RECHAZADO automáticamente.**
 
-### 1.1. Código Fuente: **Inglés**
+## 1. PROHIBICIONES ARQUITECTÓNICAS
 
-Todo el código y los identificadores técnicos **DEBEN** estar en inglés. Esto incluye, sin excepción:
+### 1.1 Multi-Tenancy
 
-- Nombres de variables, funciones, clases, y métodos.
-- Nombres de archivos y directorios.
-- Nombres de tablas y columnas en la base de datos (`app/models.py`).
-- Endpoints de la API y nombres de rutas (`url_for(...)`).
-- Comentarios dentro del código.
-- Mensajes de commit en Git.
+| ❌ PROHIBIDO | Por qué NO (Riesgo) | ✅ MANDATORIO |
+|-------------|-------------------|--------------|
+| **Resolver Tenant manualmente**<br>`tenant = get_tenant()` en cada ruta | **Data Leakage**. Si un dev olvida la línea, expone datos globales. | **Middleware Global**. Usar `g.condominium` inyectado por middleware. |
+| **Queries sin filtro**<br>`User.query.all()` | **Broken Access Control (OWASP A01)**. Expone datos de todos los condominios. | **Filtro Explícito**. `User.query.filter_by(condominium_id=g.condominium.id)`. |
+| **Hardcoding de subdominios**<br>`if subdomain == 'sandbox':` | **Vulnerabilidad Arquitectónica**. Dificulta rotación de entornos. | **Entornos Dinámicos**. Usar `g.condominium.environment`. |
+| **Flags booleanos**<br>`is_internal`, `is_demo` | **Mantenimiento Frágil**. Se olvidan en rutas nuevas. | **Enums + Middleware**. Usar ENUM `environment` + validación global. |
 
-**✅ Correcto:**
-```python
-# app/models.py
-class Condominium(db.Model):
-    name = db.Column(db.String(200))
+### 1.2 Seguridad (OWASP Top 10)
 
-# app/routes/master_routes.py
-@master_bp.route('/condominiums/new')
-def create_condominium():
-    # ...
+| ❌ PROHIBIDO | Por qué NO (Riesgo) | ✅ MANDATORIO |
+|-------------|-------------------|--------------|
+| **CSRF Desactivado**<br>`JWT_COOKIE_CSRF_PROTECT = False` | **Fraude**. Permite ejecutar acciones en nombre del usuario. | **CSRF Activado**. Siempre `True` en producción. |
+| **IDs Secuenciales Públicos**<br>`/users/1`, `/users/2` | **Data Scraping / IDOR**. Permite enumerar recursos. | **UUIDs o Checks**. Validar pertenencia al tenant siempre. |
+| **Tokens en LocalStorage** | **XSS Vulnerability**. JS malicioso puede robar el token. | **HttpOnly Cookies**. Almacenamiento seguro del navegador. |
+| **Validación solo Frontend** | **Security Bypass**. Se puede saltar con cURL/Postman. | **Decoradores Backend**. `@module_required`, `@admin_required`. |
 
-flash("Condominio creado exitosamente.", "success")
-return redirect(url_for('master.list_condominiums'))
-```
+### 1.3 Base de Datos
 
-**❌ Incorrecto:**
-```python
-# app/models.py
-class Condominio(db.Model): # Mal: Nombre de clase en español
-    nombre = db.Column(db.String(200)) # Mal: Nombre de columna en español
+| ❌ PROHIBIDO | Por qué NO (Riesgo) | ✅ MANDATORIO |
+|-------------|-------------------|--------------|
+| **Migraciones sin Backup** | **Pérdida de Datos**. Fallos irreversibles en deploy. | **Snapshot Previo**. Backup automático antes de `flask db upgrade`. |
+| **Transacciones sin Rollback** | **Inconsistencia de Datos**. Estados corruptos si falla un paso. | **Atomicidad**. Bloque `try/except` con `db.session.rollback()`. |
+| **SQL Injections**<br>Concatenación de strings en queries. | **OWASP A03**. Robo total de base de datos. | **SQLAlchemy ORM**. Usar parámetros bind del ORM siempre. |
 
-# app/routes/master_routes.py
-@master_bp.route('/condominios/nuevo') # Mal: Endpoint en español
-def crear_condominio(): # Mal: Nombre de función en español
-    # ...
+### 1.4 Gestión de Entornos
 
-flash("Condominium created successfully.", "success") # Mal: Mensaje a usuario en inglés
-return redirect(url_for('master.lista_condominios')) # Mal: Nombre de ruta en español
-```
+| ❌ PROHIBIDO | Por qué NO (Riesgo) | ✅ MANDATORIO |
+|-------------|-------------------|--------------|
+| **Usar 'sandbox' para pruebas de clientes** | **Contaminación**. Datos basura mezclados con contabilidad real. | **Entornos Separados**. Tenants `demo` y `internal` aislados. |
+| **Acceso público a tenant interno** | **Exposición de Secretos**. Admin panel expuesto a internet. | **Firewall Lógico**. Middleware bloquea IPs no autorizadas (futuro). |
 
-### 1.2. Interfaz de Usuario (UI): **Español**
+---
 
-Todo el texto que el usuario final ve en su pantalla **DEBE** estar en español. Esto incluye:
+## 2. Convención de Idioma (La Regla de Oro)
 
-- Texto dentro de las plantillas HTML (`app/templates/`).
-- Mensajes de `flash()` que se muestran al usuario.
-- Etiquetas de formularios, títulos de páginas, etc.
+La regla más importante de estilo es la separación de idiomas entre código y UI.
 
-## 2. Flujo de Trabajo (Git)
+### 2.1 Código Fuente: **Inglés**
+Todo identificador técnico **DEBE** estar en inglés:
+- Variables, Funciones, Clases (`class Condominium`, `def create_user`).
+- Modelos y Columnas de BD (`db.Column(db.String)`).
+- Mensajes de Commit.
 
-- **Ramas:** El trabajo nuevo siempre se realiza en una rama descriptiva (ej. `feature/user-profile`, `fix/login-error`). La rama `main` está protegida y solo se actualiza a través de Pull Requests.
-- **Commits:** Los mensajes de commit deben ser claros, concisos y en inglés. Deben describir *qué* se cambió y *por qué*.
+### 2.2 Interfaz de Usuario (UI): **Español**
+Todo texto visible para el usuario final **DEBE** estar en español:
+- HTML Templates (`<h1>Bienvenido</h1>`).
+- Mensajes Flash (`flash("Usuario creado", "success")`).
 
-## 3. Estilo de Código
+---
 
-- **Python:** Se sigue el estándar **PEP 8**. Se recomienda usar un formateador como `autopep8` o `black` en VS Code para mantener la consistencia automáticamente.
-- **HTML/CSS/JS:** Se sigue un estilo consistente, utilizando un formateador como `Prettier` en VS Code.
+## 3. Flujo de Trabajo (Git)
+
+- **Ramas:** `feature/nombre-feature`, `fix/bug-desc`. `main` es sagrada.
+- **Commits:** Mensajes en inglés, imperativo (`Add user model`, no `Added user model`).
+
+## 4. Stack Tecnológico Permitido
+
+- **Backend:** Python 3.11+, Flask, SQLAlchemy.
+- **Auth:** Flask-JWT-Extended (Cookies HttpOnly).
+- **DB:** PostgreSQL (Producción), SQLite (Solo Dev local).
+- **Linter:** Flake8 / Black.

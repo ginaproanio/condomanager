@@ -105,6 +105,12 @@
                                 <i class="fas fa-paint-brush me-2 text-primary"></i>Personalización
                             </button>
                         </li>
+                        <!-- NUEVA PESTAÑA INTEGRACIONES (GOOGLE DRIVE) -->
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="integrations-tab" data-bs-toggle="tab" data-bs-target="#integrations" type="button" role="tab" aria-controls="integrations" aria-selected="false">
+                                <i class="fab fa-google-drive me-2 text-success"></i>Cloud
+                            </button>
+                        </li>
                     </ul>
 
                     <!-- Contenido de las Pestañas -->
@@ -581,6 +587,55 @@
                                             </form>
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- PESTAÑA INTEGRACIONES / GOOGLE DRIVE -->
+                        <div class="tab-pane fade" id="integrations" role="tabpanel" aria-labelledby="integrations-tab">
+                            <div class="card border-0 shadow-sm mb-4">
+                                <div class="card-header bg-success text-white">
+                                    <h5 class="mb-0"><i class="fab fa-google-drive me-2"></i>Almacenamiento en la Nube (Google Drive)</h5>
+                                </div>
+                                <div class="card-body text-center py-5">
+                                    <i class="fab fa-google-drive fa-5x text-success mb-4"></i>
+                                    
+                                    {% if condominium.drive_refresh_token %}
+                                        <h3 class="text-success">¡Conectado Exitosamente!</h3>
+                                        <p class="lead text-muted">Los documentos de este condominio se sincronizan automáticamente.</p>
+                                        
+                                        <div class="alert alert-light border d-inline-block text-start mt-3">
+                                            <p class="mb-1"><strong><i class="fas fa-folder me-2"></i>Carpeta Raíz:</strong> {{ condominium.name }}</p>
+                                            <p class="mb-0"><strong><i class="fas fa-check-circle me-2"></i>Estado:</strong> Sincronizado</p>
+                                        </div>
+                                        
+                                        <div class="mt-4">
+                                            <a href="{{ url_for('google_drive.connect') }}" class="btn btn-outline-secondary">
+                                                <i class="fas fa-sync me-2"></i>Reconectar / Cambiar Cuenta
+                                            </a>
+                                        </div>
+                                    {% else %}
+                                        <h3>Conecta tu Google Drive</h3>
+                                        <p class="lead text-muted">
+                                            Almacena Actas, Contratos y Documentos de forma segura y organizada.<br>
+                                            Se creará automáticamente una estructura de carpetas para tu condominio.
+                                        </p>
+                                        
+                                        <div class="row justify-content-center mt-4">
+                                            <div class="col-md-6">
+                                                <ul class="list-group text-start mb-4">
+                                                    <li class="list-group-item border-0"><i class="fas fa-check text-success me-2"></i>Creación automática de carpetas (Actas, Gastos, etc.)</li>
+                                                    <li class="list-group-item border-0"><i class="fas fa-check text-success me-2"></i>Acceso directo desde CondoManager.</li>
+                                                    <li class="list-group-item border-0"><i class="fas fa-check text-success me-2"></i>Tú eres dueño de tus datos.</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+
+                                        <a href="{{ url_for('google_drive.connect') }}" class="btn btn-success btn-lg shadow-sm">
+                                            <i class="fab fa-google me-2"></i>Conectar con Google Drive
+                                        </a>
+                                        <p class="small text-muted mt-3">Se solicitarán permisos para gestionar archivos creados por la app.</p>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>

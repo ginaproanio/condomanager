@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Solicitud Incorrecta - CondoManager{% endblock %}
+
+{% block content %}
+<div class="container mt-5 text-center">
+    <div class="error-page">
+        <h1 class="display-1 text-warning">400</h1>
+        <h2>Solicitud Incorrecta</h2>
+        <p class="lead">{{ error or "La solicitud enviada no es válida." }}</p>
+        <a href="{{ url_for('public.home') }}" class="btn btn-primary mt-3">Volver al Inicio</a>
+    </div>
+</div>
+{% endblock %}
+

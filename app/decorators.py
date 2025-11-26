@@ -1,5 +1,5 @@
 from functools import wraps
-from flask import flash, redirect, url_for, current_app
+from flask import flash, redirect, url_for, current_app, abort
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.models import User, Condominium, UserSpecialRole, Module # Importar modelo Module
 from datetime import date
@@ -151,16 +151,55 @@ def condominium_admin_required(f):
         
         condominium = Condominium.query.get_or_404(condominium_id)
         
+        # --- BLINDAJE DE TENANTS INTERNOS ---
+        if condominium.environment == 'internal' and user.role != 'MASTER':
+            flash("Acceso denegado a tenant de sistema/interno.", "error")
+            return redirect(url_for('user.dashboard'))
+
         # --- LÓGICA DE AUTORIZACIÓN ÚNICA Y CENTRALIZADA ---
         # Usamos case-insensitive comparison para subdominios
         if not (user.role == 'ADMIN' and user.tenant and condominium.subdomain and user.tenant.lower() == condominium.subdomain.lower()):
             # Fallback: Validar también por ID directo si la asignación es por ID
             if not (user.role == 'ADMIN' and condominium.admin_user_id == user.id):
+                # Excepción para MASTER: Si es Master, puede administrar cualquier tenant (excepto si hay otra regla, pero aquí pasa)
+                if user.role == 'MASTER':
+                    return f(*args, **kwargs)
+                    
                 flash("No tienes autorización para acceder a este panel de administración.", "error")
                 return redirect(url_for('user.dashboard'))
         
         # No eliminamos 'current_user' de kwargs, ya que la vista podría necesitarlo
         # y el patrón estándar de login_required lo provee.
         
+        return f(*args, **kwargs)
+    return decorated_function
+
+def protect_internal_tenant(f):
+    """
+    Decorador específico para proteger endpoints contra modificaciones en tenants internos.
+    Uso: Para rutas que aceptan 'condominium_id' o determinan el tenant internamente.
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Intenta obtener usuario (puede venir de login_required o obtenerse aquí)
+        user_id = get_jwt_identity()
+        if not user_id:
+             # Si no hay usuario logueado, dejar que la ruta maneje (o abortar)
+             return f(*args, **kwargs)
+        
+        user = User.query.get(int(user_id))
+        if user.role == 'MASTER':
+            return f(*args, **kwargs) # Master siempre pasa
+
+        # Intentar obtener condominio del contexto
+        condominium_id = kwargs.get('condominium_id')
+        if condominium_id:
+            condo = Condominium.query.get(condominium_id)
+            if condo and (condo.environment == 'internal' or condo.is_internal):
+                abort(403, description="Acción no permitida en tenant interno/sistema.")
+        
+        # Futuro: Analizar 'tenant' del usuario si no hay ID explícito
+        # ...
+
         return f(*args, **kwargs)
     return decorated_function

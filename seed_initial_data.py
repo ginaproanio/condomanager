@@ -168,6 +168,9 @@ def seed_initial_data():
                 country="Ecuador",
                 subdomain=sandbox_subdomain,
                 status='ACTIVO',
+                environment='internal', # ARQUITECTURA CORRECTA: Tenant interno
+                is_demo=False,
+                is_internal=True, # Backward compatibility por ahora
                 admin_user_id=master.id,
                 created_by=master.id,
                 has_documents_module=True,
@@ -268,6 +271,8 @@ def seed_initial_data():
                 subdomain=demo_subdomain,
                 document_code_prefix="ALGA", # NUEVO: Prefijo para documentos
                 status='ACTIVO',
+                environment='demo', # DEMO PÚBLICA (Datos fake)
+                is_demo=True,
                 admin_user_id=admin_user.id,
                 created_by=master.id,
                 has_documents_module=True, # PREMIUM ACTIVADO

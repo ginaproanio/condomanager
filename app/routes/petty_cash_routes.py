@@ -2,7 +2,8 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_jwt_extended import jwt_required
 from app.models import db, Condominium, PettyCashTransaction
 from app.auth import get_current_user
-from app.decorators import condominium_admin_required
+from app.decorators import condominium_admin_required, protect_internal_tenant
+from app.utils.validation import validate_file, validate_amount
 import datetime
 import os
 from werkzeug.utils import secure_filename
@@ -18,7 +19,7 @@ def index(condominium_id):
     """
     condo = Condominium.query.get_or_404(condominium_id)
     
-    transactions = PettyCashTransaction.query.filter_by(condominium_id=condominium_id).order_by(PettyCashTransaction.transaction_date.desc()).all()
+    transactions = PettyCashTransaction.query.order_by(PettyCashTransaction.transaction_date.desc()).all()
     
     # Calcular saldo
     balance = sum(t.amount for t in transactions)
@@ -34,6 +35,7 @@ def index(condominium_id):
 
 @petty_cash_bp.route('/admin/condominio/<int:condominium_id>/caja-chica/nuevo', methods=['POST'])
 @condominium_admin_required
+@protect_internal_tenant # Protección extra para tenants internos
 def nuevo_movimiento(condominium_id):
     """
     Registra un nuevo movimiento (ingreso o egreso).
@@ -52,21 +54,38 @@ def nuevo_movimiento(condominium_id):
         return redirect(url_for('petty_cash.index', condominium_id=condominium_id))
     
     try:
-        amount = float(amount_str)
+        # VALIDACIÓN BACKEND: Monto Positivo
+        base_amount = validate_amount(amount_str)
+        
         if type_tx == 'EXPENSE':
-            amount = -abs(amount) # Asegurar negativo
+            amount = -abs(base_amount) # Asegurar negativo
         else:
-            amount = abs(amount) # Asegurar positivo
+            amount = abs(base_amount) # Asegurar positivo
             
         tx_date = datetime.datetime.utcnow()
         if date_str:
-            tx_date = datetime.datetime.strptime(date_str, '%Y-%m-%d')
+            try:
+                tx_date = datetime.datetime.strptime(date_str, '%Y-%m-%d')
+            except ValueError:
+                flash("Formato de fecha inválido", "error")
+                return redirect(url_for('petty_cash.index', condominium_id=condominium_id))
             
         # Procesar archivo
         receipt_url = None
         if 'receipt_file' in request.files:
             file = request.files['receipt_file']
             if file.filename != '':
+                # VALIDACIÓN BACKEND: Extensión y MIME Type
+                try:
+                    validate_file(
+                        file, 
+                        allowed_extensions=['jpg', 'jpeg', 'png', 'pdf'],
+                        allowed_mimetypes=['image/jpeg', 'image/png', 'application/pdf']
+                    )
+                except Exception as e:
+                    flash(f"Archivo inválido: {e.description if hasattr(e, 'description') else str(e)}", "error")
+                    return redirect(url_for('petty_cash.index', condominium_id=condominium_id))
+
                 filename = secure_filename(f"petty_{condominium_id}_{int(datetime.datetime.utcnow().timestamp())}_{file.filename}")
                 upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'petty_cash')
                 os.makedirs(upload_folder, exist_ok=True)
@@ -89,6 +108,6 @@ def nuevo_movimiento(condominium_id):
         
     except Exception as e:
         db.session.rollback()
-        flash(f"Error al registrar: {str(e)}", "error")
+        flash(f"Error al registrar: {e.description if hasattr(e, 'description') else str(e)}", "error")
         
     return redirect(url_for('petty_cash.index', condominium_id=condominium_id))

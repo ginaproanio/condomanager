@@ -1,11 +1,12 @@
 from flask import (
     Blueprint, request, render_template, redirect, url_for,
-    current_app, flash, make_response
+    current_app, flash, make_response, g
 )
 from flask_jwt_extended import (
     create_access_token, set_access_cookies, unset_jwt_cookies
 )
 from app.models import User, db, Condominium
+from app.extensions import limiter
 import hashlib
 from datetime import datetime, timedelta
 import secrets # Para generar tokens seguros
@@ -14,16 +15,14 @@ public_bp = Blueprint('public', __name__)
 
 @public_bp.route('/')
 def home():
-    from app.tenant import get_tenant
-    tenant = get_tenant()
-    config = current_app.get_tenant_config(tenant)
+    tenant_subdomain = g.condominium.subdomain if g.condominium else None
+    config = current_app.get_tenant_config(tenant_subdomain)
     return render_template('home.html', config=config)
 
 @public_bp.route('/solicitar-demo', methods=['GET', 'POST'])
 def demo_request():
-    from app.tenant import get_tenant
-    tenant = get_tenant()
-    config = current_app.get_tenant_config(tenant)
+    tenant_subdomain = g.condominium.subdomain if g.condominium else None
+    config = current_app.get_tenant_config(tenant_subdomain)
 
     if request.method == 'POST':
         # Recoger datos
@@ -74,12 +73,14 @@ def demo_request():
             )
             db.session.add(new_user)
             db.session.flush() # Para obtener el ID del usuario
-
+            
             demo_condo = Condominium(
                 name=f"Demo Condominio de {first_name}",
                 legal_name=f"Demo {first_name} {last_name}",
                 subdomain=demo_subdomain,
-                status='DEMO', # Estado especial
+                status='DEMO', 
+                environment='demo', # Separación estricta
+                is_demo=True,       # Flag explícito
                 admin_user_id=new_user.id,
                 created_by=new_user.id,
                 main_street="Calle Demo 1",
@@ -128,10 +129,10 @@ def verify_email(token):
     return redirect(url_for('public.login'))
 
 @public_bp.route('/register', methods=['GET', 'POST'])
+@limiter.limit("3 per hour")  # Prevenir spam de registros
 def register():
-    from app.tenant import get_tenant
-    tenant = get_tenant()
-    config = current_app.get_tenant_config(tenant)
+    tenant_subdomain = g.condominium.subdomain if g.condominium else None
+    config = current_app.get_tenant_config(tenant_subdomain)
 
     if request.method == 'POST':
         email = request.form.get('email', '').strip().lower()
@@ -171,7 +172,7 @@ def register():
             cedula=cedula, email=email, first_name=first_name, last_name=last_name,
             password_hash=hashlib.sha256(password.encode()).hexdigest(),
             birth_date=birth_date, cellphone=cellphone, city=city, country=country,
-            tenant=tenant, role='USER', status='pending',
+            tenant=tenant_subdomain, role='USER', status='pending',
             verification_token=verification_token # Asignar token para evitar violación de unique constraint
         )
 
@@ -184,9 +185,8 @@ def register():
 
 @public_bp.route('/login', methods=['GET', 'POST'])
 def login():
-    from app.tenant import get_tenant
-    tenant = get_tenant()
-    config = current_app.get_tenant_config(tenant)
+    tenant_subdomain = g.condominium.subdomain if g.condominium else None
+    config = current_app.get_tenant_config(tenant_subdomain)
     return render_template('auth/login.html', config=config)
 
 @public_bp.route('/logout')

@@ -1,18 +1,16 @@
 from flask import (
     Blueprint, render_template, redirect,
-    current_app, flash, request, url_for
+    current_app, flash, request, url_for, g
 )
 from flask_jwt_extended import jwt_required
 from app.auth import get_current_user
 from app.models import db, User, Document, Condominium, Unit, DocumentSignature, Payment # Importar DocumentSignature
-import hashlib
-from datetime import datetime, timedelta
+from app.extensions import limiter
+from app.services.user_service import UserService
+from app.services.payment_service import PaymentService
+from app.exceptions import BusinessError
 import os
-from werkzeug.utils import secure_filename
-
-# Librerías para validación criptográfica
-from cryptography.hazmat.primitives.serialization import pkcs12
-from cryptography.hazmat.backends import default_backend
+from datetime import datetime, timedelta
 
 user_bp = Blueprint('user', __name__)
 
@@ -32,17 +30,19 @@ def dashboard():
          # Lógica simple para demo: primera unidad del condominio
          pass
 
-    from app.tenant import get_tenant
-    tenant = get_tenant()
-    config = current_app.get_tenant_config(tenant)
+    tenant_subdomain = g.condominium.subdomain if g.condominium else None
+    config = current_app.get_tenant_config(tenant_subdomain)
     
     # --- Lógica de Notificaciones de Documentos ---
     new_docs_count = 0
     condo_id = None
     
-    if user_unit and user_unit.condominium_id:
+    if g.condominium:
+        condo_id = g.condominium.id
+    elif user_unit and user_unit.condominium_id:
         condo_id = user_unit.condominium_id
     elif user.tenant:
+        # Fallback legacy (si el middleware falló o no aplicó)
         condo = Condominium.query.filter_by(subdomain=user.tenant).first()
         if condo:
             condo_id = condo.id
@@ -69,75 +69,35 @@ def perfil():
     if not user:
         return redirect('/login')
         
-    from app.tenant import get_tenant
-    tenant = get_tenant()
-    config = current_app.get_tenant_config(tenant)
+    tenant_subdomain = g.condominium.subdomain if g.condominium else None
+    config = current_app.get_tenant_config(tenant_subdomain)
 
     if request.method == 'POST':
         # --- ACTUALIZACIÓN DE REDES SOCIALES ---
         if 'update_social' in request.form:
-            user.twitter_profile = request.form.get('twitter_profile', '').strip()
-            user.facebook_profile = request.form.get('facebook_profile', '').strip()
-            user.instagram_profile = request.form.get('instagram_profile', '').strip()
-            user.linkedin_profile = request.form.get('linkedin_profile', '').strip()
-            user.tiktok_profile = request.form.get('tiktok_profile', '').strip()
-            
             try:
-                db.session.commit()
+                UserService.update_social_profiles(user.id, request.form)
                 flash("Perfiles sociales actualizados correctamente.", "success")
+            except BusinessError as e:
+                 flash(e.message, "danger")
             except Exception as e:
-                db.session.rollback()
                 flash(f"Error al actualizar perfil social: {str(e)}", "danger")
             
             return redirect(url_for('user.perfil'))
 
         # Lógica para subir certificado .p12/.pfx
         if 'certificate' in request.files:
-            file = request.files['certificate']
-            password = request.form.get('cert_password')
-            
-            # Validar que se haya seleccionado un archivo
-            if file.filename == '':
-                flash("No se seleccionó ningún archivo", "warning")
-            elif file and file.filename.lower().endswith(('.p12', '.pfx')):
-                if not password:
-                    flash("Debes ingresar la contraseña del certificado para poder validarlo.", "warning")
-                else:
-                    try:
-                        # Leer el contenido binario
-                        file_data = file.read()
-                        
-                        # --- VALIDACIÓN CRIPTOGRÁFICA REAL ---
-                        try:
-                            # Intentamos abrir el contenedor PKCS12 con la clave proporcionada
-                            # Si la clave es incorrecta o el archivo no es válido, lanzará excepción
-                            pkcs12.load_key_and_certificates(
-                                file_data,
-                                password.encode(),
-                                backend=default_backend()
-                            )
-                        except ValueError:
-                            flash("Error de Validación: La contraseña ingresada es INCORRECTA para este certificado.", "danger")
-                            return redirect(url_for('user.perfil'))
-                        except Exception as e:
-                            flash(f"Error de Validación: El archivo del certificado está dañado o no es válido. Detalle: {str(e)}", "danger")
-                            return redirect(url_for('user.perfil'))
-
-                        # Si pasamos aquí, el certificado y la clave son VÁLIDOS
-                        
-                        # Guardar en base de datos
-                        user.signature_certificate = file_data
-                        # Guardamos hash solo para verificar propiedad futura, la firma real requerirá input manual
-                        user.signature_cert_password_hash = hashlib.sha256(password.encode()).hexdigest()
-                        user.has_electronic_signature = True
-                        
-                        db.session.commit()
-                        flash("✅ Firma electrónica validada y configurada exitosamente.", "success")
-                    except Exception as e:
-                        db.session.rollback()
-                        flash(f"Error interno al guardar: {str(e)}", "danger")
-            else:
-                flash("Formato de archivo no válido. Solo se permiten archivos .p12 o .pfx", "danger")
+            try:
+                UserService.upload_certificate(
+                    user.id, 
+                    request.files['certificate'], 
+                    request.form.get('cert_password')
+                )
+                flash("✅ Firma electrónica validada y configurada exitosamente.", "success")
+            except BusinessError as e:
+                flash(e.message, "danger")
+            except Exception as e:
+                flash(f"Error interno: {str(e)}", "danger")
                 
         return redirect(url_for('user.perfil'))
 
@@ -147,22 +107,22 @@ def perfil():
 @jwt_required()
 def unidades():
     user = get_current_user()
-    from app.tenant import get_tenant
-    tenant = get_tenant()
-    config = current_app.get_tenant_config(tenant)
+    tenant_subdomain = g.condominium.subdomain if g.condominium else None
+    config = current_app.get_tenant_config(tenant_subdomain)
     return render_template('services/unidades.html', mensaje="Gestión de Unidades", config=config, user=user)
 
 @user_bp.route('/pagos')
 @jwt_required()
 def pagos():
     user = get_current_user()
-    from app.tenant import get_tenant
-    tenant = get_tenant()
-    config = current_app.get_tenant_config(tenant)
+    tenant_subdomain = g.condominium.subdomain if g.condominium else None
+    config = current_app.get_tenant_config(tenant_subdomain)
     
     # Obtener el condominio para verificar config de pagos
     condominium = None
-    if user.unit and user.unit.condominium_id:
+    if g.condominium:
+        condominium = g.condominium
+    elif user.unit and user.unit.condominium_id:
         condominium = Condominium.query.get(user.unit.condominium_id)
     elif user.tenant:
         condominium = Condominium.query.filter_by(subdomain=user.tenant).first()
@@ -175,81 +135,42 @@ def pagos():
 
 @user_bp.route('/pagos/reportar', methods=['POST'])
 @jwt_required()
+@limiter.limit("10 per minute")  # Proteger pasarela de pagos
 def reportar_pago():
     user = get_current_user()
     
     # Validar que pertenezca a un condominio
-    condo = None
-    if user.unit and user.unit.condominium_id:
-        condo = Condominium.query.get(user.unit.condominium_id)
+    condo_id = None
+    if g.condominium:
+        condo_id = g.condominium.id
+    elif user.unit and user.unit.condominium_id:
+        condo_id = user.unit.condominium_id
     elif user.tenant:
         condo = Condominium.query.filter_by(subdomain=user.tenant).first()
+        if condo:
+            condo_id = condo.id
     
-    if not condo:
-        flash("No tienes un condominio asignado para reportar pagos.", "error")
-        return redirect(url_for('user.pagos'))
-
-    # Validar archivo
-    if 'proof_file' not in request.files:
-        flash('No se subió ningún archivo.', 'error')
-        return redirect(url_for('user.pagos'))
-    
-    file = request.files['proof_file']
-    if file.filename == '':
-        flash('No seleccionaste ningún archivo.', 'error')
-        return redirect(url_for('user.pagos'))
-        
-    if file:
-        filename = secure_filename(f"{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{user.id}_{file.filename}")
-        upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'payments')
-        os.makedirs(upload_folder, exist_ok=True)
-        
-        file_path = os.path.join(upload_folder, filename)
-        file.save(file_path)
-        
-        # Crear registro de pago
-        # El monto puede venir con comas, las reemplazamos por puntos
-        amount_str = request.form.get('amount', '0').replace(',', '.')
-        try:
-            amount = float(amount_str)
-        except ValueError:
-            amount = 0.0
-            
-        new_payment = Payment(
-            amount=amount,
-            amount_with_tax=amount, # Asumimos exento de IVA por ahora para transferencias de alícuotas
-            currency='USD',
-            description=request.form.get('description'),
-            status='PENDING_REVIEW',
-            payment_method='TRANSFER',
-            proof_of_payment=filename,
-            user_id=user.id,
-            condominium_id=condo.id,
-            unit_id=user.unit_id if user.unit_id else None,
-            created_at=datetime.utcnow()
+    try:
+        PaymentService.report_manual_payment(
+            user.id, 
+            condo_id, 
+            request.form, 
+            request.files.get('proof_file')
         )
-        
-        try:
-            db.session.add(new_payment)
-            db.session.commit()
-            flash('Comprobante subido correctamente. Tu pago está en revisión por la administración.', 'success')
-            # Mantener al usuario en la misma página para ver su estado o hacer otro pago
-            return redirect(url_for('user.pagos'))
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Error al guardar el reporte: {str(e)}', 'error')
-            return redirect(url_for('user.pagos'))
+        flash('Comprobante subido correctamente. Tu pago está en revisión por la administración.', 'success')
+    except BusinessError as e:
+        flash(e.message, 'error')
+    except Exception as e:
+        flash(f'Error al guardar el reporte: {str(e)}', 'error')
             
-    # Fallback redirect if request method is not POST (should be handled by @route methods)
     return redirect(url_for('user.pagos'))
 
 @user_bp.route('/reportes')
 @jwt_required()
 def reportes():
     user = get_current_user()
-    from app.tenant import get_tenant
-    tenant = get_tenant()
-    config = current_app.get_tenant_config(tenant)
+    tenant_subdomain = g.condominium.subdomain if g.condominium else None
+    config = current_app.get_tenant_config(tenant_subdomain)
     
     # --- HISTORIAL DE FIRMAS Y ACTIVIDAD ---
     # Buscar documentos firmados por el usuario

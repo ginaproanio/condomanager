@@ -5,13 +5,17 @@ from flask import (
 from flask_jwt_extended import jwt_required
 from sqlalchemy import func
 from sqlalchemy.orm.attributes import flag_modified
+from sqlalchemy.orm import joinedload # Optimización N+1
 from app import db
 from app.models import User, Condominium, Unit, UserSpecialRole, Payment
 from app.auth import get_current_user
-from app.decorators import condominium_admin_required
+from app.decorators import condominium_admin_required, protect_internal_tenant
+from app.utils.validation import validate_file # Importar validación
 from datetime import date, datetime
 import io
 import csv
+import os # Importar os a nivel de módulo
+from werkzeug.utils import secure_filename # Importar secure_filename a nivel de módulo
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -54,16 +58,24 @@ def admin_condominio_panel(condominium_id):
         return redirect(url_for('public.login'))
 
     # Si la autorización pasa, se obtiene el resto de la información.
-    pending_users_in_condo = User.query.filter_by(tenant=condominium.subdomain, status='pending').all()
-    users_in_condo = User.query.filter(User.tenant == condominium.subdomain, User.status != 'pending').all()
-    units = Unit.query.filter_by(condominium_id=condominium_id).order_by(Unit.name).all()
+    # OPTIMIZACIÓN: Eager load de unidades para usuarios
+    pending_users_in_condo = User.query.filter_by(status='pending')\
+        .options(joinedload(User.unit))\
+        .all()
+        
+    users_in_condo = User.query.filter(User.status != 'pending')\
+        .options(joinedload(User.unit))\
+        .all()
+        
+    # OPTIMIZACIÓN: Eager load de usuarios para unidades (si se muestran)
+    units = Unit.query.order_by(Unit.name).all()
     
     # --- AGREGAR ESTO ---
     # Obtener roles especiales activos para mostrarlos en la tabla
+    # OPTIMIZACIÓN: Eager load del usuario asignado
     active_special_roles = UserSpecialRole.query.filter_by(
-        condominium_id=condominium.id, 
         is_active=True
-    ).all()
+    ).options(joinedload(UserSpecialRole.user)).all()
     
     now_date = datetime.now().strftime('%Y-%m-%d')
 
@@ -156,6 +168,7 @@ def comunicaciones(condominium_id):
 
 @admin_bp.route('/admin/condominio/<int:condominium_id>/configurar-whatsapp', methods=['POST'])
 @condominium_admin_required
+@protect_internal_tenant
 def configurar_whatsapp(condominium_id):
     """
     Guarda la configuración del proveedor de WhatsApp (Gateway o Meta).
@@ -216,10 +229,12 @@ def reportes_condominio(condominium_id):
             writer = csv.writer(output)
             writer.writerow(['Unidad', 'Nombre', 'Email', 'Teléfono', 'Rol', 'Estado'])
             
+            # OPTIMIZACIÓN: Eager load de unit para el CSV
             residentes = User.query.filter(
                 User.tenant == condominium.subdomain,
                 User.status == 'active'
-            ).order_by(User.unit_id).all()
+            ).options(joinedload(User.unit))\
+             .order_by(User.unit_id).all()
             
             for res in residentes:
                 unidad = res.unit.property_number if res.unit else 'Sin Asignar'
@@ -233,8 +248,8 @@ def reportes_condominio(condominium_id):
             )
             
     # Estadísticas para la vista
-    total_unidades = Unit.query.filter_by(condominium_id=condominium.id).count()
-    total_residentes = User.query.filter_by(tenant=condominium.subdomain, status='active').count()
+    total_unidades = Unit.query.count()
+    total_residentes = User.query.filter_by(status='active').count()
     
     return render_template('admin/reportes.html', 
                            condominium=condominium,
@@ -242,6 +257,7 @@ def reportes_condominio(condominium_id):
 
 @admin_bp.route('/admin/condominio/<int:condominium_id>/configuracion-pagos', methods=['GET', 'POST'])
 @condominium_admin_required
+@protect_internal_tenant
 def configuracion_pagos(condominium_id):
     """
     Configuración de la Pasarela de Pagos (PayPhone) para el Condominio.
@@ -276,7 +292,10 @@ def configuracion_pagos(condominium_id):
         return redirect(url_for('admin.configuracion_pagos', condominium_id=condo.id))
         
     # Obtener historial de pagos recibidos para este condominio
-    transactions = Payment.query.filter_by(condominium_id=condominium_id).order_by(Payment.created_at.desc()).all()
+    # OPTIMIZACIÓN: Eager load de user y unit
+    transactions = Payment.query.order_by(Payment.created_at.desc())\
+        .options(joinedload(Payment.user), joinedload(Payment.unit))\
+        .all()
         
     return render_template('admin/config_pagos.html', condominium=condo, transactions=transactions)
 
@@ -289,16 +308,18 @@ def finanzas(condominium_id):
     condo = Condominium.query.get_or_404(condominium_id)
     
     # Pagos pendientes de revisión (Transferencias)
+    # OPTIMIZACIÓN: Eager load de user y unit
     pending_payments = Payment.query.filter_by(
-        condominium_id=condominium_id, 
         status='PENDING_REVIEW'
-    ).order_by(Payment.created_at.asc()).all()
+    ).options(joinedload(Payment.user), joinedload(Payment.unit))\
+     .order_by(Payment.created_at.asc()).all()
     
     # Historial de pagos procesados (Últimos 50)
+    # OPTIMIZACIÓN: Eager load de user y unit
     history_payments = Payment.query.filter(
-        Payment.condominium_id == condominium_id,
         Payment.status != 'PENDING_REVIEW'
-    ).order_by(Payment.created_at.desc()).limit(50).all()
+    ).options(joinedload(Payment.user), joinedload(Payment.unit))\
+     .order_by(Payment.created_at.desc()).limit(50).all()
     
     return render_template('admin/finanzas.html', 
                            condominium=condo, 
@@ -349,7 +370,6 @@ def rechazar_pago(payment_id):
 @admin_bp.route('/admin/comprobante/<filename>')
 @jwt_required()
 def ver_comprobante(filename):
-    import os
     from flask import send_from_directory, abort
     
     # 1. Buscar el pago asociado a este archivo para validar permisos
@@ -411,28 +431,28 @@ def personalizar_condominio(condominium_id):
     if 'logo_file' in request.files:
         file = request.files['logo_file']
         if file.filename != '':
-            import os
-            from werkzeug.utils import secure_filename
-            
+            # VALIDACIÓN BACKEND: Tipo de archivo
+            try:
+                validate_file(file, allowed_extensions=['png', 'jpg', 'jpeg', 'gif', 'webp'], 
+                              allowed_mimetypes=['image/png', 'image/jpeg', 'image/gif', 'image/webp'])
+            except Exception as e:
+                flash(f"Archivo inválido: {e.description if hasattr(e, 'description') else str(e)}", "error")
+                return redirect(url_for('admin.admin_condominio_panel', condominium_id=condo.id))
+
             # Validar extensión
-            allowed_extensions = {'.png', '.jpg', '.jpeg', '.gif', '.webp'}
             ext = os.path.splitext(file.filename)[1].lower()
             
-            if ext in allowed_extensions:
-                filename = secure_filename(f"logo_{condo.id}_{int(datetime.utcnow().timestamp())}{ext}")
-                upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'logos')
-                
-                # Crear directorio si no existe
-                os.makedirs(upload_folder, exist_ok=True)
-                
-                # Guardar archivo
-                file.save(os.path.join(upload_folder, filename))
-                
-                # Actualizar config
-                config.logo_url = f"uploads/logos/{filename}"
-            else:
-                flash("Formato de imagen no válido.", "error")
-                return redirect(url_for('admin.admin_condominio_panel', condominium_id=condo.id))
+            filename = secure_filename(f"logo_{condo.id}_{int(datetime.utcnow().timestamp())}{ext}")
+            upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'logos')
+            
+            # Crear directorio si no existe
+            os.makedirs(upload_folder, exist_ok=True)
+            
+            # Guardar archivo
+            file.save(os.path.join(upload_folder, filename))
+            
+            # Actualizar config
+            config.logo_url = f"uploads/logos/{filename}"
 
     try:
         db.session.commit()

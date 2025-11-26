@@ -1,0 +1,67 @@
+# .cursor/rules
+description: "Reglas absolutas para CondoManager SaaS - VIOLAR = RECHAZO"
+globs: ["**/*.py", "**/*.html", "**/*.js", "**/*.sql"]
+
+# ====================
+# 🚨 PROHIBICIONES ABSOLUTAS
+# ====================
+
+# MULTI-TENANCY
+- NUNCA uses User.query.all() sin filter_by(condominium_id=...)
+- NUNCA hagas queries sin filtrar por tenant
+- NUNCA hardcodees 'sandbox' en el código
+- NUNCA uses get_tenant() manualmente en rutas
+
+# SEGURIDAD  
+- NUNCA pongas JWT_COOKIE_CSRF_PROTECT = False
+- NUNCA almacenes tokens en localStorage
+- NUNCA valides permisos solo en frontend
+- NUNCA expongas IDs secuenciales sin verificar tenant
+
+# ARQUITECTURA
+- NUNCA pongas lógica de negocio en archivos de routes/
+- NUNCA uses flags booleanos (is_internal, is_demo) para seguridad
+- NUNCA mezcles datos de demo con producción
+
+# ====================
+# ✅ PATRONES OBLIGATORIOS
+# ====================
+
+# MULTI-TENANCY
+- SIEMPRE usa g.condominium.id en TODAS las queries
+- SIEMPRE usa el middleware @app.before_request para tenant
+- SIEMPRE usa environment ENUM ('production', 'demo', 'internal')
+
+# SEGURIDAD
+- SIEMPRE usa decoradores @admin_required, @module_required
+- SIEMPRE usa HTTP-only cookies para JWT
+- SIEMPRE valida permisos en backend
+
+# ARQUITECTURA
+- SIEMPRE usa servicios en /services/ para lógica de negocio
+- SIEMPRE usa variables de entorno para configuración
+- SIEMPRE separa: routes/ (endpoints), services/ (lógica), models/ (datos)
+
+# ====================
+# 🎯 REGLAS ESPECÍFICAS
+# ====================
+
+# MÓDULOS FREEMIUM
+- Para documentos: SIEMPRE usa @module_required('documents')
+- Para acceso premium: SIEMPRE verifica CondominiumModule.status
+
+# PAGOS
+- SIEMPRE usa PaymentService en services/
+- NUNCA pongas lógica de pagos en routes/
+
+# ROLES
+- SIEMPRE verifica UserSpecialRole.is_active y fechas de vigencia
+- SIEMPRE usa @admin_required para rutas administrativas
+
+# ====================
+# 🌐 CONVENCIONES
+# ====================
+
+- CÓDIGO: inglés (create_user, PaymentService, calculate_payment)
+- UI: español ("Crear Usuario", "Panel de Control", "Bienvenido")
+- COMMITS: inglés imperativo ("Add payment feature", "Fix user validation")

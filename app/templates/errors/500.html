@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Error Interno - CondoManager{% endblock %}
+
+{% block content %}
+<div class="container mt-5 text-center">
+    <div class="error-page">
+        <h1 class="display-1 text-danger">500</h1>
+        <h2>Error Interno del Servidor</h2>
+        <p class="lead">{{ error or "Ha ocurrido un error inesperado. Por favor intenta más tarde." }}</p>
+        <a href="{{ url_for('public.home') }}" class="btn btn-primary mt-3">Volver al Inicio</a>
+    </div>
+</div>
+{% endblock %}
+
