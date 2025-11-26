@@ -15,14 +15,14 @@ public_bp = Blueprint('public', __name__)
 
 @public_bp.route('/')
 def home():
-    tenant_subdomain = g.condominium.subdomain if g.condominium else None
+    condo = getattr(g, 'condominium', None)
+    tenant_subdomain = condo.subdomain if condo else None
     config = current_app.get_tenant_config(tenant_subdomain)
     return render_template('home.html', config=config)
 
 @public_bp.route('/solicitar-demo', methods=['GET', 'POST'])
 def demo_request():
-    tenant_subdomain = g.condominium.subdomain if g.condominium else None
-    config = current_app.get_tenant_config(tenant_subdomain)
+    config = current_app.get_tenant_config(getattr(g, 'condominium', None))
 
     if request.method == 'POST':
         # Recoger datos
@@ -131,8 +131,8 @@ def verify_email(token):
 @public_bp.route('/register', methods=['GET', 'POST'])
 @limiter.limit("3 per hour")  # Prevenir spam de registros
 def register():
-    tenant_subdomain = g.condominium.subdomain if g.condominium else None
-    config = current_app.get_tenant_config(tenant_subdomain)
+    condo = getattr(g, 'condominium', None)
+    config = current_app.get_tenant_config(condo.subdomain if condo else None)
 
     if request.method == 'POST':
         email = request.form.get('email', '').strip().lower()
@@ -171,8 +171,8 @@ def register():
         new_user = User(
             cedula=cedula, email=email, first_name=first_name, last_name=last_name,
             password_hash=hashlib.sha256(password.encode()).hexdigest(),
-            birth_date=birth_date, cellphone=cellphone, city=city, country=country,
-            tenant=tenant_subdomain, role='USER', status='pending',
+            birth_date=birth_date, cellphone=cellphone, city=city, country=country, role='USER', status='pending',
+            tenant=condo.subdomain if condo else None,
             verification_token=verification_token # Asignar token para evitar violación de unique constraint
         )
 
@@ -185,8 +185,8 @@ def register():
 
 @public_bp.route('/login', methods=['GET', 'POST'])
 def login():
-    tenant_subdomain = g.condominium.subdomain if g.condominium else None
-    config = current_app.get_tenant_config(tenant_subdomain)
+    condo = getattr(g, 'condominium', None)
+    config = current_app.get_tenant_config(condo.subdomain if condo else None)
     return render_template('auth/login.html', config=config)
 
 @public_bp.route('/logout')

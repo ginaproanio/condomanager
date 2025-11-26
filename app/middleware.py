@@ -4,10 +4,6 @@ from app.models import Condominium
 def init_tenant_middleware(app):
     @app.before_request
     def resolve_tenant():
-        # 0. Excepciones para rutas públicas/estáticas que no requieren contexto de tenant
-        if request.endpoint in ['static', 'public.home', 'public.login', 'public.register', 'public.demo_request', 'public.logout']:
-            return
-
         host = request.headers.get('Host', '')
         
         # 1. Detectar Subdominio
@@ -31,10 +27,15 @@ def init_tenant_middleware(app):
         g.environment = 'production' # Default seguro
 
         if subdomain:
-            # BÚSQUEDA (Aquí se podría agregar caché Redis en el futuro)
             tenant = Condominium.query.filter_by(subdomain=subdomain).first()
             
             if not tenant:
+                # Si estamos en una ruta pública, no encontrar un tenant no es un error.
+                # Por ejemplo, en la página de registro principal.
+                if request.endpoint and request.endpoint.startswith('public.'):
+                    g.condominium = None
+                    return
+
                 # Si hay subdominio pero no existe el tenant, es un 404
                 abort(404, description="Condominio no encontrado")
             
@@ -48,9 +49,15 @@ def init_tenant_middleware(app):
                 pass
 
         else:
-            # Estamos en el dominio raíz (www o landing page)
-            # No hay g.condominium
-            pass
+            # Si no hay subdominio, estamos en el dominio raíz.
+            # Para rutas que no son públicas, esto podría ser un error si se espera un tenant.
+            # Pero para las públicas, es normal.
+            if request.endpoint and not request.endpoint.startswith('public.'):
+                 # Si una ruta protegida se accede sin subdominio, es un error.
+                 # Esto previene que se acceda a /dashboard en el dominio principal.
+                 abort(404, description="Se requiere un subdominio de condominio para esta página.")
+            
+            g.condominium = None
 
     @app.before_request
     def bridge_csrf_form_to_header():
