@@ -152,33 +152,3 @@ def admin_required(f):
             return redirect(url_for('user.dashboard'))
         return f(*args, **kwargs)
     return decorated_function
-
-def protect_internal_tenant(f):
-    """
-    Decorador específico para proteger endpoints contra modificaciones en tenants internos.
-    Uso: Para rutas que aceptan 'condominium_id' o determinan el tenant internamente.
-    """
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        # Intenta obtener usuario (puede venir de login_required o obtenerse aquí)
-        user_id = get_jwt_identity()
-        if not user_id:
-             # Si no hay usuario logueado, dejar que la ruta maneje (o abortar)
-             return f(*args, **kwargs)
-        
-        user = User.query.get(int(user_id))
-        if user.role == 'MASTER':
-            return f(*args, **kwargs) # Master siempre pasa
-
-        # Intentar obtener condominio del contexto
-        condominium_id = kwargs.get('condominium_id')
-        if condominium_id:
-            condo = Condominium.query.get(condominium_id)
-            if condo and (condo.environment == 'internal' or condo.is_internal):
-                abort(403, description="Acción no permitida en tenant interno/sistema.")
-        
-        # Futuro: Analizar 'tenant' del usuario si no hay ID explícito
-        # ...
-
-        return f(*args, **kwargs)
-    return decorated_function

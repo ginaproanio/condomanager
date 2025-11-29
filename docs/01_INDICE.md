@@ -59,6 +59,7 @@ Este proyecto sigue convenciones de código y documentación para asegurar clari
 - **[00_CONVENCIONES.md](./00_CONVENCIONES.md)**: Constitución Técnica (Reglas y Antipatrones).
 - **[01_INDICE.md](./01_INDICE.md)**: Este archivo (Mapa de navegación).
 - **[02_ARQUITECTURA.md](./02_ARQUITECTURA.md)**: Diseño de alto nivel, Multi-Tenancy y decisiones técnicas.
+- **[03_PLAN_IMPLEMENTACION_LOGIN.md](./03_PLAN_IMPLEMENTACION_LOGIN.md)**: **Fuente de Verdad** sobre el flujo de login Multi-Tenant.
 - **[03_DATABASE.md](./03_DATABASE.md)**: Esquema de base de datos, modelos y migraciones.
 - **[04_API.md](./04_API.md)**: Referencia de Endpoints y flujos de datos.
 - **[05_INSTALACION.md](./05_INSTALACION.md)**: Guía de setup para desarrolladores.

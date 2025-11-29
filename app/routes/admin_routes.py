@@ -8,8 +8,8 @@ from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.orm import joinedload # Optimización N+1
 from app import db
 from app.models import User, Condominium, Unit, UserSpecialRole, Payment
-from app.auth import get_current_user, is_authorized_admin_for_condo
-from app.decorators import admin_tenant_required, protect_internal_tenant
+from app.auth import get_current_user
+from app.decorators import admin_tenant_required
 from app.utils.validation import validate_file # Importar validación
 from datetime import date, datetime
 import io
@@ -123,17 +123,15 @@ def asignar_rol_especial():
     return redirect(url_for('admin.admin_condominio_panel'))
 
 @admin_bp.route('/admin/usuarios/roles_especiales/revocar/<int:role_id>', methods=['POST'])
-@jwt_required() # No usamos condominium_admin_required directamente porque el ID viene en el form, pero validamos adentro
+@admin_tenant_required
 def revocar_rol_especial(role_id):
     role_entry = UserSpecialRole.query.get_or_404(role_id)
-    current_user = get_current_user()
-    
-    # Validación de seguridad manual
-    condo = Condominium.query.get(role_entry.condominium_id)
-    if not is_authorized_admin_for_condo(current_user, condo):
-        flash("No autorizado.", "error")
-        return redirect(url_for('user.dashboard'))
+    condominium = g.condominium
 
+    # Doble chequeo: Asegurarse de que el rol que se revoca pertenece al condominio actual.
+    if role_entry.condominium_id != condominium.id:
+        abort(403, "No puedes revocar roles de otro condominio.")
+        
     role_entry.is_active = False
     role_entry.end_date = date.today()
     db.session.commit()
@@ -154,8 +152,7 @@ def comunicaciones():
     return render_template('admin/comunicaciones.html', condominium=condominium, status=whatsapp_status)
 
 @admin_bp.route('/admin/configurar-whatsapp', methods=['POST'])
-@jwt_required()
-@protect_internal_tenant
+@admin_tenant_required
 def configurar_whatsapp():
     """
     Guarda la configuración del proveedor de WhatsApp (Gateway o Meta).
@@ -244,8 +241,7 @@ def reportes_condominio():
                            stats={'unidades': total_unidades, 'residentes': total_residentes})
 
 @admin_bp.route('/admin/configuracion-pagos', methods=['GET', 'POST'])
-@jwt_required()
-@protect_internal_tenant
+@admin_tenant_required
 def configuracion_pagos():
     """
     Configuración de la Pasarela de Pagos (PayPhone) para el Condominio.
@@ -317,16 +313,15 @@ def finanzas():
                            history_payments=history_payments)
 
 @admin_bp.route('/admin/pagos/aprobar/<int:payment_id>', methods=['POST'])
-@jwt_required()
+@admin_tenant_required
 def aprobar_pago(payment_id):
     payment = Payment.query.get_or_404(payment_id)
     current_user = get_current_user()
+    condominium = g.condominium
     
-    # Validar permisos
-    condo = Condominium.query.get(payment.condominium_id)
-    if not is_authorized_admin_for_condo(current_user, condo):
-        flash("No autorizado para aprobar este pago.", "error")
-        return redirect(url_for('user.dashboard'))
+    # Doble chequeo: Asegurarse de que el pago pertenece al condominio actual.
+    if payment.condominium_id != condominium.id:
+        abort(403, "No puedes aprobar pagos de otro condominio.")
         
     payment.status = 'APPROVED'
     payment.reviewed_by = current_user.id
@@ -338,16 +333,15 @@ def aprobar_pago(payment_id):
     return redirect(url_for('admin.finanzas'))
 
 @admin_bp.route('/admin/pagos/rechazar/<int:payment_id>', methods=['POST'])
-@jwt_required()
+@admin_tenant_required
 def rechazar_pago(payment_id):
     payment = Payment.query.get_or_404(payment_id)
     current_user = get_current_user()
+    condominium = g.condominium
     
-    condo = Condominium.query.get(payment.condominium_id)
-    if not is_authorized_admin_for_condo(current_user, condo):
-        flash("No autorizado.", "error")
-        return redirect(url_for('user.dashboard'))
-        
+    if payment.condominium_id != condominium.id:
+        abort(403, "No puedes rechazar pagos de otro condominio.")
+
     payment.status = 'REJECTED'
     payment.reviewed_by = current_user.id
     payment.review_date = datetime.utcnow()
@@ -385,8 +379,7 @@ def ver_comprobante(filename):
     is_owner = (payment.user_id and current_user.id == payment.user_id)
     
     # B) Es administrador del condominio al que pertenece el pago
-    condo = Condominium.query.get(payment.condominium_id)
-    is_admin = is_authorized_admin_for_condo(current_user, condo)
+    is_admin = (current_user.role == 'ADMIN' and payment.condominium_id == g.condominium.id)
     
     # C) Es MASTER
     is_master = (current_user.role == 'MASTER')
@@ -398,7 +391,6 @@ def ver_comprobante(filename):
     return send_from_directory(upload_folder, filename)
 
 @admin_bp.route('/admin/personalizar', methods=['POST'])
-@jwt_required()
 @admin_tenant_required
 def personalizar_condominio():
     """
