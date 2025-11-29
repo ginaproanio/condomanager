@@ -292,7 +292,6 @@ def master_manage_user(current_user):
         
         condo = Condominium.query.get(int(condominium_id))
         user_to_manage.tenant = condo.subdomain
-        # user_to_manage.condominium_id = condo.id # ELIMINADO: Este campo no existe en User
         user_to_manage.status = 'active'
         db.session.commit()
         flash(f'Usuario {user_to_manage.email} asignado a {condo.name} y aprobado.', 'success')
@@ -318,7 +317,6 @@ def master_manage_user(current_user):
         db.session.flush() # Para obtener el ID del nuevo condo
 
         user_to_manage.tenant = demo_subdomain
-        # user_to_manage.condominium_id = demo_condo.id # ELIMINADO: Este campo no existe en User
         user_to_manage.status = 'active'
         user_to_manage.role = 'ADMIN' # Un usuario de demo debe ser admin de su demo
         
@@ -357,7 +355,6 @@ def master_usuarios_editar(current_user, user_id):
         condominium_id = request.form.get('condominium_id')
         # --- Fin de la lógica actualizada ---
         
-        # user_to_edit.condominium_id = int(condominium_id) if condominium_id else None # ELIMINADO: Este campo no existe en User
         user_to_edit.tenant = Condominium.query.get(condominium_id).subdomain if condominium_id else None
 
         db.session.commit()
@@ -605,7 +602,6 @@ def master_usuarios_crear(current_user):
         condominium_id = request.form.get('condominium_id')
         if condominium_id:
             condo = Condominium.query.get(condominium_id)
-            # new_user.condominium_id = condo.id # ELIMINADO: Este campo no existe en User
             new_user.tenant = condo.subdomain
 
         db.session.add(new_user)
