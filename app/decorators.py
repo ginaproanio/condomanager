@@ -144,7 +144,7 @@ def condominium_admin_required(f):
         
         if not user:
             flash("Sesión no válida.", "error")
-            return redirect(url_for('public.login'))
+            return redirect(url_for('auth.login'))
 
         if not condominium_id:
             abort(500, "Error de configuración: la ruta protegida no recibió un ID de condominio.")

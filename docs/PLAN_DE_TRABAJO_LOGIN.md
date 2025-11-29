@@ -1,11 +1,11 @@
-# Plan de Trabajo: Implementación de Lógica de Login
+# Reporte de Implementación: Lógica de Login Seguro
 
-**Versión:** 2.0 (Actualizado post-implementación)
+**Versión:** 3.0 (Reporte Post-Implementación)
 **Fecha:** 2025-11-29
 
 ## 1. Objetivo
 
-Implementar y centralizar la lógica de backend para la autenticación de usuarios (login, registro, logout) en un nuevo blueprint (`auth_bp`). El objetivo es crear un sistema de login seguro, robusto y que cumpla con las reglas de seguridad multi-tenant, protección contra ataques y manejo de sesiones con JWT.
+Centralizar la lógica de autenticación en un nuevo blueprint (`auth_bp`) para crear un sistema de login seguro, robusto y que cumpla con las reglas de negocio y seguridad del proyecto, incluyendo protección multi-tenant, redirección por roles y mitigación de ataques comunes.
 
 ---
 
@@ -25,7 +25,7 @@ El plan consiste en crear esta clase en Python y conectar la lógica a tu HTML e
 
 ---
 
-## 3. Plan de Trabajo Detallado
+## 3. Plan de Implementación Original
 
 ### Paso 1: Crear la Clase `LoginForm` en Python
 
