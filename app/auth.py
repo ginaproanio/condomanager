@@ -74,7 +74,7 @@ def login():
                             
                             # Construir la URL completa del subdominio
                             subdomain_url = f"{scheme}://{admin_condo.subdomain}.{base_domain}"
-                            redirect_url = f"{subdomain_url}{url_for('admin.admin_condominio_panel', condominium_id=admin_condo.id)}"
+                            redirect_url = f"{subdomain_url}{url_for('admin.admin_condominio_panel')}"
 
                     response = make_response(redirect(next_url or redirect_url))
                     set_access_cookies(response, access_token)
