@@ -70,6 +70,7 @@ def login():
     return render_template('auth/login.html', form=form) # ✅ CORRECCIÓN: Se pasa la variable 'form' al template.
 
 @auth_bp.route('/registro', methods=['GET', 'POST'])
+@limiter.limit("3 per hour") # REGLA: Previene spam de registros
 def register():
     form = RegistrationForm()
     if form.validate_on_submit():
