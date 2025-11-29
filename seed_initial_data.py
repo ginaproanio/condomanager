@@ -250,38 +250,6 @@ def seed_initial_data():
         
         if not algarrobos:
             print(f"🌱 Creando Condominio Realista ({demo_subdomain})...")
-        
-        # --- LÓGICA DE ACTUALIZACIÓN FORZOSA PARA ADMIN ---
-        # Buscamos o creamos al usuario ADMIN de Algarrobos y forzamos su contraseña.
-        admin_email = "admin@algarrobos.com"
-        admin_user = models.User.query.filter_by(email=admin_email).first()
-        if not admin_user:
-            print(f"   🌱 Creando usuario ADMIN para {demo_subdomain}...")
-            admin_user = models.User(
-                first_name='Michelle',
-                last_name='Tobar',
-                email=admin_email,
-                role='ADMIN',
-                cedula='1700000001',
-                cellphone='0991234567',
-                city='Cumbayá',
-                country='Ecuador',
-                birth_date=datetime.strptime('1992-05-10', '%Y-%m-%d').date(),
-            )
-            db.session.add(admin_user)
-        
-        # Forzar siempre la contraseña y el estado correcto
-        print(f"   ✅ Asegurando contraseña segura para ADMIN {admin_email}...")
-        admin_user.password_hash = generate_password_hash('Admin123!')
-        admin_user.status = 'active'
-        admin_user.tenant = demo_subdomain
-        admin_user.email_verified = True
-        db.session.add(admin_user)
-        db.session.flush()
-
-        if not algarrobos:
-            db.session.flush()
-
             algarrobos = models.Condominium(
                 name="Conjunto Residencial Los Algarrobos",
                 legal_name="Comité Pro-Mejoras Algarrobos",
@@ -297,7 +265,6 @@ def seed_initial_data():
                 status='ACTIVO',
                 environment='demo', # DEMO PÚBLICA (Datos fake)
                 is_demo=True,
-                admin_user_id=admin_user.id,
                 created_by=master.id,
                 has_documents_module=True, # PREMIUM ACTIVADO
                 has_billing_module=True,
@@ -305,8 +272,34 @@ def seed_initial_data():
                 whatsapp_provider='META_API'
             )
             db.session.add(algarrobos)
-            db.session.flush()
+        
+        # --- LÓGICA DE ACTUALIZACIÓN FORZOSA PARA ADMIN (CORREGIDA) ---
+        admin_email = "admin@algarrobos.com"
+        admin_user = models.User.query.filter_by(email=admin_email).first()
+        if not admin_user:
+            print(f"   🌱 Creando usuario ADMIN para {demo_subdomain}...")
+            admin_user = models.User(
+                first_name='Michelle', last_name='Tobar', email=admin_email, role='ADMIN',
+                cedula='1700000001', cellphone='0991234567', city='Cumbayá', country='Ecuador',
+                birth_date=datetime.strptime('1992-05-10', '%Y-%m-%d').date()
+            )
+            db.session.add(admin_user)
+        
+        print(f"   ✅ Asegurando datos y contraseña segura para ADMIN {admin_email}...")
+        admin_user.password_hash = generate_password_hash('Admin123!')
+        admin_user.status = 'active'
+        admin_user.tenant = demo_subdomain
+        admin_user.email_verified = True
+        
+        # ASOCIACIÓN CRÍTICA: Asegurar que el admin y el condominio estén vinculados
+        if algarrobos.admin_user_id != admin_user.id:
+            algarrobos.admin_user_id = admin_user.id
+        if admin_user.condominium_id != algarrobos.id:
+            admin_user.condominium_id = algarrobos.id
 
+        db.session.add_all([admin_user, algarrobos])
+
+        if not algarrobos.id: # Si el condominio era nuevo
             # Config Visual Algarrobos
             if not db.session.get(models.CondominiumConfig, demo_subdomain):
                 viz_config = models.CondominiumConfig(
