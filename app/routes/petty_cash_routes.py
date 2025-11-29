@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_jwt_extended import jwt_required
 from app.models import db, PettyCashTransaction
 from app.auth import get_current_user
-from app.decorators import condominium_admin_required, protect_internal_tenant
+from app.decorators import admin_tenant_required
 from app.utils.validation import validate_file, validate_amount
 import datetime
 import os
@@ -11,17 +11,13 @@ from werkzeug.utils import secure_filename
 petty_cash_bp = Blueprint('petty_cash', __name__)
 
 @petty_cash_bp.route('/admin/caja-chica', methods=['GET'])
-@jwt_required()
+@admin_tenant_required
 def index():
     """
     Panel principal de Caja Chica.
     Muestra el saldo actual y el historial de movimientos.
-    Usa g.condominium.
     """
     condo = g.condominium
-    if not condo:
-        flash("Se requiere un contexto de condominio.", "error")
-        return redirect(url_for('user.dashboard'))
     
     transactions = PettyCashTransaction.query.filter_by(condominium_id=condo.id)\
         .order_by(PettyCashTransaction.transaction_date.desc()).all()
@@ -39,16 +35,12 @@ def index():
                            now_date=now_date)
 
 @petty_cash_bp.route('/admin/caja-chica/nuevo', methods=['POST'])
-@jwt_required()
-@protect_internal_tenant # Protección extra para tenants internos
+@admin_tenant_required
 def nuevo_movimiento():
     """
     Registra un nuevo movimiento (ingreso o egreso).
-    Usa g.condominium.
     """
     condo = g.condominium
-    if not condo:
-        return redirect(url_for('user.dashboard'))
     user = get_current_user()
     
     description = request.form.get('description')
