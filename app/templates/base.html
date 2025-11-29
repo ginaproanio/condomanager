@@ -87,12 +87,12 @@
                             </span>
                         </li>
                         <li class="nav-item">
-                            <a class="btn btn-outline-danger btn-sm" href="{{ url_for('public.logout') }}">Cerrar sesión</a>
+                            <a class="btn btn-outline-danger btn-sm" href="{{ url_for('auth.logout') }}">Cerrar sesión</a>
                         </li>
                     {% else %}
-                        {% if request.endpoint != 'public.login' %}
+                        {% if request.endpoint != 'auth.login' %}
                         <li class="nav-item">
-                            <a class="btn btn-primary" href="{{ url_for('public.login') }}">
+                            <a class="btn btn-primary" href="{{ url_for('auth.login') }}">
                                 <i class="fas fa-sign-in-alt me-2"></i>Iniciar sesión
                             </a>
                         </li>
