@@ -81,7 +81,6 @@ def register():
                 password_hash=hashed_password,
                 role='USER',
                 status='pending', # REGLA DE NEGOCIO: Los usuarios nuevos esperan aprobación
-                tenant=g.condominium.subdomain if g.condominium else None,
                 condominium_id=g.condominium.id if g.condominium else None
             )
             db.session.add(new_user)
