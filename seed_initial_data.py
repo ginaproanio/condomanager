@@ -250,26 +250,36 @@ def seed_initial_data():
         
         if not algarrobos:
             print(f"🌱 Creando Condominio Realista ({demo_subdomain})...")
-            
-            # Crear Admin del Condominio
-            admin_email = "admin@algarrobos.com"
+        
+        # --- LÓGICA DE ACTUALIZACIÓN FORZOSA PARA ADMIN ---
+        # Buscamos o creamos al usuario ADMIN de Algarrobos y forzamos su contraseña.
+        admin_email = "admin@algarrobos.com"
+        admin_user = models.User.query.filter_by(email=admin_email).first()
+        if not admin_user:
+            print(f"   🌱 Creando usuario ADMIN para {demo_subdomain}...")
             admin_user = models.User(
-                # --- DATOS ENRIQUECIDOS ---
                 first_name='Michelle',
                 last_name='Tobar',
                 email=admin_email,
-                password_hash=generate_password_hash('Admin123!'),
                 role='ADMIN',
-                status='active',
                 cedula='1700000001',
                 cellphone='0991234567',
                 city='Cumbayá',
                 country='Ecuador',
                 birth_date=datetime.strptime('1992-05-10', '%Y-%m-%d').date(),
-                tenant=demo_subdomain,
-                email_verified=True,
             )
             db.session.add(admin_user)
+        
+        # Forzar siempre la contraseña y el estado correcto
+        print(f"   ✅ Asegurando contraseña segura para ADMIN {admin_email}...")
+        admin_user.password_hash = generate_password_hash('Admin123!')
+        admin_user.status = 'active'
+        admin_user.tenant = demo_subdomain
+        admin_user.email_verified = True
+        db.session.add(admin_user)
+        db.session.flush()
+
+        if not algarrobos:
             db.session.flush()
 
             algarrobos = models.Condominium(
@@ -337,70 +347,79 @@ def seed_initial_data():
                 ("Luis", "Gomez", "A1", "Local Comercial")
             ]
 
-            users_objects = [] # Guardar para roles especiales
+            users_objects = []
 
-            for idx, (nombre, apellido, num, tipo) in enumerate(residents_data):
-                # Crear Unidad
-                unit = models.Unit(
-                    property_number=num,
-                    name=f"{tipo} {num}",
-                    property_type=tipo,
-                    condominium_id=algarrobos.id,
-                    created_by=admin_user.id,
-                    area_m2=120.0,
-                    bedrooms=3,
-                    bathrooms=2
-                )
-                db.session.add(unit)
-                db.session.flush()
-
-                # Crear Residente Activo
-                residente = models.User(
-                    cedula=f'17000000{idx+2}',
-                    email=f"{nombre.lower()}.{apellido.lower()}@example.com",
-                    first_name=nombre,
-                    last_name=apellido,
-                    password_hash=generate_password_hash('Vecino123!'),
-                    role='USER',
-                    status='active',
-                    tenant=demo_subdomain,
-                    email_verified=True,
-                    unit_id=unit.id, # Asignado a la unidad
-                    cellphone=f'099000000{idx}'
-                )
+            # --- LÓGICA DE ACTUALIZACIÓN FORZOSA PARA RESIDENTES ---
+            for idx, (nombre, apellido, _, _) in enumerate(residents_data):
+                email = f"{nombre.lower()}.{apellido.lower()}@example.com"
+                residente = models.User.query.filter_by(email=email).first()
+                if not residente:
+                    print(f"      🌱 Creando residente: {email}...")
+                    residente = models.User(role='USER', tenant=demo_subdomain)
+                    db.session.add(residente)
+                
+                # Forzar siempre los datos correctos
+                print(f"      ✅ Asegurando datos y contraseña para residente {email}...")
+                residente.password_hash=generate_password_hash('Vecino123!')
+                residente.status='active'
+                residente.email_verified=True
+                residente.cedula=f'17000000{idx+2}'
+                residente.email=email
+                residente.first_name=nombre
+                residente.last_name=apellido
+                residente.cellphone=f'099000000{idx}'
                 db.session.add(residente)
-                db.session.flush()
                 users_objects.append(residente)
+
+            # Asignar unidades (esto puede hacerse en un bucle separado o integrado)
+            for idx, (residente, (_, _, num, tipo)) in enumerate(zip(users_objects, residents_data)):
+                if not residente.unit:
+                    unit = models.Unit.query.filter_by(property_number=num, condominium_id=algarrobos.id).first()
+                    if not unit:
+                        unit = models.Unit(
+                            property_number=num, name=f"{tipo} {num}", property_type=tipo,
+                            condominium_id=algarrobos.id, created_by=admin_user.id,
+                            area_m2=120.0, bedrooms=3, bathrooms=2
+                        )
+                        db.session.add(unit)
+                        db.session.flush()
+                    residente.unit_id = unit.id
+                    db.session.add(residente)
 
             # ------------------------------------------
             # 3.1.5 USUARIOS PENDIENTES Y RECHAZADOS (Para pruebas del Master)
             # ------------------------------------------
             print("   ... Generando Usuarios Pendientes/Rechazados...")
             
-            pending_user = models.User(
-                cedula='1755555555',
-                email='pendiente@example.com',
-                first_name='Pedro',
-                last_name='Pendiente',
-                password_hash=generate_password_hash('123456'),
-                role='USER',
-                status='pending',
-                tenant=demo_subdomain,
-                cellphone='0999999999'
-            )
+            pending_user = models.User.query.filter_by(email='pendiente@example.com').first()
+            if not pending_user:
+                pending_user = models.User(
+                    cedula=f'17000000{idx+2}',
+                    email='pendiente@example.com',
+                    first_name='Pedro',
+                    last_name='Pendiente',
+                    password_hash=generate_password_hash('123456'),
+                    role='USER',
+                    status='pending',
+                    tenant=demo_subdomain,
+                    cellphone='0999999999'
+                )
+                db.session.add(pending_user)
             
-            rejected_user = models.User(
-                cedula='1744444444',
-                email='rechazado@example.com',
-                first_name='Roberto',
-                last_name='Rechazado',
-                password_hash=generate_password_hash('123456'),
-                role='USER',
-                status='rejected',
-                tenant=demo_subdomain,
-                cellphone='0988888888'
-            )
-            db.session.add_all([pending_user, rejected_user])
+            rejected_user = models.User.query.filter_by(email='rechazado@example.com').first()
+            if not rejected_user:
+                rejected_user = models.User(
+                    cedula='1744444444',
+                    email='rechazado@example.com',
+                    first_name='Roberto',
+                    last_name='Rechazado',
+                    password_hash=generate_password_hash('123456'),
+                    role='USER',
+                    status='rejected',
+                    tenant=demo_subdomain,
+                    cellphone='0988888888'
+                )
+                db.session.add(rejected_user)
 
             # ------------------------------------------
             # 3.2 DIRECTIVA (Roles Especiales)
