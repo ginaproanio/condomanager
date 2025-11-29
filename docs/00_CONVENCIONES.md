@@ -2,11 +2,13 @@
 
 > **Propósito**: Este documento es la **Constitución Técnica** de CondoManager-SaaS. Define las reglas inquebrantables de arquitectura y seguridad, así como las convenciones de estilo.
 >
-> **Cualquier PR que viole la Sección 1 será rechazado automáticamente.**
+> **REGLA SUPREMA (2025)**:  
+> La funcionalidad del sistema siempre tiene prioridad sobre cualquier convención de estilo.  
+> Si un cambio por "cumplir convención" rompe algo → se revierte inmediatamente.
 
 ---
 
-# 🚨 ANTIPATRONES Y REGLAS DE SEGURIDAD (ZERO TOLERANCE)
+# ANTIPATRONES Y REGLAS DE SEGURIDAD (ZERO TOLERANCE)
 
 **Cualquier PR que viole esta sección será RECHAZADO automáticamente.**
 
@@ -19,6 +21,7 @@
 | **Resolver Tenant manualmente**<br>`tenant = get_tenant()` en cada ruta | **Data Leakage**. Si un dev olvida la línea, expone datos globales. | **Middleware Global**. Usar `g.condominium` inyectado por middleware. |
 | **Queries sin filtro**<br>`User.query.all()` | **Broken Access Control (OWASP A01)**. Expone datos de todos los condominios. | **Filtro Explícito**. `User.query.filter_by(condominium_id=g.condominium.id)`. |
 | **Hardcoding de subdominios**<br>`if subdomain == 'sandbox':` | **Vulnerabilidad Arquitectónica**. Dificulta rotación de entornos. | **Entornos Dinámicos**. Usar `g.condominium.environment`. |
+| **Queries globales sin filtro de entorno**<br>`db.session.query(func.sum(Payment.amount))` | **Métricas Contaminadas**. Mezcla datos de producción con datos de prueba (`sandbox`, `internal`). | **Filtro de Entorno**. En queries globales (MASTER), filtrar por `environment` para métricas reales (ej. `environment NOT IN ('sandbox', 'internal')`). |
 | **Flags booleanos**<br>`is_internal`, `is_demo` | **Mantenimiento Frágil**. Se olvidan en rutas nuevas. | **Enums + Middleware**. Usar ENUM `environment` + validación global. |
 
 ### 1.2 Seguridad (OWASP Top 10)
@@ -26,16 +29,7 @@
 | ❌ PROHIBIDO | Por qué NO (Riesgo) | ✅ MANDATORIO |
 |-------------|-------------------|--------------|
 | **CSRF Desactivado**<br>`JWT_COOKIE_CSRF_PROTECT = False` | **Fraude**. Permite ejecutar acciones en nombre del usuario. | **CSRF Activado**. Siempre `True` en producción. |
-| **IDs Secuenciales Públicos**<br>`/users/1`, `/users/2` | **Data Scraping / IDOR**. Permite enumerar recursos. | **UUIDs o Checks**. Validar pertenencia al tenant siempre. |
-| **Tokens en LocalStorage** | **XSS Vulnerability**. JS malicioso puede robar el token. | **HttpOnly Cookies**. Almacenamiento seguro del navegador. |
-| **Validación solo Frontend** | **Security Bypass**. Se puede saltar con cURL/Postman. | **Decoradores Backend**. `@module_required`, `@admin_required`. |
-
-### 1.3 Base de Datos
-
-| ❌ PROHIBIDO | Por qué NO (Riesgo) | ✅ MANDATORIO |
-|-------------|-------------------|--------------|
-| **Migraciones sin Backup** | **Pérdida de Datos**. Fallos irreversibles en deploy. | **Snapshot Previo**. Backup automático antes de `flask db upgrade`. |
-| **Transacciones sin Rollback** | **Inconsistencia de Datos**. Estados corruptos si falla un paso. | **Atomicidad**. Bloque `try/except` con `db.session.rollback()`. |
+| **Transacciones sin atomicidad**<br>Sin `try/except` + `rollback()` | Pérdida de consistencia en BD. | **Atomicidad**. Bloque `try/except` con `db.session.rollback()`. |
 | **SQL Injections**<br>Concatenación de strings en queries. | **OWASP A03**. Robo total de base de datos. | **SQLAlchemy ORM**. Usar parámetros bind del ORM siempre. |
 
 ### 1.4 Gestión de Entornos
@@ -47,31 +41,30 @@
 
 ---
 
-## 2. Convención de Idioma (La Regla de Oro)
+## 2. Convención de Idioma — REGLA REALISTA 2025
 
-La regla más importante de estilo es la separación de idiomas entre código y UI.
+| Elemento                        | Idioma permitido         | Justificación                                                                 |
+|---------------------------------|--------------------------|-------------------------------------------------------------------------------|
+| Código nuevo (2025 en adelante) | 100 % inglés             | Hiring internacional, herramientas, claridad global                           |
+| Código existente funcional      | Español permitido        | No romper funcionalidades por estética                                        |
+| Refactor de archivo existente   | Migrar a inglés + tests  | Cambio controlado, nunca masivo                                               |
+| Columnas y tablas de BD         | Español permitido        | Ecuador: cédula, avalúo municipal, código predial, integración SRI           |
+| Rutas URL visibles al usuario   | Español (obligatorio)    | UX Latam: `/registro`, `/dashboard`, `/pagos`, `/aprobar`                     |
+| Templates HTML (texto visible)  | Español (obligatorio)    | Experiencia de usuario final                                                  |
+| Variables, funciones, clases internas | Inglés preferido (nuevo) | Consistencia técnica                                                          |
+| Mensajes de commit              | Inglés, imperativo       | `Add user registration`, `Fix payment webhook`                                |
+| Logs técnicos y flash messages  | Inglés                   | Debugging y monitoreo                                                         |
 
-### 2.1 Código Fuente: **Inglés**
-Todo identificador técnico **DEBE** estar en inglés:
-- Variables, Funciones, Clases (`class Condominium`, `def create_user`).
-- Modelos y Columnas de BD (`db.Column(db.String)`).
-- Mensajes de Commit.
+**Ejemplos permitidos y correctos en producción 2025**:
+```python
+# Modelos (campos legales ecuatorianos)
+cedula = db.Column(db.String(20), unique=True)
+avaluo_municipal = db.Column(db.Numeric)
 
-### 2.2 Interfaz de Usuario (UI): **Español**
-Todo texto visible para el usuario final **DEBE** estar en español:
-- HTML Templates (`<h1>Bienvenido</h1>`).
-- Mensajes Flash (`flash("Usuario creado", "success")`).
+# Rutas públicas
+@app.route('/registro')
+def registro():
+    return render_template('public/registro.html')
 
----
-
-## 3. Flujo de Trabajo (Git)
-
-- **Ramas:** `feature/nombre-feature`, `fix/bug-desc`. `main` es sagrada.
-- **Commits:** Mensajes en inglés, imperativo (`Add user model`, no `Added user model`).
-
-## 4. Stack Tecnológico Permitido
-
-- **Backend:** Python 3.11+, Flask, SQLAlchemy.
-- **Auth:** Flask-JWT-Extended (Cookies HttpOnly).
-- **DB:** PostgreSQL (Producción), SQLite (Solo Dev local).
-- **Linter:** Flake8 / Black.
+# Código nuevo
+def create_payment_intent(amount: float) -> str:

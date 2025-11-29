@@ -11,9 +11,9 @@ def test_login_page_loads(client):
     """
     Prueba Básica 2: Verificar que la página de login carga.
     """
-    response = client.get('/login')
+    response = client.get('/ingresar')
     assert response.status_code == 200
-    assert b"Iniciar Sesi" in response.data # Buscamos parte del texto "Iniciar Sesión"
+    assert b"Ingresar a tu Cuenta" in response.data
 
 def test_demo_page_loads(client):
     """
@@ -22,4 +22,3 @@ def test_demo_page_loads(client):
     response = client.get('/solicitar-demo')
     assert response.status_code == 200
     assert b"Solicita una Demo" in response.data
-

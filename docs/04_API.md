@@ -9,9 +9,9 @@ Estos endpoints son accedidos a través de un navegador y renderizan plantillas 
 
 ### 1.1 Rutas Públicas (`public_routes.py`)
 - **`GET /`**: Página de inicio o landing page.
-- **`GET /login`**: Muestra el formulario de inicio de sesión.
-- **`GET /registro`**: Muestra el formulario de registro de nuevos usuarios.
-- **`GET /logout`**: Cierra la sesión del usuario.
+- **`GET, POST /ingresar`**: Muestra y procesa el formulario de inicio de sesión.
+- **`GET, POST /registro`**: Muestra y procesa el formulario de registro de nuevos usuarios.
+- **`GET /salir`**: Cierra la sesión del usuario y elimina las cookies JWT.
 
 ### 1.2 Rutas de Usuario (`user_routes.py`)
 - **`GET /dashboard`**: Panel principal para usuarios con rol `USER`.

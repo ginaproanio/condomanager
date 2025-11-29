@@ -7,7 +7,7 @@ from flask_jwt_extended import (
 )
 from app.models import User, db, Condominium
 from app.extensions import limiter
-import hashlib
+from werkzeug.security import generate_password_hash # ✅ Importar la función correcta
 from datetime import datetime, timedelta
 import secrets # Para generar tokens seguros
 
@@ -22,7 +22,7 @@ def home():
 
 @public_bp.route('/solicitar-demo', methods=['GET', 'POST'])
 def demo_request():
-    config = current_app.get_tenant_config(getattr(g, 'condominium', None))
+    config = current_app.get_tenant_config(getattr(g, 'condominium', None).subdomain if getattr(g, 'condominium', None) else None)
 
     if request.method == 'POST':
         # Recoger datos
@@ -36,11 +36,11 @@ def demo_request():
         # Validaciones básicas
         if not password:
             flash("La contraseña es obligatoria.", "warning")
-            return redirect(url_for('public.demo_request'))
+            return render_template('public/demo_request.html', config=config, request_form=request.form)
             
         if User.query.filter_by(email=email).first():
             flash("Este correo ya está registrado. Por favor inicia sesión.", "warning")
-            return redirect(url_for('public.login'))
+            return redirect(url_for('auth.login'))
         
         if User.query.filter_by(cedula=cedula).first():
             flash("Esta cédula ya está registrada.", "warning")
@@ -63,7 +63,7 @@ def demo_request():
                 email=email,
                 cedula=cedula,
                 cellphone=cellphone,
-                password_hash=hashlib.sha256(password.encode()).hexdigest(),
+                password_hash=generate_password_hash(password), # ✅ Usar el hashing seguro
                 role='ADMIN', # Admin de su propia demo
                 status='active', # Activo para que pueda entrar ya
                 tenant=demo_subdomain,
@@ -104,7 +104,7 @@ def demo_request():
             flash(f"¡Tu demo está lista! Hemos enviado un correo de validación a {email}. (Simulado: Tu cuenta está activa por ahora)", "success")
             
             # Auto-Login opcional o redirección
-            return redirect(url_for('public.login'))
+            return redirect(url_for('auth.login'))
 
         except Exception as e:
             db.session.rollback()
@@ -119,88 +119,14 @@ def verify_email(token):
     user = User.query.filter_by(verification_token=token).first()
     if not user:
         flash("Token de verificación inválido o expirado.", "error")
-        return redirect(url_for('public.login'))
+        return redirect(url_for('auth.login'))
     
     user.email_verified = True
     user.verification_token = None # Consumir token
     db.session.commit()
     
     flash("¡Correo verificado correctamente! Ya puedes usar tu cuenta.", "success")
-    return redirect(url_for('public.login'))
-
-@public_bp.route('/register', methods=['GET', 'POST'])
-@limiter.limit("3 per hour")  # Prevenir spam de registros
-def register():
-    condo = getattr(g, 'condominium', None)
-    config = current_app.get_tenant_config(condo.subdomain if condo else None)
-
-    if request.method == 'POST':
-        email = request.form.get('email', '').strip().lower()
-        cedula = request.form.get('cedula', '').strip()
-        first_name = request.form.get('first_name', '').strip()
-        last_name = request.form.get('last_name', '').strip()
-        password = request.form.get('password', '')
-        cellphone = request.form.get('cellphone', '').strip()
-        birth_date_str = request.form.get('birth_date')
-        city = request.form.get('city', '').strip()
-        country = request.form.get('country', '').strip()
-
-        if not password:
-            flash("La contraseña es obligatoria.", "danger")
-            return render_template('auth/registro.html', config=config, **request.form)
-
-        if User.query.filter_by(email=email).first():
-            flash("El correo electrónico ya está registrado.", "danger")
-            return render_template('auth/registro.html', config=config, **request.form)
-        
-        if User.query.filter_by(cedula=cedula).first():
-            flash("La cédula ya está registrada.", "danger")
-            return render_template('auth/registro.html', config=config, **request.form)
-
-        birth_date = None
-        if birth_date_str:
-            try:
-                birth_date = datetime.strptime(birth_date_str, '%Y-%m-%d').date()
-            except ValueError:
-                flash("El formato de la fecha de nacimiento es inválido.", "danger")
-                return render_template('auth/registro.html', config=config, **request.form)
-
-        # Generar token de verificación único
-        verification_token = secrets.token_urlsafe(32)
-
-        new_user = User(
-            cedula=cedula, email=email, first_name=first_name, last_name=last_name,
-            password_hash=hashlib.sha256(password.encode()).hexdigest(),
-            birth_date=birth_date, cellphone=cellphone, city=city, country=country, role='USER', status='pending',
-            tenant=condo.subdomain if condo else None,
-            verification_token=verification_token # Asignar token para evitar violación de unique constraint
-        )
-
-        db.session.add(new_user)
-        db.session.commit()
-        flash("¡Registro exitoso! Tu cuenta está pendiente de aprobación por el administrador.", "success")
-        return redirect(url_for('public.login'))
-
-    return render_template('auth/registro.html', config=config)
-
-@public_bp.route('/login', methods=['GET', 'POST'])
-def login():
-    condo = getattr(g, 'condominium', None)
-    config = current_app.get_tenant_config(condo.subdomain if condo else None)
-    return render_template('auth/login.html', config=config)
-
-@public_bp.route('/logout')
-def logout():
-    response = make_response(redirect(url_for('public.home')))
-    unset_jwt_cookies(response)
-    
-    # REFUERZO DE SEGURIDAD: Prevenir caché al salir
-    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
-    response.headers['Pragma'] = 'no-cache'
-    response.headers['Expires'] = '0'
-    
-    flash("Has cerrado sesión correctamente", "info")
-    return response
+    return redirect(url_for('auth.login'))
 
 @public_bp.route('/health')
 def health():

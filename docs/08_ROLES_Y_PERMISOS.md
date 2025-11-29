@@ -13,7 +13,7 @@ La directiva del condominio (compuesta por roles especiales) elige a un `ADMINIS
 - **Gestión de Plataforma:** Creación y configuración global de condominios y usuarios administradores.
 - **Gestión del Catálogo de Módulos:** Creación y edición de los módulos que la plataforma ofrece.
 - **Supervisión de Condominios (Solo Lectura):** Acceso a un panel de supervisión (`/supervise/<id>`) con estadísticas generales (conteos de unidades, usuarios activos/pendientes) para fines de facturación y seguimiento.
-- **Reportería Global:** Acceso a `/master/reports` para exportar bases de datos completas de condominios y usuarios (CSV) con fines de auditoría y marketing.
+- **Reportería Global:** Acceso a `/master/reports` para exportar datos agregados. **Regla Crítica:** Todas las métricas de negocio (pagos, usuarios activos, etc.) deben filtrar y excluir los condominios con `environment = 'sandbox'` o `'internal'`.
 - **Limitación Crítica de Seguridad:** El rol `MASTER` **NUNCA** puede operar, navegar o ejecutar acciones dentro del panel de un `ADMIN`. El sistema está diseñado para que la suplantación de roles sea imposible. El acceso del `MASTER` a los datos de un condominio se limita estrictamente a los datos agregados y métricas del panel de supervisión.
 - **Gestión del Catálogo de Módulos:**
     - **Exclusividad:** Solo el `MASTER` puede crear, editar y definir los precios de los módulos en el catálogo global del sistema (tabla `modules`).
@@ -21,7 +21,7 @@ La directiva del condominio (compuesta por roles especiales) elige a un `ADMINIS
     - **Gestión de Estado Global:** Pone un módulo en estado `MAINTENANCE` para toda la plataforma. Esto bloquea el acceso incluso si el condominio lo ha pagado, mostrando un mensaje personalizado de mantenimiento (con fecha estimada de fin).
     - **Gestión de Estado Específico:** Registra períodos de mantenimiento para un módulo en un condominio específico, dejando un historial auditable.
 - **Documentos Propios:** El MASTER tiene su propio módulo de "Documentos" para gestionar contratos, términos de servicio y comunicados de la plataforma, independiente de los condominios.
-- **Sandbox:** El MASTER reside en un condominio de pruebas ("Sandbox") para sus configuraciones personales (como WhatsApp).
+- **Sandbox:** El MASTER reside en un condominio de pruebas ("Sandbox") para sus configuraciones personales. Este condominio no debe ser incluido en los reportes de negocio.
 
 ### 1.2 ADMINISTRADOR
 - Gestión completa de **un único condominio específico** al que está asignado (vía `tenant` y validación de `Condominium.admin_user_id`).
@@ -190,7 +190,7 @@ En el entorno de pruebas (Railway), la validación estricta de roles por subdomi
 ### 7.2 Auditoría
 - Registro de quién asignó cada rol
 - Histórico de cambios en asignaciones
-- Trazabilidad de acciones por rol (ej. quién aprobó un pago manual).
+- Trazabilidad de acciones por rol (ej. quién aprobó un pago manual) mediante logging estructurado con **structlog**.
 
 ### 7.3 Marketplace y Módulos Especiales
 - Roles especiales pueden tener accesos adicionales según módulos contratados.

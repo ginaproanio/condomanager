@@ -9,7 +9,7 @@ from sqlalchemy.orm import joinedload # Optimización N+1
 from app.auth import get_current_user
 from app.models import Condominium, User, CondominiumConfig, Unit, PlatformBankAccount
 from app import db, models
-from datetime import datetime, timedelta
+from datetime import datetime
 import io
 import csv
 from app.decorators import master_required
@@ -292,7 +292,6 @@ def master_manage_user(current_user):
         
         condo = Condominium.query.get(int(condominium_id))
         user_to_manage.tenant = condo.subdomain
-        # user_to_manage.condominium_id = condo.id # ELIMINADO: Este campo no existe en User
         user_to_manage.status = 'active'
         db.session.commit()
         flash(f'Usuario {user_to_manage.email} asignado a {condo.name} y aprobado.', 'success')
@@ -318,7 +317,6 @@ def master_manage_user(current_user):
         db.session.flush() # Para obtener el ID del nuevo condo
 
         user_to_manage.tenant = demo_subdomain
-        # user_to_manage.condominium_id = demo_condo.id # ELIMINADO: Este campo no existe en User
         user_to_manage.status = 'active'
         user_to_manage.role = 'ADMIN' # Un usuario de demo debe ser admin de su demo
         
@@ -357,7 +355,6 @@ def master_usuarios_editar(current_user, user_id):
         condominium_id = request.form.get('condominium_id')
         # --- Fin de la lógica actualizada ---
         
-        # user_to_edit.condominium_id = int(condominium_id) if condominium_id else None # ELIMINADO: Este campo no existe en User
         user_to_edit.tenant = Condominium.query.get(condominium_id).subdomain if condominium_id else None
 
         db.session.commit()
@@ -521,7 +518,7 @@ def master_importar_admins_csv(current_user):
             csv_reader = csv.DictReader(stream)
             created_count = 0
             errors = []
-            import hashlib
+            from werkzeug.security import generate_password_hash
             import secrets
             
             for row in csv_reader:
@@ -529,8 +526,8 @@ def master_importar_admins_csv(current_user):
                     errors.append(f"Usuario con email {row['email']} o cédula {row['cedula']} ya existe.")
                     continue
 
-                password = row.get('password')
-                pwd_hash = hashlib.sha256(password.encode()).hexdigest() if password else None
+                password = row.get('password', '')
+                pwd_hash = generate_password_hash(password) if password else None
                 
                 # Generar token para evitar colisiones UNIQUE en NULL
                 verification_token = secrets.token_urlsafe(32)
@@ -578,9 +575,8 @@ def master_usuarios_crear(current_user):
             flash(f"La cédula '{cedula}' ya está registrada.", "error")
             return render_template('master/crear_usuario.html', user=current_user, all_condominiums=all_condominiums, request_form=request.form)
 
-        import hashlib
+        from werkzeug.security import generate_password_hash
         password = request.form.get('password')
-        pwd_hash = hashlib.sha256(password.encode()).hexdigest() if password else None
 
         birth_date_str = request.form.get('birth_date')
         birth_date = datetime.strptime(birth_date_str, '%Y-%m-%d').date() if birth_date_str else None
@@ -593,7 +589,7 @@ def master_usuarios_crear(current_user):
             last_name=request.form.get('last_name'),
             cedula=cedula,
             email=email,
-            password_hash=pwd_hash,
+            password_hash=generate_password_hash(password) if password else None,
             cellphone=request.form.get('cellphone'),
             birth_date=birth_date,
             city=request.form.get('city'),
@@ -606,7 +602,6 @@ def master_usuarios_crear(current_user):
         condominium_id = request.form.get('condominium_id')
         if condominium_id:
             condo = Condominium.query.get(condominium_id)
-            # new_user.condominium_id = condo.id # ELIMINADO: Este campo no existe en User
             new_user.tenant = condo.subdomain
 
         db.session.add(new_user)

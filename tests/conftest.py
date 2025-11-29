@@ -36,4 +36,3 @@ def runner(app):
     Un runner para probar comandos de CLI si fuera necesario.
     """
     return app.test_cli_runner()
-
