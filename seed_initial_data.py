@@ -133,13 +133,18 @@ def seed_initial_data():
         if not master:
             print(f"🌱 Creando usuario MASTER: {master_email}...")
             master = models.User(
-                cedula='0000000000',
+                # --- DATOS ENRIQUECIDOS ---
+                first_name='Gina',
+                last_name='Proaño',
                 email=master_email, 
-                first_name='Super', 
-                last_name='Admin', 
                 password_hash=generate_password_hash(master_password),
                 role='MASTER', 
                 status='active',
+                cedula='1700000000',
+                cellphone='0999999999',
+                city='Quito',
+                country='Ecuador',
+                birth_date=datetime.strptime('1990-01-01', '%Y-%m-%d').date(),
                 tenant='sandbox', # Asignado directamente al sandbox
                 email_verified=True
             )
@@ -249,16 +254,20 @@ def seed_initial_data():
             # Crear Admin del Condominio
             admin_email = "admin@algarrobos.com"
             admin_user = models.User(
-                cedula='1700000001',
-                email=admin_email,
+                # --- DATOS ENRIQUECIDOS ---
                 first_name='Michelle',
                 last_name='Tobar',
+                email=admin_email,
                 password_hash=generate_password_hash('Admin123!'),
                 role='ADMIN',
                 status='active',
+                cedula='1700000001',
+                cellphone='0991234567',
+                city='Cumbayá',
+                country='Ecuador',
+                birth_date=datetime.strptime('1992-05-10', '%Y-%m-%d').date(),
                 tenant=demo_subdomain,
                 email_verified=True,
-                cellphone='0991234567'
             )
             db.session.add(admin_user)
             db.session.flush()
@@ -269,6 +278,7 @@ def seed_initial_data():
                 email=admin_email,
                 ruc="1790000000001",
                 main_street="Av. Interoceánica Km 14",
+                house_number="Lote 2",
                 cross_street="Calle Los Ceibos",
                 city="Cumbayá",
                 country="Ecuador",

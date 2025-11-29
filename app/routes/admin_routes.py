@@ -55,7 +55,7 @@ def admin_condominio_panel(condominium_id):
     # --- GUARDIÁN ÚNICO Y ESTRICTO ---
     if not is_authorized_admin_for_condo(current_user, condominium):
         flash("No tienes acceso a este panel de administración de condominio o no estás asignado a este condominio. Por favor, inicia sesión como un Administrador autorizado.", "error")
-        return redirect(url_for('public.login'))
+        return redirect(url_for('auth.login'))
 
     # Si la autorización pasa, se obtiene el resto de la información.
     # OPTIMIZACIÓN: Eager load de unidades para usuarios
