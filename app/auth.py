@@ -1,7 +1,7 @@
 from flask import (
     Blueprint, render_template, flash, redirect, url_for, g, current_app, make_response
 )
-from flask_jwt_extended import create_access_token, set_access_cookies, unset_jwt_cookies
+from flask_jwt_extended import create_access_token, set_access_cookies, unset_jwt_cookies, get_jwt_identity, verify_jwt_in_request
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from app.models import User
@@ -9,6 +9,24 @@ from app.forms import LoginForm, RegistrationForm
 from app.extensions import limiter, db
 
 auth_bp = Blueprint('auth', __name__)
+
+def get_current_user():
+    """
+    Devuelve la instancia User asociada con el JWT actual si existe,
+    o None si no hay token/usuario.
+    """
+    try:
+        # Usar verify_jwt_in_request(optional=True) para no forzar un error si no hay token
+        verify_jwt_in_request(optional=True)
+        identity = get_jwt_identity()
+        if not identity:
+            return None
+        # La identidad se guarda como str(user.id), por eso se convierte a int
+        user = User.query.get(int(identity))
+        return user
+    except Exception as e:
+        current_app.logger.debug(f"get_current_user error: {e}")
+        return None
 
 @auth_bp.route('/ingresar', methods=['GET', 'POST'])
 @limiter.limit("5 per minute") # REGLA: Previene ataques de fuerza bruta
