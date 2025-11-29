@@ -127,11 +127,11 @@ def seed_initial_data():
         # 1. USUARIO MAESTRO (SUPERADMIN)
         # ==========================================
         master_email = os.environ.get('MASTER_EMAIL', 'maestro@condomanager.com')
+        master_password = os.environ.get('MASTER_PASSWORD', 'Master2025!')
         master = models.User.query.filter_by(email=master_email).first()
         
         if not master:
-            print(f"🌱 Creando Master: {master_email}...")
-            master_password = os.environ.get('MASTER_PASSWORD', 'Master2025!')
+            print(f"🌱 Creando usuario MASTER: {master_email}...")
             master = models.User(
                 cedula='0000000000',
                 email=master_email, 
@@ -146,7 +146,12 @@ def seed_initial_data():
             db.session.add(master)
             db.session.flush() # Para tener ID
         else:
-            print("✅ Master ya existe.")
+            # FIX DEFINITIVO: Forzar la actualización del hash si el master ya existe.
+            print(f"✅ Master ya existe. Forzando actualización de contraseña a formato seguro para {master_email}...")
+            master.password_hash = generate_password_hash(master_password)
+            master.status = 'active' # Asegurar que esté activo
+            master.role = 'MASTER'   # Asegurar que sea MASTER
+            db.session.add(master)
 
         # ==========================================
         # 2. CONDOMINIO SANDBOX (Entorno del Master)
