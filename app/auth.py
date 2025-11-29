@@ -47,9 +47,20 @@ def login():
                 else:
                     access_token = create_access_token(identity=str(user.id))
                     # Redirección segura para evitar Open Redirect
-                    next_url = request.args.get('next')
-                    # Aquí podrías añadir una validación de `next_url` si es necesario
-                    response = make_response(redirect(next_url or url_for('user.dashboard')))
+                    next_url = request.args.get('next') # TODO: Añadir validación is_safe_url
+
+                    # --- SOLUCIÓN ARQUITECTURAL: Redirección por Rol ---
+                    redirect_url = url_for('user.dashboard') # Destino por defecto para USER
+                    
+                    if user.role == 'MASTER':
+                        redirect_url = url_for('master.master_panel')
+                    elif user.role == 'ADMIN':
+                        # Un ADMIN debe ir a su panel de condominio. Buscamos cuál administra.
+                        admin_condo = Condominium.query.filter_by(admin_user_id=user.id).first()
+                        if admin_condo:
+                            redirect_url = url_for('admin.admin_condominio_panel', condominium_id=admin_condo.id)
+
+                    response = make_response(redirect(next_url or redirect_url))
                     set_access_cookies(response, access_token)
                     
                     log_context = f"en subdominio {g.condominium.subdomain}" if g.condominium else "en dominio global"
