@@ -24,7 +24,7 @@ def login_required(f):
         user = get_current_user_from_jwt()
         if user is None:
             flash("Sesión inválida o expirada. Por favor, inicia sesión de nuevo.", "error")
-            return redirect(url_for('public.login'))
+            return redirect(url_for('auth.login'))
         kwargs['current_user'] = user # Pasar el usuario al wrapped function
         return f(*args, **kwargs)
     return decorated_function

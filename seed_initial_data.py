@@ -1,5 +1,5 @@
 import os
-import hashlib
+from werkzeug.security import generate_password_hash
 from datetime import datetime, timedelta
 from app import create_app
 from app.extensions import db
@@ -132,13 +132,12 @@ def seed_initial_data():
         if not master:
             print(f"🌱 Creando Master: {master_email}...")
             master_password = os.environ.get('MASTER_PASSWORD', 'Master2025!')
-            pwd_hash = hashlib.sha256(master_password.encode()).hexdigest()
             master = models.User(
                 cedula='0000000000',
                 email=master_email, 
                 first_name='Super', 
                 last_name='Admin', 
-                password_hash=pwd_hash,
+                password_hash=generate_password_hash(master_password),
                 role='MASTER', 
                 status='active',
                 tenant='sandbox', # Asignado directamente al sandbox
@@ -249,7 +248,7 @@ def seed_initial_data():
                 email=admin_email,
                 first_name='Michelle',
                 last_name='Tobar',
-                password_hash=hashlib.sha256('Admin123!'.encode()).hexdigest(),
+                password_hash=generate_password_hash('Admin123!'),
                 role='ADMIN',
                 status='active',
                 tenant=demo_subdomain,
@@ -346,7 +345,7 @@ def seed_initial_data():
                     email=f"{nombre.lower()}.{apellido.lower()}@example.com",
                     first_name=nombre,
                     last_name=apellido,
-                    password_hash=hashlib.sha256('Vecino123!'.encode()).hexdigest(),
+                    password_hash=generate_password_hash('Vecino123!'),
                     role='USER',
                     status='active',
                     tenant=demo_subdomain,
@@ -368,7 +367,7 @@ def seed_initial_data():
                 email='pendiente@example.com',
                 first_name='Pedro',
                 last_name='Pendiente',
-                password_hash=hashlib.sha256('123456'.encode()).hexdigest(),
+                password_hash=generate_password_hash('123456'),
                 role='USER',
                 status='pending',
                 tenant=demo_subdomain,
@@ -380,7 +379,7 @@ def seed_initial_data():
                 email='rechazado@example.com',
                 first_name='Roberto',
                 last_name='Rechazado',
-                password_hash=hashlib.sha256('123456'.encode()).hexdigest(),
+                password_hash=generate_password_hash('123456'),
                 role='USER',
                 status='rejected',
                 tenant=demo_subdomain,

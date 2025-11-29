@@ -14,7 +14,7 @@ def iniciar_pago():
     user = get_current_user()
     if not user:
         flash("Debes iniciar sesión para realizar pagos.", "error")
-        return redirect(url_for('public.login'))
+        return redirect(url_for('auth.login'))
 
     # Obtener condominio del usuario (asumimos que está en uno)
     # Prioridad: Unidad asignada -> Tenant del usuario

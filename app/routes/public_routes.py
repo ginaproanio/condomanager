@@ -44,7 +44,7 @@ def demo_request():
         
         if User.query.filter_by(cedula=cedula).first():
             flash("Esta cédula ya está registrada.", "warning")
-            return redirect(url_for('public.login'))
+            return redirect(url_for('auth.login'))
 
         try:
             # 1. Crear Condominio Demo
