@@ -60,7 +60,8 @@ def init_tenant_middleware(app):
                 request.endpoint.startswith('public.') or
                 request.endpoint.startswith('auth.') or
                 request.endpoint.startswith('api.') or
-                request.endpoint.startswith('master.')
+                request.endpoint.startswith('master.') or
+                request.endpoint.startswith('document.') # ✅ PERMITIR ACCESO AL MÓDULO DE DOCUMENTOS
             ):
                  # Si una ruta protegida (como user.dashboard) se accede sin subdominio, es un error.
                  abort(404, description="Se requiere un subdominio de condominio para esta página.")
