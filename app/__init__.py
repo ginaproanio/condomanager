@@ -97,9 +97,8 @@ def create_app():
         return models.User.query.get(int(identity))
 
     with app.app_context():
-        from .routes import all_blueprints
-        for bp in all_blueprints:
-            app.register_blueprint(bp)
+        from . import routes
+        routes.init_app(app)
 
     @cache.memoize(timeout=300) # 5 minutos cache
     def get_tenant_config(tenant):
