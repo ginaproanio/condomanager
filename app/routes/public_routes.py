@@ -8,6 +8,7 @@ from flask_jwt_extended import (
 from app.models import User, db, Condominium
 from app.extensions import limiter
 import hashlib
+from werkzeug.security import generate_password_hash # ✅ Importar la función correcta
 from datetime import datetime, timedelta
 import secrets # Para generar tokens seguros
 
@@ -63,7 +64,7 @@ def demo_request():
                 email=email,
                 cedula=cedula,
                 cellphone=cellphone,
-                password_hash=hashlib.sha256(password.encode()).hexdigest(),
+                password_hash=generate_password_hash(password), # ✅ Usar el hashing seguro
                 role='ADMIN', # Admin de su propia demo
                 status='active', # Activo para que pueda entrar ya
                 tenant=demo_subdomain,

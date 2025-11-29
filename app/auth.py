@@ -67,7 +67,7 @@ def login():
             current_app.logger.warning(f"Failed login attempt for {email_lower}.")
             return render_template('auth/login.html', form=form, error='Usuario o contraseña incorrectos.')
 
-    return render_template('auth/login.html', form=form)
+    return render_template('auth/login.html', form=form) # ✅ CORRECCIÓN: Se pasa la variable 'form' al template.
 
 @auth_bp.route('/registro', methods=['GET', 'POST'])
 def register():
