@@ -3,8 +3,8 @@ from flask import (
 )
 from flask_jwt_extended import create_access_token, set_access_cookies, unset_jwt_cookies, get_jwt_identity, verify_jwt_in_request
 from werkzeug.security import check_password_hash, generate_password_hash
-
-from app.models import User
+ 
+from app.models import User, Condominium
 from app.forms import LoginForm, RegistrationForm
 from app.extensions import limiter, db
 
@@ -47,7 +47,7 @@ def login():
             if user and check_password_hash(user.password_hash, form.password.data):
                 if user.status != 'active':
                     flash('Tu cuenta se encuentra pendiente de aprobación o ha sido desactivada.', 'warning')
-                    current_app.logger.warning(f"Login denegado para usuario inactivo/pendiente: {email_lower}")
+                    current_app.logger.warning(f"Login denied for inactive/pending user: {email_lower}")
                     return render_template('auth/login.html', form=form)
                 else:
                     access_token = create_access_token(identity=str(user.id))
@@ -69,14 +69,14 @@ def login():
                     set_access_cookies(response, access_token)
                     
                     log_context = f"en subdominio {g.condominium.subdomain}" if g.condominium else "en dominio global"
-                    current_app.logger.info(f"Login exitoso para user {user.id} {log_context}.")
+                    current_app.logger.info(f"Successful login for user_id={user.id} in context: {log_context}.")
                     return response
             # Mensaje de error genérico fuera del bloque `if user` para evitar enumeración de usuarios
             flash('Usuario o contraseña incorrectos.', 'danger')
-            current_app.logger.warning(f"Intento de login fallido para el correo: {email_lower}.")
+            current_app.logger.warning(f"Failed login attempt for email: {email_lower}.")
  
         except Exception as e:
-            current_app.logger.error(f"Error DB during login: {str(e)}")
+            current_app.logger.error(f"Database error during login: {str(e)}")
             flash('Error interno del servidor.', 'danger')
 
     # Para peticiones GET o si la validación del formulario falla, SIEMPRE se pasa el 'form'.
