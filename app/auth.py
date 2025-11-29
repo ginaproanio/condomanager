@@ -60,10 +60,21 @@ def login():
                     if user.role == 'MASTER':
                         redirect_url = url_for('master.master_panel')
                     elif user.role == 'ADMIN':
-                        # Un ADMIN debe ir a su panel de condominio. Buscamos cuál administra.
                         admin_condo = Condominium.query.filter_by(admin_user_id=user.id).first()
                         if admin_condo:
-                            redirect_url = url_for('admin.admin_condominio_panel', condominium_id=admin_condo.id)
+                            # --- SOLUCIÓN ARQUITECTURAL ---
+                            # Forzar redirección al subdominio para establecer el contexto del tenant.
+                            # Esto asegura que el middleware cargue g.condominium en la siguiente petición.
+                            scheme = request.environ.get('wsgi.url_scheme', 'http')
+                            # Usamos un dominio base de la configuración o lo construimos.
+                            # En producción, esto debería ser tu dominio principal (ej: condomanager.vip)
+                            # Para Railway, el host es dinámico, así que lo reconstruimos.
+                            host_parts = request.host.split('.')
+                            base_domain = '.'.join(host_parts[-2:]) if len(host_parts) > 1 else request.host
+                            
+                            # Construir la URL completa del subdominio
+                            subdomain_url = f"{scheme}://{admin_condo.subdomain}.{base_domain}"
+                            redirect_url = f"{subdomain_url}{url_for('admin.admin_condominio_panel', condominium_id=admin_condo.id)}"
 
                     response = make_response(redirect(next_url or redirect_url))
                     set_access_cookies(response, access_token)
