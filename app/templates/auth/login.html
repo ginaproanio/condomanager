@@ -31,7 +31,8 @@
                     {% endif %}
 
                     <!-- Formulario JWT -->
-                    <form id="login-form">
+                    <form id="login-form" method="POST" action="{{ url_for('auth.login') }}">
+                        {{ form.hidden_tag() }} <!-- ✅ REGLA CRÍTICA: Protección CSRF obligatoria -->
                         <div class="mb-3">
                             <label for="email" class="form-label">Email</label>
                             <div class="input-group">

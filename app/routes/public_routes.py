@@ -22,7 +22,7 @@ def home():
 
 @public_bp.route('/solicitar-demo', methods=['GET', 'POST'])
 def demo_request():
-    config = current_app.get_tenant_config(getattr(g, 'condominium', None))
+    config = current_app.get_tenant_config(getattr(g, 'condominium', None).subdomain if getattr(g, 'condominium', None) else None)
 
     if request.method == 'POST':
         # Recoger datos
@@ -131,8 +131,8 @@ def verify_email(token):
 @public_bp.route('/register', methods=['GET', 'POST'])
 @limiter.limit("3 per hour")  # Prevenir spam de registros
 def register():
-    condo = getattr(g, 'condominium', None)
-    config = current_app.get_tenant_config(condo.subdomain if condo else None)
+    tenant_subdomain = getattr(g, 'condominium', None).subdomain if getattr(g, 'condominium', None) else None
+    config = current_app.get_tenant_config(tenant_subdomain)
 
     if request.method == 'POST':
         email = request.form.get('email', '').strip().lower()
@@ -171,8 +171,9 @@ def register():
         new_user = User(
             cedula=cedula, email=email, first_name=first_name, last_name=last_name,
             password_hash=hashlib.sha256(password.encode()).hexdigest(),
-            birth_date=birth_date, cellphone=cellphone, city=city, country=country, role='USER', status='pending',
-            tenant=condo.subdomain if condo else None,
+            birth_date=birth_date, cellphone=cellphone, city=city, country=country,
+            role='USER', status='pending',
+            tenant=tenant_subdomain,
             verification_token=verification_token # Asignar token para evitar violación de unique constraint
         )
 
@@ -186,7 +187,30 @@ def register():
 @public_bp.route('/login', methods=['GET', 'POST'])
 def login():
     condo = getattr(g, 'condominium', None)
-    config = current_app.get_tenant_config(condo.subdomain if condo else None)
+    tenant_subdomain = condo.subdomain if condo else None
+    config = current_app.get_tenant_config(tenant_subdomain)
+
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
+
+        user = User.query.filter_by(email=email, tenant=tenant_subdomain).first()
+
+        if user and user.password_hash == hashlib.sha256(password.encode()).hexdigest():
+            if user.status != 'active':
+                flash("Tu cuenta no está activa. Por favor, verifica tu correo o contacta al administrador.", "warning")
+                return render_template('auth/login.html', config=config, email=email)
+
+            access_token = create_access_token(identity=user.id, fresh=True)
+            response = make_response(redirect(url_for('user.dashboard'))) # Asumiendo 'user.dashboard' es la ruta post-login
+            set_access_cookies(response, access_token)
+
+            flash(f"¡Bienvenido de nuevo, {user.first_name}!", "success")
+            return response
+        else:
+            flash("Credenciales inválidas. Por favor, verifica tu correo y contraseña.", "danger")
+            return render_template('auth/login.html', config=config, email=email)
+
     return render_template('auth/login.html', config=config)
 
 @public_bp.route('/logout')

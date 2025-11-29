@@ -41,10 +41,11 @@ def create_app():
         database_url = database_url.replace('postgres://', 'postgresql+pg8000://', 1)
         app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 
-    print(f"Database URL: {app.config['SQLALCHEMY_DATABASE_URI']}")
-
     # --- CONFIGURAR LOGGING (Semana 3, Día 3) ---
     setup_logging(app)
+
+    # ✅ CORRECCIÓN: Se elimina el print de la URL y se usa el logger.
+    app.logger.debug("Database URI has been configured.")
 
     db.init_app(app)
     jwt.init_app(app)

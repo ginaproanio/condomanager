@@ -8,8 +8,11 @@ Sistema multi-condominio implementado inicialmente para "Punta Blanca", diseñad
 - Python con Flask Framework
 - SQLAlchemy ORM
 - Flask-JWT-Extended para autenticación (con cookies HTTP-Only)
-- Flask-Migrate para la gestión y evolución del esquema de la base de datos.
+- Flask-Migrate para la gestión del esquema de la DB.
 - Gunicorn para servir la aplicación en producción
+- Flask-Limiter para protección contra ataques de fuerza bruta.
+- structlog para logging estructurado en formato JSON.
+- Flask-Caching para optimización de rendimiento.
 - `hashlib` para hashing de contraseñas
 
 ### 2.2 Frontend
@@ -74,6 +77,7 @@ La implementación actual utiliza una estrategia de **multi-tenancy de esquema c
 - **Base de Datos Única:** Todos los datos (usuarios, condominios, unidades) residen en una única base de datos.
 - **Separación Lógica:** La separación de datos entre condominios se logra mediante un campo `tenant` (o `condominium_id` para usuarios/unidades) en los modelos de la base de datos.
 - **Determinación del Tenant:** La lógica en `app/tenant.py` determina el inquilino (tenant) basándose en el subdominio de la solicitud HTTP. Por defecto, si no se encuentra un subdominio válido, se utiliza 'puntablanca'.
+- **Queries Globales:** Las consultas para métricas de negocio globales (ej. reportes del MASTER) **deben** excluir explícitamente los entornos de prueba filtrando por `environment NOT IN ('sandbox', 'internal')`.
 
 ### ⚠️ NOTA CRÍTICA: Configuración de Multi-Tenancy en Testing vs. Producción
 
@@ -88,6 +92,7 @@ Cuando se despliegue en un dominio real (ej: `condomanager.com`) con certificado
 1.  Esta excepción en `app/tenant.py` **debe ser revisada**.
 2.  La lógica actual `if 'localhost' in host or 'railway.app' in host` dejará de aplicar automáticamente (lo cual es correcto), activando la validación estricta de subdominios.
 3.  **Verificación:** Asegurarse de que los usuarios finales accedan EXCLUSIVAMENTE a través de su subdominio asignado (ej: `algarrobos.condomanager.com`) para garantizar la seguridad del aislamiento de datos.
+4.  **Infraestructura:** Los subdominios para tenants reales son gestionados vía Cloudflare. El entorno de desarrollo/pruebas se ejecuta en `localhost` o en la URL principal de Railway sin subdominio.
 
 ## 5. Modelos Principales (definidos en `app/models.py`)
 
