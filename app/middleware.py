@@ -71,3 +71,29 @@ def init_tenant_middleware(app):
             current_condominium=getattr(g, 'condominium', None),
             csrf_token=csrf_token
         )
+
+    @app.context_processor
+    def inject_url_helpers():
+        """
+        Inyecta una función url_for inteligente en las plantillas.
+        Añade automáticamente el 'tenant_slug' a las rutas que lo requieran.
+        """
+        def url_for_tenant(endpoint, **values):
+            if g.condominium and 'tenant_slug' not in values:
+                if endpoint.split('.')[0] in ['admin', 'petty_cash', 'google_drive']:
+                    values['tenant_slug'] = g.condominium.subdomain
+            return url_for(endpoint, **values)
+        return dict(url_for_tenant=url_for_tenant)
+
+    @app.context_processor
+    def inject_url_helpers():
+        """
+        Inyecta una función url_for inteligente en las plantillas.
+        Añade automáticamente el 'tenant_slug' a las rutas que lo requieran.
+        """
+        def url_for_tenant(endpoint, **values):
+            if g.condominium and 'tenant_slug' not in values:
+                if endpoint.split('.')[0] in ['admin', 'petty_cash', 'google_drive']:
+                    values['tenant_slug'] = g.condominium.subdomain
+            return url_for(endpoint, **values)
+        return dict(url_for_tenant=url_for_tenant)

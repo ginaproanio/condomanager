@@ -7,7 +7,7 @@
     <!-- Encabezado -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <a href="{{ url_for('admin.admin_condominio_panel', tenant_slug=condominium.subdomain) }}" class="btn btn-outline-secondary mb-2">
+            <a href="{{ url_for_tenant('admin.admin_condominio_panel') }}" class="btn btn-outline-secondary mb-2">
                 <i class="fas fa-arrow-left me-2"></i>Volver al Panel
             </a>
             <h2 class="text-success mb-0"><i class="fab fa-whatsapp me-2"></i>Comunicaciones Masivas</h2>
@@ -171,7 +171,7 @@
                         </div>
                         <div class="card-body p-4">
                             
-                            <form method="POST" action="{{ url_for('admin.configurar_whatsapp', tenant_slug=condominium.subdomain) }}">
+                            <form method="POST" action="{{ url_for_tenant('admin.configurar_whatsapp') }}">
                                 <div class="mb-4">
                                     <label class="form-label fw-bold">Selecciona tu Proveedor</label>
                                     <div class="list-group">
