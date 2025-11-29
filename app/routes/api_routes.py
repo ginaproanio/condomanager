@@ -61,18 +61,9 @@ def api_login():
             # Esta consulta es permitida aquí porque es para ENRUTAMIENTO, no para acceso a datos.
             admin_condo = Condominium.query.filter_by(admin_user_id=user.id).first()
             if admin_condo and admin_condo.subdomain:
-                # ✅ SOLUCIÓN DEFINITIVA: Construir URL absoluta con subdominio.
-                # 1. Obtener el host base (ej: condomanager.vip)
-                server_name = current_app.config.get('SERVER_NAME')
-                if not server_name:
-                    # Fallback para desarrollo o si SERVER_NAME no está configurado
-                    host_parts = request.host.split('.')
-                    server_name = '.'.join(host_parts[-2:]) if len(host_parts) > 1 else request.host
-
-                # 2. Construir la URL que activa el middleware de tenant.
-                scheme = 'https' if not current_app.debug else 'http'
-                admin_panel_path = url_for('admin.admin_condominio_panel') # Ahora esto funciona porque la ruta ya no pide ID.
-                redirect_url = f"{scheme}://{admin_condo.subdomain}.{server_name}{admin_panel_path}"
+                # --- ARQUITECTURA PATH-BASED PARA RAILWAY ---
+                # Construir la URL relativa con el slug del tenant.
+                redirect_url = url_for('admin.admin_condominio_panel', tenant_slug=admin_condo.subdomain)
             else:
                 # Si es un ADMIN no asignado, la API devuelve un estado de 'warning'.
                 # El frontend será responsable de mostrar este mensaje al usuario.

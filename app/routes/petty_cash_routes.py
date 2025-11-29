@@ -10,7 +10,7 @@ from werkzeug.utils import secure_filename
 
 petty_cash_bp = Blueprint('petty_cash', __name__)
 
-@petty_cash_bp.route('/admin/caja-chica', methods=['GET'])
+@petty_cash_bp.route('/<tenant_slug>/admin/caja-chica', methods=['GET'])
 @admin_tenant_required
 def index():
     """
@@ -34,7 +34,7 @@ def index():
                            balance=balance, 
                            now_date=now_date)
 
-@petty_cash_bp.route('/admin/caja-chica/nuevo', methods=['POST'])
+@petty_cash_bp.route('/<tenant_slug>/admin/caja-chica/nuevo', methods=['POST'])
 @admin_tenant_required
 def nuevo_movimiento():
     """
@@ -51,7 +51,7 @@ def nuevo_movimiento():
     
     if not all([description, amount_str, type_tx, category]):
         flash("Faltan campos obligatorios.", "error")
-        return redirect(url_for('petty_cash.index'))
+        return redirect(url_for('petty_cash.index', tenant_slug=condo.subdomain))
     
     try:
         # VALIDACIÓN BACKEND: Monto Positivo
@@ -68,7 +68,7 @@ def nuevo_movimiento():
                 tx_date = datetime.datetime.strptime(date_str, '%Y-%m-%d')
             except ValueError:
                 flash("Formato de fecha inválido", "error")
-                return redirect(url_for('petty_cash.index'))
+                return redirect(url_for('petty_cash.index', tenant_slug=condo.subdomain))
             
         # Procesar archivo
         receipt_url = None
@@ -84,7 +84,7 @@ def nuevo_movimiento():
                     )
                 except Exception as e:
                     flash(f"Archivo inválido: {e.description if hasattr(e, 'description') else str(e)}", "error")
-                    return redirect(url_for('petty_cash.index'))
+                    return redirect(url_for('petty_cash.index', tenant_slug=condo.subdomain))
 
                 filename = secure_filename(f"petty_{condo.id}_{int(datetime.datetime.utcnow().timestamp())}_{file.filename}")
                 upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'petty_cash')
@@ -110,4 +110,4 @@ def nuevo_movimiento():
         db.session.rollback()
         flash(f"Error al registrar: {e.description if hasattr(e, 'description') else str(e)}", "error")
         
-    return redirect(url_for('petty_cash.index'))
+    return redirect(url_for('petty_cash.index', tenant_slug=condo.subdomain))

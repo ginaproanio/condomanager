@@ -28,21 +28,23 @@ def master_panel(current_user):
 @master_required
 def reports(current_user):
     # Generación de estadísticas en tiempo real
-    total_condos = Condominium.query.count()
-    active_condos = Condominium.query.filter_by(status='ACTIVO').count()
+    # ✅ REGLA: Las métricas de negocio deben excluir entornos internos/de prueba.
+    production_envs = ['production', 'demo'] # Definir qué se considera "real"
+    
+    total_condos = Condominium.query.filter(Condominium.environment.in_(production_envs)).count()
+    active_condos = Condominium.query.filter(Condominium.status=='ACTIVO', Condominium.environment.in_(production_envs)).count()
     inactive_condos = total_condos - active_condos
     
-    total_users = User.query.count()
+    # Contar solo usuarios de condominios de producción/demo
+    total_users = db.session.query(User).join(Condominium, User.tenant == Condominium.subdomain).filter(Condominium.environment.in_(production_envs)).count()
     # Usuarios con roles de gestión (ADMIN o MASTER)
     management_users = User.query.filter(or_(User.role=='ADMIN', User.role=='MASTER')).count()
     
     # Métrica de Mora / Deuda (Pagos pendientes de revisión o rechazados)
-    # En un sistema real, esto sumaría facturas vencidas. Aquí sumamos pagos en estado 'PENDING_REVIEW' o 'REJECTED'
-    # como proxy de "Atención requerida".
-    pending_payments_count = models.Payment.query.filter_by(status='PENDING_REVIEW').count()
+    pending_payments_count = db.session.query(models.Payment).join(Condominium).filter(Condominium.environment.in_(production_envs), models.Payment.status=='PENDING_REVIEW').count()
     
     # Documentos Totales (Métrica real solicitada)
-    total_docs = models.Document.query.count()
+    total_docs = db.session.query(models.Document).join(Condominium).filter(Condominium.environment.in_(production_envs)).count()
     
     # Lógica de exportación (POST)
     if request.method == 'POST':

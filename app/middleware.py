@@ -4,24 +4,21 @@ from app.models import Condominium
 def init_tenant_middleware(app):
     @app.before_request
     def resolve_tenant():
-        host = request.headers.get('Host', '')
-        
-        # 1. Detectar Subdominio
+        # --- ARQUITECTURA PATH-BASED PARA RAILWAY ---
+        # Ya no se usa el subdominio, se usa el primer segmento de la ruta.
+        # Ej: /algarrobos/admin/panel -> parts[1] es 'algarrobos'
         subdomain = None
-        
-        # Soporte para desarrollo local o Railway (dominio principal)
-        if 'localhost' in host or 'railway.app' in host:
-            # En desarrollo, permitimos anular el tenant vía query param
-            # Esto facilita probar diferentes tenants sin configurar DNS local
-            tenant_param = request.args.get('tenant')
-            if tenant_param:
-                subdomain = tenant_param
-        else:
-            # En producción, extraemos el subdominio real
-            parts = host.split('.')
-            if len(parts) > 2: # ej: demo.condomanager.com -> parts=['demo', 'condomanager', 'com']
-                subdomain = parts[0]
+        path_parts = request.path.split('/')
+        if len(path_parts) > 1 and path_parts[1] not in ['static', 'api', 'master', 'auth', 'google_drive']:
+            # Asumimos que el primer segmento es el slug del tenant
+            # Se excluyen rutas globales para no confundirlas con un tenant.
+            subdomain = path_parts[1]
 
+        # Para desarrollo, mantenemos la capacidad de forzar un tenant con un query param.
+        # Esto es útil para probar rutas sin tener que escribir el slug en la URL cada vez.
+        tenant_param = request.args.get('tenant')
+        if tenant_param and current_app.debug:
+            subdomain = tenant_param
         # 2. Cargar Condominio (Tenant)
         g.condominium = None
         g.environment = 'production' # Default seguro
@@ -30,41 +27,21 @@ def init_tenant_middleware(app):
             tenant = Condominium.query.filter_by(subdomain=subdomain).first()
             
             if not tenant:
-                # Si estamos en una ruta pública, no encontrar un tenant no es un error.
-                # Por ejemplo, en la página de registro principal.
-                if request.endpoint and request.endpoint.startswith('public.'):
-                    g.condominium = None
-                    return
-
-                # Si hay subdominio pero no existe el tenant, es un 404
-                abort(404, description="Condominio no encontrado")
+                abort(404, description="Condominio no encontrado con el slug proporcionado en la URL.")
             
             g.condominium = tenant
             g.environment = tenant.environment # 'production', 'demo', 'internal'
 
-            # 3. LÓGICA DE AISLAMIENTO DE ENTORNOS
-            # Si es un entorno 'demo' o 'internal', se pueden aplicar reglas extra aquí
-            if tenant.environment == 'internal':
-                # Podríamos restringir acceso por IP aquí
-                pass
-
         else:
-            # Si no hay subdominio, estamos en el dominio raíz.
-            # Para rutas que no son públicas, esto podría ser un error si se espera un tenant.
-            # Pero para las públicas, es normal.
-            
-            # --- SOLUCIÓN ARQUITECTURAL DEFINITIVA ---
-            # Permitir que las rutas públicas, de autenticación, de API y del MASTER
-            # se ejecuten en el dominio raíz sin requerir un subdominio.
+            # Si no se detecta un slug de tenant en la URL, estamos en el dominio raíz (ej. /login, /api/auth/login).
+            # Las rutas públicas, de API, master, etc., deben funcionar aquí.
             if request.endpoint and not (
                 request.endpoint.startswith('public.') or
                 request.endpoint.startswith('auth.') or
                 request.endpoint.startswith('api.') or
-                request.endpoint.startswith('master.') or
-                request.endpoint.startswith('document.') # ✅ PERMITIR ACCESO AL MÓDULO DE DOCUMENTOS
+                request.endpoint.startswith('master.')
             ):
-                 # Si una ruta protegida (como user.dashboard) se accede sin subdominio, es un error.
-                 abort(404, description="Se requiere un subdominio de condominio para esta página.")
+                 pass # Para otras rutas, dejamos que el decorador de la ruta decida si requiere un tenant.
             
             g.condominium = None
 

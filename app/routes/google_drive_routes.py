@@ -6,7 +6,7 @@ from app.decorators import admin_tenant_required
 
 google_drive_bp = Blueprint('google_drive', __name__, url_prefix='/google_drive')
 
-@google_drive_bp.route('/connect', methods=['GET'])
+@google_drive_bp.route('/<tenant_slug>/connect', methods=['GET'])
 @admin_tenant_required
 def connect_drive():
     """
@@ -63,4 +63,4 @@ def callback():
         flash(f"Ocurrió un error configurando Drive: {str(e)}", "error")
 
     # Redirigir al panel de admin del condominio correcto
-    return redirect(url_for('admin.admin_condominio_panel'))
+    return redirect(url_for('admin.admin_condominio_panel', tenant_slug=condo.subdomain))

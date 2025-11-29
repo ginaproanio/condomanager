@@ -41,9 +41,9 @@ Sistema multi-condominio implementado inicialmente para "Punta Blanca", diseñad
 │   │   ├── user_routes.py   # Rutas para usuarios autenticados (dashboard, pagos).
 │   │   ├── admin_routes.py  # Rutas para administradores de condominio (rol ADMIN).
 │   │   │   # Endpoints clave:
-│   │   │   # - /admin/panel: Panel de gestión (Unidades, Usuarios, Directiva).
-│   │   │   # - /admin/usuarios/roles_especiales: Asignación de roles de directiva.
-│   │   │   # - /admin/finanzas: Panel de control financiero.
+│   │   │   # - /<tenant_slug>/admin/panel: Panel de gestión (Unidades, Usuarios, Directiva).
+│   │   │   # - /<tenant_slug>/admin/usuarios/roles_especiales: Asignación de roles de directiva.
+│   │   │   # - /<tenant_slug>/admin/finanzas: Panel de control financiero.
 │   │   ├── master_routes.py # Rutas para el super-administrador (rol MASTER).
 │   │   │   # Endpoints clave:
 │   │   │   # - /master: Panel global con tarjetas de gestión.
@@ -77,22 +77,21 @@ La implementación actual utiliza una estrategia de **multi-tenancy de esquema c
 - **Base de Datos Única:** Todos los datos (usuarios, condominios, unidades) residen en una única base de datos.
 - **Separación Lógica:** La separación de datos entre condominios se logra mediante un campo `tenant` (o `condominium_id` para usuarios/unidades) en los modelos de la base de datos.
 - **Determinación del Tenant:** La lógica en `app/tenant.py` determina el inquilino (tenant) basándose en el subdominio de la solicitud HTTP. Por defecto, si no se encuentra un subdominio válido, se utiliza 'puntablanca'.
+- **Determinación del Tenant:** La lógica en `app/middleware.py` determina el inquilino (tenant) basándose en el **primer segmento de la ruta URL**. Por ejemplo, en `https://condomanager.vip/algarrobos/admin`, el middleware identifica `algarrobos` como el tenant.
 - **Queries Globales:** Las consultas para métricas de negocio globales (ej. reportes del MASTER) **deben** excluir explícitamente los entornos de prueba filtrando por `environment NOT IN ('sandbox', 'internal')`.
 
-### ⚠️ NOTA CRÍTICA: Configuración de Multi-Tenancy en Testing vs. Producción
+### ⚠️ NOTA CRÍTICA: Arquitectura Multi-Tenancy "Path-Based"
 
-**Estado Actual (Testing en Railway / Localhost):**
-Debido a que el entorno de pruebas en Railway no tiene configurados los subdominios wildcard (ej: `*.railway.app`), se ha implementado una **relajación intencional** en la lógica de detección de inquilinos (`app/tenant.py`).
+**Decisión Arquitectónica (Nov 2025):**
+Se ha adoptado una arquitectura **"Path-Based Multi-Tenancy"** (Multi-Tenancy Basada en Rutas) como el estándar para la plataforma.
 
-*   **Comportamiento:** Si el host contiene `railway.app` o `localhost`, la función `get_tenant()` devuelve `None` (Modo Global) en lugar de forzar un tenant específico o fallar.
-*   **Efecto:** Permite que usuarios de *cualquier* condominio (ej: `algarrobos`) se logueen desde la URL principal sin ser bloqueados por "Acceso desde subdominio incorrecto".
+*   **Justificación:** La estrategia original basada en subdominios (ej. `algarrobos.condomanager.vip`) es incompatible con las limitaciones de plataformas de despliegue como Railway, que no ofrecen soporte nativo para subdominios dinámicos (wildcard DNS). El error `DNS_PROBE_FINISHED_NXDOMAIN` confirmó esta incompatibilidad.
+*   **Implementación:**
+    1.  **Identificación del Tenant:** El middleware `resolve_tenant` en `app/middleware.py` inspecciona el path de la URL. Si la ruta es `/algarrobos/admin/panel`, extrae `algarrobos` como el identificador del tenant.
+    2.  **Definición de Rutas:** Todas las rutas que pertenecen a un tenant específico **deben** estar prefijadas con un parámetro dinámico `<tenant_slug>`. Ejemplo: `@admin_bp.route('/<tenant_slug>/admin/panel')`.
+    3.  **Redirección Post-Login:** Tras un login exitoso, el sistema redirige al usuario a la ruta completa, incluyendo el slug del tenant. Ejemplo: `redirect(url_for('admin.admin_condominio_panel', tenant_slug='algarrobos'))`.
 
-**🚨 PARA PRODUCCIÓN (Dominio Real):**
-Cuando se despliegue en un dominio real (ej: `condomanager.com`) con certificados SSL Wildcard:
-1.  Esta excepción en `app/tenant.py` **debe ser revisada**.
-2.  La lógica actual `if 'localhost' in host or 'railway.app' in host` dejará de aplicar automáticamente (lo cual es correcto), activando la validación estricta de subdominios.
-3.  **Verificación:** Asegurarse de que los usuarios finales accedan EXCLUSIVAMENTE a través de su subdominio asignado (ej: `algarrobos.condomanager.com`) para garantizar la seguridad del aislamiento de datos.
-4.  **Infraestructura:** Los subdominios para tenants reales son gestionados vía Cloudflare. El entorno de desarrollo/pruebas se ejecuta en `localhost` o en la URL principal de Railway sin subdominio.
+*   **Beneficios:** Esta arquitectura es robusta, cumple con las convenciones de aislamiento de datos y es 100% compatible con el entorno de despliegue actual, eliminando la necesidad de configuraciones de DNS complejas.
 
 ## 5. Modelos Principales (definidos en `app/models.py`)
 

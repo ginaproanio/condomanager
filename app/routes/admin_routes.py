@@ -31,7 +31,7 @@ def reject_user(user_id): # Renombrado para consistencia
     # ... (la lógica interna de esta función debe ser revisada, pero no es la causa del bloqueo)
     pass
 
-@admin_bp.route('/admin/panel', methods=['GET', 'POST'])
+@admin_bp.route('/<tenant_slug>/admin/panel', methods=['GET', 'POST'])
 @admin_tenant_required
 def admin_condominio_panel():
     """
@@ -71,7 +71,7 @@ def admin_condominio_panel():
                            active_special_roles=active_special_roles,
                            now_date=now_date)
 
-@admin_bp.route('/admin/usuarios/roles_especiales', methods=['POST'])
+@admin_bp.route('/<tenant_slug>/admin/usuarios/roles_especiales', methods=['POST'])
 @admin_tenant_required
 def asignar_rol_especial():
     """
@@ -87,7 +87,7 @@ def asignar_rol_especial():
 
     if not all([user_id, role, start_date_str]):
         flash("Faltan datos obligatorios.", "error")
-        return redirect(url_for('admin.admin_condominio_panel'))
+        return redirect(url_for('admin.admin_condominio_panel', tenant_slug=condominium.subdomain))
 
     try:
         start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
@@ -97,7 +97,7 @@ def asignar_rol_especial():
         ROLES_VALIDOS = ['PRESIDENTE', 'SECRETARIO', 'TESORERO', 'CONTADOR', 'VOCAL']
         if role not in ROLES_VALIDOS:
              flash("Rol inválido.", "error")
-             return redirect(url_for('admin.admin_condominio_panel'))
+             return redirect(url_for('admin.admin_condominio_panel', tenant_slug=condominium.subdomain))
 
         # Desactivar roles previos del mismo tipo para este usuario en este condominio (opcional, según regla de negocio)
         # UserSpecialRole.query.filter_by(user_id=user_id, condominium_id=condominium_id, role=role, is_active=True).update({'is_active': False})
@@ -120,9 +120,9 @@ def asignar_rol_especial():
         db.session.rollback()
         flash(f"Error al asignar rol: {str(e)}", "error")
 
-    return redirect(url_for('admin.admin_condominio_panel'))
+    return redirect(url_for('admin.admin_condominio_panel', tenant_slug=condominium.subdomain))
 
-@admin_bp.route('/admin/usuarios/roles_especiales/revocar/<int:role_id>', methods=['POST'])
+@admin_bp.route('/<tenant_slug>/admin/usuarios/roles_especiales/revocar/<int:role_id>', methods=['POST'])
 @admin_tenant_required
 def revocar_rol_especial(role_id):
     role_entry = UserSpecialRole.query.get_or_404(role_id)
@@ -137,9 +137,9 @@ def revocar_rol_especial(role_id):
     db.session.commit()
     
     flash("Rol revocado correctamente.", "success")
-    return redirect(url_for('admin.admin_condominio_panel'))
+    return redirect(url_for('admin.admin_condominio_panel', tenant_slug=condominium.subdomain))
 
-@admin_bp.route('/admin/comunicaciones')
+@admin_bp.route('/<tenant_slug>/admin/comunicaciones')
 @admin_tenant_required
 def comunicaciones():
     """
@@ -151,7 +151,7 @@ def comunicaciones():
     whatsapp_status = 'disconnected' 
     return render_template('admin/comunicaciones.html', condominium=condominium, status=whatsapp_status)
 
-@admin_bp.route('/admin/configurar-whatsapp', methods=['POST'])
+@admin_bp.route('/<tenant_slug>/admin/configurar-whatsapp', methods=['POST'])
 @admin_tenant_required
 def configurar_whatsapp():
     """
@@ -164,7 +164,7 @@ def configurar_whatsapp():
     # Validar que sea un proveedor válido
     if provider not in ['GATEWAY_QR', 'META_API']:
         flash("Proveedor no válido", "error")
-        return redirect(url_for('admin.comunicaciones'))
+        return redirect(url_for('admin.comunicaciones', tenant_slug=condo.subdomain))
         
     condo.whatsapp_provider = provider
     
@@ -194,9 +194,9 @@ def configurar_whatsapp():
         db.session.rollback()
         flash(f"Error al guardar configuración: {str(e)}", "error")
         
-    return redirect(url_for('admin.comunicaciones'))
+    return redirect(url_for('admin.comunicaciones', tenant_slug=condo.subdomain))
 
-@admin_bp.route('/admin/reportes', methods=['GET', 'POST'])
+@admin_bp.route('/<tenant_slug>/admin/reportes', methods=['GET', 'POST'])
 @admin_tenant_required
 def reportes_condominio():
     """
@@ -240,7 +240,7 @@ def reportes_condominio():
                            condominium=condominium,
                            stats={'unidades': total_unidades, 'residentes': total_residentes})
 
-@admin_bp.route('/admin/configuracion-pagos', methods=['GET', 'POST'])
+@admin_bp.route('/<tenant_slug>/admin/configuracion-pagos', methods=['GET', 'POST'])
 @admin_tenant_required
 def configuracion_pagos():
     """
@@ -274,7 +274,7 @@ def configuracion_pagos():
             db.session.rollback()
             flash(f"Error al guardar: {str(e)}", "error")
             
-        return redirect(url_for('admin.configuracion_pagos'))
+        return redirect(url_for('admin.configuracion_pagos', tenant_slug=condo.subdomain))
         
     # Obtener historial de pagos recibidos para este condominio
     # OPTIMIZACIÓN: Eager load de user y unit
@@ -284,7 +284,7 @@ def configuracion_pagos():
         
     return render_template('admin/config_pagos.html', condominium=condo, transactions=transactions)
 
-@admin_bp.route('/admin/finanzas', methods=['GET'])
+@admin_bp.route('/<tenant_slug>/admin/finanzas', methods=['GET'])
 @admin_tenant_required
 def finanzas():
     """
@@ -312,7 +312,7 @@ def finanzas():
                            pending_payments=pending_payments,
                            history_payments=history_payments)
 
-@admin_bp.route('/admin/pagos/aprobar/<int:payment_id>', methods=['POST'])
+@admin_bp.route('/<tenant_slug>/admin/pagos/aprobar/<int:payment_id>', methods=['POST'])
 @admin_tenant_required
 def aprobar_pago(payment_id):
     payment = Payment.query.get_or_404(payment_id)
@@ -330,9 +330,9 @@ def aprobar_pago(payment_id):
     
     db.session.commit()
     flash(f"Pago de ${payment.amount} aprobado exitosamente.", "success")
-    return redirect(url_for('admin.finanzas'))
+    return redirect(url_for('admin.finanzas', tenant_slug=condominium.subdomain))
 
-@admin_bp.route('/admin/pagos/rechazar/<int:payment_id>', methods=['POST'])
+@admin_bp.route('/<tenant_slug>/admin/pagos/rechazar/<int:payment_id>', methods=['POST'])
 @admin_tenant_required
 def rechazar_pago(payment_id):
     payment = Payment.query.get_or_404(payment_id)
@@ -349,9 +349,9 @@ def rechazar_pago(payment_id):
     
     db.session.commit()
     flash("Pago rechazado.", "warning")
-    return redirect(url_for('admin.finanzas'))
+    return redirect(url_for('admin.finanzas', tenant_slug=condominium.subdomain))
 
-@admin_bp.route('/admin/comprobante/<filename>')
+@admin_bp.route('/<tenant_slug>/admin/comprobante/<filename>')
 @jwt_required()
 def ver_comprobante(filename):
     from flask import send_from_directory, abort
@@ -390,7 +390,7 @@ def ver_comprobante(filename):
     upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'payments')
     return send_from_directory(upload_folder, filename)
 
-@admin_bp.route('/admin/personalizar', methods=['POST'])
+@admin_bp.route('/<tenant_slug>/admin/personalizar', methods=['POST'])
 @admin_tenant_required
 def personalizar_condominio():
     """
@@ -420,7 +420,7 @@ def personalizar_condominio():
                               allowed_mimetypes=['image/png', 'image/jpeg', 'image/gif', 'image/webp'])
             except Exception as e:
                 flash(f"Archivo inválido: {e.description if hasattr(e, 'description') else str(e)}", "error")
-                return redirect(url_for('admin.admin_condominio_panel'))
+                return redirect(url_for('admin.admin_condominio_panel', tenant_slug=condo.subdomain))
 
             # Validar extensión
             ext = os.path.splitext(file.filename)[1].lower()
@@ -444,4 +444,4 @@ def personalizar_condominio():
         db.session.rollback()
         flash(f"Error al guardar: {str(e)}", "error")
         
-    return redirect(url_for('admin.admin_condominio_panel'))
+    return redirect(url_for('admin.admin_condominio_panel', tenant_slug=condo.subdomain))

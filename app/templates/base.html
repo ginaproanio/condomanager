@@ -57,13 +57,20 @@
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
         <div class="container-fluid">
-            <a class="navbar-brand me-4" href="{{ url_for('master.master_panel') if user and user.role == 'MASTER' else (url_for('user.dashboard') if user else url_for('public.home')) }}">
-                {% if config and config.logo_url %}
+            <a class="navbar-brand me-4" 
+               href="{% if user and user.role == 'MASTER' %}{{ url_for('master.master_panel') }}{% elif current_condominium and user and user.role == 'ADMIN' %}{{ url_for('admin.admin_condominio_panel', tenant_slug=current_condominium.subdomain) }}{% elif user %}{{ url_for('user.dashboard') }}{% else %}{{ url_for('public.home') }}{% endif %}">
+                {% if current_condominium and current_condominium.config and current_condominium.config.logo_url %}
+                    <img src="{{ url_for('static', filename=current_condominium.config.logo_url) }}" alt="Logo {{ current_condominium.config.commercial_name }}">
+                {% elif config and config.logo_url %}
                     <img src="{{ url_for('static', filename=config.logo_url) }}" alt="Logo {{ config.commercial_name }}">
                 {% else %}
                     <i class="fas fa-building me-2 text-primary"></i>
                 {% endif %}
-                {{ config.commercial_name if config and config.commercial_name else 'CondoManager' }}
+                {% if current_condominium and current_condominium.config and current_condominium.config.commercial_name %}
+                    {{ current_condominium.config.commercial_name }}
+                {% else %}
+                    {{ config.commercial_name if config and config.commercial_name else 'CondoManager' }}
+                {% endif %}
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -82,12 +89,12 @@
                     {% if user %}
                         <li class="nav-item">
                             <span class="navbar-text me-3">
-                                Bienvenido, <strong>{{ user.name }}</strong> 
+                                Bienvenido, <strong>{{ user.first_name or user.name }}</strong> 
                                 <span class="badge bg-secondary ms-1">{{ user.role }}</span>
                             </span>
                         </li>
                         <li class="nav-item">
-                            <a class="btn btn-outline-danger btn-sm" href="{{ url_for('auth.logout') }}">Cerrar sesión</a>
+                            <a class="btn btn-outline-danger btn-sm" href="{{ url_for('auth.logout') }}">Cerrar Sesión</a>
                         </li>
                     {% else %}
                         {% if request.endpoint != 'auth.login' %}
