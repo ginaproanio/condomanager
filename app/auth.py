@@ -36,8 +36,13 @@ def login():
     if form.validate_on_submit():
         email_lower = form.email.data.lower()
         try:
-            user = User.query.filter_by(email=email_lower).first() if not g.get('condominium') else \
-                   User.query.filter_by(email=email_lower, condominium_id=g.condominium.id).first()
+            # --- LÓGICA DE BÚSQUEDA CORREGIDA ---
+            if g.get('condominium'):
+                # Si estamos en un subdominio, la búsqueda es estricta para ese tenant.
+                user = User.query.filter_by(email=email_lower, condominium_id=g.condominium.id).first()
+            else:
+                # Si estamos en el dominio principal, buscamos el usuario por email en CUALQUIER tenant.
+                user = User.query.filter_by(email=email_lower).first()
  
             if user and check_password_hash(user.password_hash, form.password.data):
                 if user.status != 'active':
