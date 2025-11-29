@@ -7,7 +7,6 @@ from flask_jwt_extended import (
 )
 from app.models import User, db, Condominium
 from app.extensions import limiter
-import hashlib
 from werkzeug.security import generate_password_hash # ✅ Importar la función correcta
 from datetime import datetime, timedelta
 import secrets # Para generar tokens seguros
@@ -37,11 +36,11 @@ def demo_request():
         # Validaciones básicas
         if not password:
             flash("La contraseña es obligatoria.", "warning")
-            return redirect(url_for('public.demo_request'))
+            return render_template('public/demo_request.html', config=config, request_form=request.form)
             
         if User.query.filter_by(email=email).first():
             flash("Este correo ya está registrado. Por favor inicia sesión.", "warning")
-            return redirect(url_for('public.login'))
+            return redirect(url_for('auth.login'))
         
         if User.query.filter_by(cedula=cedula).first():
             flash("Esta cédula ya está registrada.", "warning")
@@ -105,7 +104,7 @@ def demo_request():
             flash(f"¡Tu demo está lista! Hemos enviado un correo de validación a {email}. (Simulado: Tu cuenta está activa por ahora)", "success")
             
             # Auto-Login opcional o redirección
-            return redirect(url_for('public.login'))
+            return redirect(url_for('auth.login'))
 
         except Exception as e:
             db.session.rollback()
@@ -120,14 +119,14 @@ def verify_email(token):
     user = User.query.filter_by(verification_token=token).first()
     if not user:
         flash("Token de verificación inválido o expirado.", "error")
-        return redirect(url_for('public.login'))
+        return redirect(url_for('auth.login'))
     
     user.email_verified = True
     user.verification_token = None # Consumir token
     db.session.commit()
     
     flash("¡Correo verificado correctamente! Ya puedes usar tu cuenta.", "success")
-    return redirect(url_for('public.login'))
+    return redirect(url_for('auth.login'))
 
 @public_bp.route('/health')
 def health():

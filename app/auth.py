@@ -43,6 +43,7 @@ def login():
                 if user.status != 'active':
                     flash('Tu cuenta se encuentra pendiente de aprobación o ha sido desactivada.', 'warning')
                     current_app.logger.warning(f"Login denegado para usuario inactivo/pendiente: {email_lower}")
+                    return render_template('auth/login.html', form=form)
                 else:
                     access_token = create_access_token(identity=str(user.id))
                     # Redirección segura para evitar Open Redirect

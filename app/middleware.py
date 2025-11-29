@@ -52,9 +52,10 @@ def init_tenant_middleware(app):
             # Si no hay subdominio, estamos en el dominio raíz.
             # Para rutas que no son públicas, esto podría ser un error si se espera un tenant.
             # Pero para las públicas, es normal.
-            if request.endpoint and not request.endpoint.startswith('public.'):
+            # --- CORRECCIÓN ARQUITECTURAL ---
+            # Permitir que las rutas públicas Y las de autenticación se ejecuten en el dominio raíz.
+            if request.endpoint and not (request.endpoint.startswith('public.') or request.endpoint.startswith('auth.')):
                  # Si una ruta protegida se accede sin subdominio, es un error.
-                 # Esto previene que se acceda a /dashboard en el dominio principal.
                  abort(404, description="Se requiere un subdominio de condominio para esta página.")
             
             g.condominium = None
