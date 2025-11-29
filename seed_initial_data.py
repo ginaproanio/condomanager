@@ -246,6 +246,7 @@ def seed_initial_data():
         # 3. CONDOMINIO DE PRUEBA REAL (Algarrobos)
         # ==========================================
         demo_subdomain = 'algarrobos'
+        admin_email = "admin@algarrobos.com" # Definir aquí para usarlo abajo
         algarrobos = models.Condominium.query.filter_by(subdomain=demo_subdomain).first()
         
         if not algarrobos:
@@ -298,8 +299,12 @@ def seed_initial_data():
             admin_user.condominium_id = algarrobos.id
 
         db.session.add_all([admin_user, algarrobos])
+        
+        db.session.flush() # Hacemos flush para que algarrobos.id esté disponible
 
-        if not algarrobos.id: # Si el condominio era nuevo
+        # El resto de la siembra de datos (unidades, residentes, etc.) solo debe
+        # ejecutarse si el condominio es nuevo, para no duplicar datos.
+        if not algarrobos.id:
             # Config Visual Algarrobos
             if not db.session.get(models.CondominiumConfig, demo_subdomain):
                 viz_config = models.CondominiumConfig(
@@ -493,16 +498,5 @@ def seed_initial_data():
                 created_at=datetime.utcnow() - timedelta(hours=2)
             )
             db.session.add_all([pago1, pago2])
-
         else:
             print(f"✅ Condominio '{demo_subdomain}' ya existe.")
-
-        db.session.commit()
-        print("✅✅✅ Script de siembra de datos COMPLETADO con ÉXITO.")
-        print("-------------------------------------------------------")
-        print(f"🔑 Master: {master_email} / (Pass en ENV o default)")
-        print(f"🔑 Admin Algarrobos: admin@algarrobos.com / Admin123!")
-        print("-------------------------------------------------------")
-
-if __name__ == '__main__':
-    seed_initial_data()
