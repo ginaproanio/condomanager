@@ -1,11 +1,11 @@
 # Plan de Trabajo: Implementación de Lógica de Login
 
-**Versión:** 1.1
+**Versión:** 2.0 (Actualizado post-implementación)
 **Fecha:** 2025-11-29
 
 ## 1. Objetivo
 
-Implementar la lógica de backend para el inicio de sesión de usuarios, utilizando el template existente `app/templates/auth/login.html`. El objetivo es crear una ruta de login segura, robusta y que cumpla con todas las reglas de la Constitución Técnica (00_CONVENCIONES.md), especialmente en lo referente a seguridad multi-tenant y protección contra ataques.
+Implementar y centralizar la lógica de backend para la autenticación de usuarios (login, registro, logout) en un nuevo blueprint (`auth_bp`). El objetivo es crear un sistema de login seguro, robusto y que cumpla con las reglas de seguridad multi-tenant, protección contra ataques y manejo de sesiones con JWT.
 
 ---
 
@@ -31,7 +31,7 @@ El plan consiste en crear esta clase en Python y conectar la lógica a tu HTML e
 
 Crearemos la clase que procesará los datos del login.
 
-**Archivo:** `app/forms.py` (o crear `app/auth/forms.py` si se prefiere mayor modularidad).
+**Archivo:** `app/forms.py`
 
 ```python
 # app/forms.py
@@ -72,14 +72,14 @@ El formulario actual en `login.html` carece de protección CSRF, lo cual es una 
 
 ### Paso 3: Implementar la Lógica en la Ruta (Backend)
 
-Aquí se conectará todo: se procesará el formulario, se validará al usuario contra la base de datos (respetando el tenant) y se gestionará la sesión.
+Aquí se conectará todo: se procesará el formulario, se validará al usuario contra la base de datos (respetando el tenant) y se gestionará la sesión mediante un blueprint dedicado.
 
-**Archivo:** `app/auth.py` (o donde se defina la ruta `/ingresar`).
+**Archivo:** `app/auth.py` (Contiene el nuevo `auth_bp`).
 
 ```python
 from flask import render_template, flash, redirect, url_for, g, current_app, make_response
 from flask_jwt_extended import create_access_token, set_access_cookies
-from werkzeug.security import check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 from .forms import LoginForm  # Importar la clase del paso 1
 from .models import User
 from .extensions import limiter

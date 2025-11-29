@@ -16,6 +16,10 @@ def app():
         "JWT_COOKIE_CSRF_PROTECT": False # Desactivar CSRF de JWT en tests
     })
 
+    # --- CORRECCIÓN: Registrar el blueprint de autenticación en el entorno de pruebas ---
+    from app.auth import auth_bp
+    app.register_blueprint(auth_bp)
+
     # Crear contexto de aplicación y base de datos
     with app.app_context():
         db.create_all()
@@ -36,4 +40,3 @@ def runner(app):
     Un runner para probar comandos de CLI si fuera necesario.
     """
     return app.test_cli_runner()
-

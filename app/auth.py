@@ -29,45 +29,38 @@ def get_current_user():
         return None
 
 @auth_bp.route('/ingresar', methods=['GET', 'POST'])
-@limiter.limit("5 per minute") # REGLA: Previene ataques de fuerza bruta
+@limiter.limit("5 per minute", key_func=lambda: request.remote_addr or "test")
 def login():
     form = LoginForm()
+
     if form.validate_on_submit():
         email_lower = form.email.data.lower()
-        
         try:
-            # ✅ LÓGICA ANTI-PARALELISMO:
-            # Si no hay subdominio (g.condominium es None), es un login "global" (MASTER en Railway/localhost).
-            # Si hay subdominio, la query se filtra ESTRICTAMENTE por el condominium_id.
-            user = User.query.filter_by(email=email_lower).first() if not g.condominium else \
+            user = User.query.filter_by(email=email_lower).first() if not g.get('condominium') else \
                    User.query.filter_by(email=email_lower, condominium_id=g.condominium.id).first()
+
+            if user and check_password_hash(user.password_hash, form.password.data):
+                if user.status != 'active':
+                    flash('Tu cuenta se encuentra pendiente de aprobación o ha sido desactivada.', 'warning')
+                    current_app.logger.warning(f"Login denegado para usuario inactivo/pendiente: {email_lower}")
+                else:
+                    access_token = create_access_token(identity=str(user.id))
+                    response = make_response(redirect(url_for('user.dashboard')))
+                    set_access_cookies(response, access_token)
+                    
+                    log_context = f"en subdominio {g.condominium.subdomain}" if g.condominium else "en dominio global"
+                    current_app.logger.info(f"Login exitoso para user {user.id} {log_context}.")
+                    return response
+            
+            flash('Usuario o contraseña incorrectos.', 'danger')
+            current_app.logger.warning(f"Intento de login fallido para {email_lower}.")
+
         except Exception as e:
             current_app.logger.error(f"Error DB during login: {str(e)}")
             flash('Error interno del servidor.', 'danger')
-            return render_template('auth/login.html', form=form)
 
-        if user and check_password_hash(user.password_hash, form.password.data):
-            # ✅ REGLA DE ROLES: Verificar que la cuenta esté activa antes de crear la sesión.
-            if user.status != 'active':
-                flash('Tu cuenta se encuentra pendiente de aprobación o ha sido desactivada.', 'warning')
-                current_app.logger.warning(f"Login denied for inactive/pending user: {email_lower}")
-                return render_template('auth/login.html', form=form, error='Acceso denegado.')
-
-            access_token = create_access_token(identity=str(user.id))
-            response = make_response(redirect(url_for('user.dashboard'))) # Redirige al dashboard de usuario
-            set_access_cookies(response, access_token)
-            
-            log_context = f"en subdominio {g.condominium.subdomain}" if g.condominium else "en dominio global"
-            current_app.logger.info(f"Successful login for user {user.id} {log_context}.")
-            if g.condominium and g.condominium.environment == 'sandbox':
-                current_app.logger.info(f"Login detected in SANDBOX environment for user {user.id}.")
-
-            return response
-        else:
-            current_app.logger.warning(f"Failed login attempt for {email_lower}.")
-            return render_template('auth/login.html', form=form, error='Usuario o contraseña incorrectos.')
-
-    return render_template('auth/login.html', form=form) # ✅ CORRECCIÓN: Se pasa la variable 'form' al template.
+    # Para peticiones GET o si la validación del formulario falla, SIEMPRE se pasa el 'form'.
+    return render_template('auth/login.html', form=form)
 
 @auth_bp.route('/registro', methods=['GET', 'POST'])
 @limiter.limit("3 per hour") # REGLA: Previene spam de registros
