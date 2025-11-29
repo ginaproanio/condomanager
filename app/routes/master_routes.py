@@ -9,7 +9,7 @@ from sqlalchemy.orm import joinedload # Optimización N+1
 from app.auth import get_current_user
 from app.models import Condominium, User, CondominiumConfig, Unit, PlatformBankAccount
 from app import db, models
-from datetime import datetime, timedelta
+from datetime import datetime
 import io
 import csv
 from app.decorators import master_required
@@ -521,7 +521,7 @@ def master_importar_admins_csv(current_user):
             csv_reader = csv.DictReader(stream)
             created_count = 0
             errors = []
-            import hashlib
+            from werkzeug.security import generate_password_hash
             import secrets
             
             for row in csv_reader:
@@ -529,8 +529,8 @@ def master_importar_admins_csv(current_user):
                     errors.append(f"Usuario con email {row['email']} o cédula {row['cedula']} ya existe.")
                     continue
 
-                password = row.get('password')
-                pwd_hash = hashlib.sha256(password.encode()).hexdigest() if password else None
+                password = row.get('password', '')
+                pwd_hash = generate_password_hash(password) if password else None
                 
                 # Generar token para evitar colisiones UNIQUE en NULL
                 verification_token = secrets.token_urlsafe(32)
@@ -578,9 +578,8 @@ def master_usuarios_crear(current_user):
             flash(f"La cédula '{cedula}' ya está registrada.", "error")
             return render_template('master/crear_usuario.html', user=current_user, all_condominiums=all_condominiums, request_form=request.form)
 
-        import hashlib
+        from werkzeug.security import generate_password_hash
         password = request.form.get('password')
-        pwd_hash = hashlib.sha256(password.encode()).hexdigest() if password else None
 
         birth_date_str = request.form.get('birth_date')
         birth_date = datetime.strptime(birth_date_str, '%Y-%m-%d').date() if birth_date_str else None
@@ -593,7 +592,7 @@ def master_usuarios_crear(current_user):
             last_name=request.form.get('last_name'),
             cedula=cedula,
             email=email,
-            password_hash=pwd_hash,
+            password_hash=generate_password_hash(password) if password else None,
             cellphone=request.form.get('cellphone'),
             birth_date=birth_date,
             city=request.form.get('city'),

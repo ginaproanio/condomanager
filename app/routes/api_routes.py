@@ -4,7 +4,7 @@ from app.auth import get_current_user
 from app.models import Condominium, User, Unit
 from app import db, models
 from app.extensions import limiter
-import hashlib
+from werkzeug.security import check_password_hash # ✅ Importar la función correcta
 from datetime import timedelta
 import traceback
 
@@ -25,23 +25,21 @@ def api_login():
 
         email = data['email'].strip()
         password = data['password']
-        pwd_hash = hashlib.sha256(password.encode()).hexdigest()
 
         # --- SOLUCIÓN DE INGENIERÍA: AUTENTICACIÓN POR TENANT ---
         # 1. Obtener el tenant del subdominio actual.
         tenant = g.condominium.subdomain if g.condominium else None
         current_app.logger.info(f"Login attempt for {email} on tenant: {tenant}")
 
-        # 2. La autenticación AHORA exige que el email, password Y tenant coincidan.
-        # EXCEPCIÓN: El MASTER puede loguearse desde cualquier subdominio.
-        user_query = User.query.filter_by(email=email, password_hash=pwd_hash)
+        # 2. Buscar usuario por email y tenant (si aplica)
+        user_query = User.query.filter_by(email=email)
         
         if tenant: # Si hay un subdominio, filtramos por tenant para todos excepto el MASTER
             user_query = user_query.filter( (User.tenant == tenant) | (User.role == 'MASTER') )
         
         user = user_query.first()
 
-        if not user:
+        if not user or not check_password_hash(user.password_hash, password): # ✅ Usar el hashing seguro
             # Si no se encuentra, es porque las credenciales son incorrectas O porque intenta loguearse en el subdominio equivocado.
             current_app.logger.warning(f"Login failed for {email}. Tenant: {tenant}")
             return jsonify({"error": "Credenciales incorrectas o acceso desde un subdominio no autorizado."}), 401
