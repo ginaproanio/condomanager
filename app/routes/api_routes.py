@@ -71,7 +71,7 @@ def api_login():
 
                 # 2. Construir la URL que activa el middleware de tenant.
                 scheme = 'https' if not current_app.debug else 'http'
-                admin_panel_path = url_for('admin.admin_condominio_panel') # Obtiene la ruta, ej: /admin/panel
+                admin_panel_path = url_for('admin.admin_condominio_panel') # Ahora esto funciona porque la ruta ya no pide ID.
                 redirect_url = f"{scheme}://{admin_condo.subdomain}.{server_name}{admin_panel_path}"
             else:
                 # Si es un ADMIN no asignado, la API devuelve un estado de 'warning'.

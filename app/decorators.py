@@ -2,7 +2,7 @@ from functools import wraps
 from flask import flash, redirect, url_for, current_app, abort
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.models import User, Condominium, UserSpecialRole, Module # Importar modelo Module
-from datetime import date
+from datetime import date, datetime
 
 def get_current_user_from_jwt():
     """Safely gets the current user from the JWT."""
@@ -11,6 +11,29 @@ def get_current_user_from_jwt():
         return None
     # Usamos .with_for_update() para un bloqueo pesimista si es necesario en transacciones complejas.
     return User.query.get(int(user_id))
+
+def admin_tenant_required(f):
+    """
+    Decorador definitivo para rutas de administración de un tenant.
+    Verifica en orden:
+    1. Autenticación JWT.
+    2. Existencia de un tenant en `g.condominium`.
+    3. Que el usuario sea el ADMIN asignado a ese tenant.
+    """
+    @wraps(f)
+    @jwt_required()
+    def decorated_function(*args, **kwargs):
+        user = get_current_user_from_jwt()
+        condominium = getattr(g, 'condominium', None)
+
+        if not condominium:
+            abort(404, "Se requiere un contexto de condominio (subdominio).")
+
+        if not (user and user.role == 'ADMIN' and condominium.admin_user_id == user.id):
+            abort(403, "Acceso denegado. No eres el administrador de este condominio.")
+        
+        return f(*args, **kwargs)
+    return decorated_function
 
 def login_required(f):
     """
@@ -127,50 +150,6 @@ def admin_required(f):
         if user is None or user.role.upper() != 'ADMIN':
             flash("Acceso denegado. Se requiere rol de Administrador.", "error")
             return redirect(url_for('user.dashboard'))
-        return f(*args, **kwargs)
-    return decorated_function
-
-def condominium_admin_required(f):
-    """
-    Decorator para rutas que requieren el rol 'ADMIN' y estar asignado a un condominio específico.
-    Se basa en admin_required para asegurar el rol y pasa el usuario.
-    La función de la ruta debe aceptar 'condominium_id' como argumento.
-    """
-    @wraps(f)
-    @login_required # Solo necesita que esté logueado, la lógica interna valida el rol
-    def decorated_function(*args, **kwargs):
-        user = kwargs.get('current_user')
-        condominium_id = kwargs.get('condominium_id')
-        
-        if not user:
-            flash("Sesión no válida.", "error")
-            return redirect(url_for('auth.login'))
-
-        if not condominium_id:
-            abort(500, "Error de configuración: la ruta protegida no recibió un ID de condominio.")
-        
-        condominium = Condominium.query.get_or_404(condominium_id)
-        
-        # --- BLINDAJE DE TENANTS INTERNOS ---
-        if condominium.environment == 'internal' and user.role != 'MASTER':
-            flash("Acceso denegado a tenant de sistema/interno.", "error")
-            return redirect(url_for('user.dashboard'))
-
-        # --- LÓGICA DE AUTORIZACIÓN ÚNICA Y CENTRALIZADA ---
-        # Usamos case-insensitive comparison para subdominios
-        if not (user.role == 'ADMIN' and user.tenant and condominium.subdomain and user.tenant.lower() == condominium.subdomain.lower()):
-            # Fallback: Validar también por ID directo si la asignación es por ID
-            if not (user.role == 'ADMIN' and condominium.admin_user_id == user.id):
-                # Excepción para MASTER: Si es Master, puede administrar cualquier tenant (excepto si hay otra regla, pero aquí pasa)
-                if user.role == 'MASTER':
-                    return f(*args, **kwargs)
-                    
-                flash("No tienes autorización para acceder a este panel de administración.", "error")
-                return redirect(url_for('user.dashboard'))
-        
-        # No eliminamos 'current_user' de kwargs, ya que la vista podría necesitarlo
-        # y el patrón estándar de login_required lo provee.
-        
         return f(*args, **kwargs)
     return decorated_function
 

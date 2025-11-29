@@ -41,9 +41,9 @@ Sistema multi-condominio implementado inicialmente para "Punta Blanca", diseñad
 │   │   ├── user_routes.py   # Rutas para usuarios autenticados (dashboard, pagos).
 │   │   ├── admin_routes.py  # Rutas para administradores de condominio (rol ADMIN).
 │   │   │   # Endpoints clave:
-│   │   │   # - /admin/condominio/<id>: Panel de gestión (Unidades, Usuarios, Directiva).
+│   │   │   # - /admin/panel: Panel de gestión (Unidades, Usuarios, Directiva).
 │   │   │   # - /admin/usuarios/roles_especiales: Asignación de roles de directiva.
-│   │   │   # - /admin/condominio/<id>/finanzas: Panel de control financiero.
+│   │   │   # - /admin/finanzas: Panel de control financiero.
 │   │   ├── master_routes.py # Rutas para el super-administrador (rol MASTER).
 │   │   │   # Endpoints clave:
 │   │   │   # - /master: Panel global con tarjetas de gestión.
@@ -51,7 +51,7 @@ Sistema multi-condominio implementado inicialmente para "Punta Blanca", diseñad
 │   │   ├── document_routes.py # Rutas para el módulo "Firmas & Comunicados" (Freemium).
 │   │   ├── payment_routes.py  # Endpoints para callbacks y proceso de pagos.
 │   │   ├── petty_cash_routes.py # Rutas para el módulo de Caja Chica.
-│   │   ├── api_routes.py    # Endpoints de la API REST.
+│   │   ├── api_routes.py    # Endpoints de la API REST (ej: /api/auth/login).
 │   │   └── dev_routes.py    # Rutas para desarrollo y depuración.
 │   ├── static/         # Archivos estáticos (CSS, JS, imágenes).
 │   │   ├── css/
