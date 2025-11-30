@@ -7,8 +7,9 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from app.models import User, Condominium
 from app.forms import LoginForm, RegistrationForm
 from app.extensions import limiter, db
- 
-auth_bp = Blueprint('auth', __name__) # El nombre 'auth' se mantiene para no romper url_for()
+
+# ARQUITECTURA: Prefijo para evitar colisión con el middleware de tenants.
+auth_bp = Blueprint('auth', __name__, url_prefix='/global')
  
 def get_current_user():
     """

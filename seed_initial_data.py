@@ -503,3 +503,7 @@ def seed_initial_data():
 
         db.session.commit()
         print("✅✅✅ AUDIT: Script de siembra de datos finalizado exitosamente.")
+
+# --- BLOQUE DE EJECUCIÓN SEGURA ---
+if __name__ == '__main__':
+    seed_initial_data()
