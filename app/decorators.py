@@ -1,16 +1,6 @@
 from functools import wraps
-from flask import flash, redirect, url_for, current_app, abort, g
+from flask import abort, g
 from flask_jwt_extended import jwt_required, get_jwt_identity, verify_jwt_in_request
-from app.models import User, Condominium, UserSpecialRole, Module # Importar modelo Module
-from datetime import date, datetime
-
-def get_current_user_from_jwt():
-    """Safely gets the current user from the JWT."""
-    verify_jwt_in_request(optional=True)
-    user_id = get_jwt_identity()
-    if user_id is None:
-        return None
-    return User.query.get(int(user_id))
 
 def admin_tenant_required(f):
     """
@@ -23,7 +13,11 @@ def admin_tenant_required(f):
     @wraps(f)
     @jwt_required()
     def decorated_function(*args, **kwargs):
-        user = get_current_user_from_jwt()
+        # Importación local para romper dependencias circulares
+        from app.models import User
+        user_id = get_jwt_identity()
+        user = User.query.get(int(user_id)) if user_id else None
+
         condominium = getattr(g, 'condominium', None)
 
         if not condominium:
@@ -32,5 +26,28 @@ def admin_tenant_required(f):
         if not (user and user.role == 'ADMIN' and condominium.admin_user_id == user.id):
             abort(403, "Acceso denegado. No eres el administrador de este condominio.")
         
+        return f(*args, **kwargs)
+    return decorated_function
+
+def master_required(f):
+    """
+    Decorador para rutas del panel MASTER.
+    Verifica que el usuario esté autenticado y tenga el rol 'MASTER'.
+    """
+    @wraps(f)
+    @jwt_required()
+    def decorated_function(*args, **kwargs):
+        # Importación local para romper dependencias circulares
+        from app.models import User
+        user_id = get_jwt_identity()
+        user = User.query.get(int(user_id)) if user_id else None
+
+        if not (user and user.role == 'MASTER'):
+            abort(403, "Acceso denegado. Se requiere rol de MASTER.")
+        
+        # Opcional: Verificar que no haya un contexto de tenant
+        if getattr(g, 'condominium', None):
+            abort(400, "Las rutas MASTER no deben tener un contexto de condominio.")
+
         return f(*args, **kwargs)
     return decorated_function

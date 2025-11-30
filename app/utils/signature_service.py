@@ -6,11 +6,6 @@ import os
 from flask import current_app
 import hashlib
 
-# Imports para el proveedor de firma local
-from pyhanko.sign import signers
-from pyhanko.pdf_utils.incremental_writer import IncrementalPdfFileWriter
-from pyhanko.sign.fields import SigFieldSpec, append_signature_field
-
 # --- ABSTRACT STRATEGY ---
 class SignatureProvider(ABC):
     @abstractmethod
