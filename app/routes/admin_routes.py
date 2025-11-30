@@ -7,8 +7,7 @@ from sqlalchemy import func
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.orm import joinedload # Optimización N+1
 from app import db
-from app.models import User, Condominium, Unit, UserSpecialRole, Payment
-from app.auth import get_current_user
+from app.models import User, Condominium, Unit, UserSpecialRole, Payment # Se mantiene esta
 from app.decorators import admin_tenant_required
 from app.utils.validation import validate_file # Importar validación
 from datetime import date, datetime
@@ -33,12 +32,14 @@ def reject_user(user_id): # Renombrado para consistencia
 
 @admin_bp.route('/<tenant_slug>/admin/panel', methods=['GET', 'POST'])
 @admin_tenant_required
-def admin_condominio_panel():
+def admin_condominio_panel(tenant_slug):
     """
     Panel de gestión específico para un condominio.
     Muestra las unidades y opciones de gestión.
     """
-    current_user = get_current_user()
+    # ARQUITECTURA: El decorador @admin_tenant_required ya validó al usuario y al tenant.
+    # El objeto 'g.condominium' está disponible globalmente gracias al middleware.
+    # La variable 'user' está disponible globalmente en las plantillas gracias al context_processor.
     condominium = g.condominium
 
     # Si la autorización pasa, se obtiene el resto de la información.
@@ -63,7 +64,6 @@ def admin_condominio_panel():
     now_date = datetime.now().strftime('%Y-%m-%d')
 
     return render_template('admin/condominio_panel.html',
-                           user=current_user,
                            condominium=condominium,
                            units=units,
                            pending_users_in_condo=pending_users_in_condo,
