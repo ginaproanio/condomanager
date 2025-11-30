@@ -4,6 +4,12 @@ import base64
 import json
 import os
 from flask import current_app
+import hashlib
+
+# Imports para el proveedor de firma local
+from pyhanko.sign import signers
+from pyhanko.pdf_utils.incremental_writer import IncrementalPdfFileWriter
+from pyhanko.sign.fields import SigFieldSpec, append_signature_field
 
 # --- ABSTRACT STRATEGY ---
 class SignatureProvider(ABC):
@@ -114,29 +120,29 @@ class SignatureServiceFactory:
     def get_provider(condominium) -> SignatureProvider:
         """
         Retorna la instancia del proveedor configurado.
-        Por ahora solo soporta NexxitOneshot, pero está listo para extenderse.
+        Soporta Nexxit (externo) y Local (interno).
         """
         if not condominium:
             return None
             
-        # Lógica de selección de proveedor
-        # 1. Primero revisamos la configuración explícita en DB (futuro)
-        # provider_type = condominium.signature_provider_config.get('type', 'NEXXIT') if condominium.signature_provider_config else 'NEXXIT'
-        
-        # Por ahora, default a NEXXIT
-        provider_type = 'NEXXIT'
+        # La configuración del proveedor se toma de los settings del condominio
+        provider_type = 'local' # Default a 'local' si no hay nada configurado
+        if condominium.signature_provider_config:
+            provider_type = condominium.signature_provider_config.get('type', 'local')
 
         if provider_type == 'NEXXIT':
             api_key = None
             if condominium.signature_provider_config:
                 api_key = condominium.signature_provider_config.get('api_key')
             
-            # Fallback securely for Punta Blanca using Environment Variable
+            # Fallback seguro para Punta Blanca usando una Variable de Entorno
             if not api_key and condominium.subdomain == 'puntablanca':
                 api_key = os.environ.get('PUNTABLANCA_NEXXIT_KEY')
             
             if api_key:
                 return NexxitOneshotProvider(api_key)
+        
+        elif provider_type == 'local':
+            return LocalSignatureProvider()
                 
         return None
-

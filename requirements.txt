@@ -9,8 +9,8 @@ psycopg2-binary==2.9.7
 Flask-Migrate==4.0.7
 cryptography==42.0.5
 pyOpenSSL==24.0.0
-endesive==2.0.10
 Flask-Mail==0.10.0
+pyhanko==0.20.1
 twilio==9.0.0
 reportlab==4.0.4
 pytest
