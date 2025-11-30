@@ -74,7 +74,7 @@ def module_required(module_name):
     Decorador factory para verificar si un módulo específico está activo
     para el condominio actual en el contexto `g`.
     """
-    def decorator(f):
+    def wrapper(f):
         @wraps(f)
         # Este decorador asume que otro decorador como @admin_tenant_required ya se ha ejecutado
         # y ha validado el usuario y el condominio.
@@ -97,5 +97,5 @@ def module_required(module_name):
                 abort(403, f"El módulo '{module_name}' no está activo o no existe para este condominio.")
             
             return f(*args, **kwargs)
-        return decorator
-    return decorator
+        return decorated_function
+    return wrapper
