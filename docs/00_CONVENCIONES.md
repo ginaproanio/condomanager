@@ -18,7 +18,7 @@
 
 | ❌ PROHIBIDO | Por qué NO (Riesgo) | ✅ MANDATORIO |
 |-------------|-------------------|--------------|
-| **Resolver Tenant manualmente**<br>`tenant = get_tenant()` en cada ruta | **Data Leakage**. Si un dev olvida la línea, expone datos globales. | **Middleware Global**. Usar `g.condominium` inyectado por middleware. |
+| **Resolver Tenant manualmente**<br>`tenant = get_tenant()` en cada ruta | **Data Leakage**. Si un dev olvida la línea, expone datos globales. | **Middleware Global**. Usar `g.condominium` inyectado por el middleware `resolve_tenant`. |
 | **Queries sin filtro**<br>`User.query.all()` | **Broken Access Control (OWASP A01)**. Expone datos de todos los condominios. | **Filtro Explícito**. `User.query.filter_by(condominium_id=g.condominium.id)`. |
 | **Hardcoding de subdominios**<br>`if subdomain == 'sandbox':` | **Vulnerabilidad Arquitectónica**. Dificulta rotación de entornos. | **Entornos Dinámicos**. Usar `g.condominium.environment`. |
 | **Queries globales sin filtro de entorno**<br>`db.session.query(func.sum(Payment.amount))` | **Métricas Contaminadas**. Mezcla datos de producción con datos de prueba (`sandbox`, `internal`). | **Filtro de Entorno**. En queries globales (MASTER), filtrar por `environment` para métricas reales (ej. `environment NOT IN ('sandbox', 'internal')`). |

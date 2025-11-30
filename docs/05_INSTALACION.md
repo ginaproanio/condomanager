@@ -1,5 +1,5 @@
 # Guía de Instalación
-Versión: 2.1.0 (Alineado con el despliegue en Railway)
+Versión: 3.0.0 (Alineado con la arquitectura "Path-Based")
 
 > **Objetivo**: Esta guía describe cómo configurar un entorno de desarrollo en una PC local con el único fin de **modificar el código y subirlo a GitHub**. No es necesario ejecutar la aplicación ni una base de datos localmente, ya que todas las pruebas se realizan en el ambiente de Railway.
 

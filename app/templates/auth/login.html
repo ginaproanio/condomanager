@@ -15,21 +15,6 @@
                         <p class="text-muted">Accede a tu cuenta de CondoManager</p>
                     </div>
 
-                    <!-- Mensajes -->
-                    {% if mensaje %}
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        <i class="fas fa-check-circle me-2"></i>{{ mensaje }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                    {% endif %}
-
-                    {% if error %}
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <i class="fas fa-exclamation-triangle me-2"></i>{{ error }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                    {% endif %}
-
                     <!-- Formulario JWT -->
                     <form id="login-form" method="POST" action="{{ url_for('auth.login') }}">
                         {{ form.hidden_tag() }} <!-- ✅ REGLA CRÍTICA: Protección CSRF obligatoria -->

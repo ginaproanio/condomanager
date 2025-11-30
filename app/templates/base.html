@@ -58,7 +58,7 @@
     <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
         <div class="container-fluid">
             <a class="navbar-brand me-4" 
-               href="{% if user and user.role == 'MASTER' %}{{ url_for('master.master_panel') }}{% elif current_condominium and user and user.role == 'ADMIN' %}{{ url_for('admin.admin_condominio_panel', tenant_slug=current_condominium.subdomain) }}{% elif user %}{{ url_for('user.dashboard') }}{% else %}{{ url_for('public.home') }}{% endif %}">
+               href="{{ url_for('public.home') }}">
                 {% if current_condominium and current_condominium.config and current_condominium.config.logo_url %}
                     <img src="{{ url_for('static', filename=current_condominium.config.logo_url) }}" alt="Logo {{ current_condominium.config.commercial_name }}">
                 {% elif config and config.logo_url %}
@@ -80,7 +80,13 @@
                 <!-- Menú Principal (Izquierda) -->
                 <ul class="navbar-nav me-auto">
                     {% if user %}
-                        <!-- Aquí irán otros módulos futuros (Pagos, Reservas) -->
+                        {% if user.role == 'MASTER' %}
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('master.master_panel') }}">Panel Master</a></li>
+                        {% elif user.role == 'ADMIN' %}
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for_tenant('admin.admin_condominio_panel') }}">Panel Admin</a></li>
+                        {% elif user.role == 'USER' %}
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for_tenant('user.dashboard') }}">Mi Panel</a></li>
+                        {% endif %}
                     {% endif %}
                 </ul>
 
@@ -111,18 +117,7 @@
     </nav>
 
     <!-- Mensajes Flash -->
-    {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            <div class="container mt-3">
-                {% for message in messages %}
-                    <div class="alert alert-info alert-dismissible fade show">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                {% endfor %}
-            </div>
-        {% endif %}
-    {% endwith %}
+    {% include '_messages.html' %}
 
     <!-- Contenido Principal -->
     <main class="min-vh-100">

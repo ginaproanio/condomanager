@@ -1,11 +1,12 @@
-## 1. Requisitos 
-- **Plataforma**: Una cuenta en Railway.
-- **Repositorio**: El código del proyecto alojado en GitHub.
-- **Conexión**: El repositorio de GitHub debe estar conectado a un proyecto en Railway.
+# Guía de Despliegue en Railway
+Versión: 3.0.0 (Alineado con la arquitectura "Path-Based")
 
-## 2. Configuración en Railway
+## 1. Visión General
+El proyecto está diseñado para un despliegue continuo (Continuous Deployment) en **Railway** a través de Git. Cualquier commit fusionado a la rama `main` iniciará un nuevo despliegue automáticamente.
  
-### 2.1 Serviciosiserp
+## 2. Configuración del Proyecto en Railway
+
+### 2.1 Servicios Requeridos
 1.  **Aplicación Web (Web App)**: Conectada a tu repositorio de GitHub. Railway detectará el `Procfile` y sabrá cómo ejecutar la aplicación.
 2.  **Base de Datos (PostgreSQL)**: Un servicio de base de datos de PostgreSQL. Railway proporcionará automáticamente la URL de conexión (`DATABASE_URL`).
  
@@ -13,10 +14,12 @@
 En la configuración de tu servicio de aplicación en Railway, define las siguientes variables:
 ```env
 FLASK_ENV=production
-SQLALCHEMY_DATABASE_URI=${{PostgreSQL.DATABASE_URL}} # Railway inyecta esta variable automáticamente
-SECRET_KEY= # Usar el generador de secretos de RailwayJWT_SECRET_KEY= # Usar el generador de secretos de Railway
-MASTER_EMAIL=maestro@condomanager.com # O el email que desees para el super-admin
+DATABASE_URL=${{PostgreSQL.DATABASE_URL}} # Railway inyecta esta variable automáticamente
+SECRET_KEY= # Usar el generador de secretos de Railway
+JWT_SECRET_KEY= # Usar el generador de secretos de Railway
+MASTER_EMAIL=maestro@condomanager.com # Email para el super-admin
 MASTER_PASSWORD= # Contraseña fuerte para el super-admin
+# Otras variables como las de pasarelas de pago (PAYPHONE_*)
 ```
 
 ### 3.5 SSL/HTTPS

@@ -10,24 +10,6 @@ from app.extensions import limiter, db
 
 # ARQUITECTURA: Prefijo para evitar colisión con el middleware de tenants.
 auth_bp = Blueprint('auth', __name__, url_prefix='/global')
- 
-def get_current_user():
-    """
-    Devuelve la instancia User asociada con el JWT actual si existe,
-    o None si no hay token/usuario.
-    """
-    try:
-        # Usar verify_jwt_in_request(optional=True) para no forzar un error si no hay token
-        verify_jwt_in_request(optional=True)
-        identity = get_jwt_identity()
-        if not identity:
-            return None
-        # La identidad se guarda como str(user.id), por eso se convierte a int
-        user = User.query.get(int(identity))
-        return user
-    except Exception as e:
-        current_app.logger.debug(f"get_current_user error: {e}")
-        return None
 
 @auth_bp.route('/ingresar', methods=['GET', 'POST'])
 @limiter.limit("5 per minute", key_func=lambda: request.remote_addr or "test")
@@ -98,7 +80,9 @@ def register():
                 password_hash=hashed_password,
                 role='USER',
                 status='pending', # REGLA DE NEGOCIO: Los usuarios nuevos esperan aprobación
-                condominium_id=g.condominium.id if g.condominium else None
+                # ARQUITECTURA: Manejo seguro para registros desde el dominio raíz.
+                # Si no hay 'g.condominium', se guarda como None y el MASTER lo asignará.
+                condominium_id=g.condominium.id if g.get('condominium') else None
             )
             db.session.add(new_user)
             db.session.commit() # REGLA: Transacción atómica

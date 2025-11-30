@@ -1,7 +1,7 @@
 # Arquitectura del Sistema
 
 ## 1. Visión General
-Sistema multi-condominio implementado inicialmente para "Punta Blanca", diseñado para escalar a múltiples instancias.
+Sistema multi-condominio (multi-tenant) diseñado para escalar a múltiples instancias, utilizando una arquitectura **Path-Based** compatible con plataformas de despliegue modernas como Railway.
 
 ## 2. Stack Tecnológico Actual
 ### 2.1 Backend
@@ -30,11 +30,11 @@ Sistema multi-condominio implementado inicialmente para "Punta Blanca", diseñad
 /condomanager-saas/
 ├── app/
 │   ├── __init__.py     # Inicialización de la aplicación Flask y registro de componentes.
-│   ├── auth.py         # Funciones auxiliares de autenticación (ej. obtener usuario actual).
+│   ├── auth.py         # Funciones auxiliares de autenticación y context_processors.
 │   ├── decorators.py   # Decoradores de seguridad y roles (@module_required, @admin_required).
 │   ├── extensions.py   # Instancia de SQLAlchemy (db) para evitar dependencias circulares.
 │   ├── models.py       # Definición de todos los modelos de la base de datos.
-│   ├── tenant.py       # Lógica para determinar el tenant (inquilino) de la solicitud.
+│   ├── middleware.py   # Middleware para resolver el tenant (g.condominium) desde la URL.
 │   ├── routes/         # Módulo que contiene todas las rutas (endpoints) de la aplicación.
 │   │   ├── __init__.py # Inicializa y registra los blueprints de rutas.
 │   │   ├── public_routes.py # Rutas públicas (home, registro, login, demos).
@@ -76,9 +76,8 @@ La implementación actual utiliza una estrategia de **multi-tenancy de esquema c
 
 - **Base de Datos Única:** Todos los datos (usuarios, condominios, unidades) residen en una única base de datos.
 - **Separación Lógica:** La separación de datos entre condominios se logra mediante un campo `tenant` (o `condominium_id` para usuarios/unidades) en los modelos de la base de datos.
-- **Determinación del Tenant:** La lógica en `app/tenant.py` determina el inquilino (tenant) basándose en el subdominio de la solicitud HTTP. Por defecto, si no se encuentra un subdominio válido, se utiliza 'puntablanca'.
 - **Determinación del Tenant:** La lógica en `app/middleware.py` determina el inquilino (tenant) basándose en el **primer segmento de la ruta URL**. Por ejemplo, en `https://condomanager.vip/algarrobos/admin`, el middleware identifica `algarrobos` como el tenant.
-- **Queries Globales:** Las consultas para métricas de negocio globales (ej. reportes del MASTER) **deben** excluir explícitamente los entornos de prueba filtrando por `environment NOT IN ('sandbox', 'internal')`.
+- **Queries Globales (Regla Crítica):** Las consultas para métricas de negocio globales (ej. reportes del MASTER) **deben** excluir explícitamente los entornos de prueba filtrando por `environment NOT IN ('sandbox', 'internal')` para prevenir la contaminación de datos.
 
 ### ⚠️ NOTA CRÍTICA: Arquitectura Multi-Tenancy "Path-Based"
 
@@ -88,8 +87,10 @@ Se ha adoptado una arquitectura **"Path-Based Multi-Tenancy"** (Multi-Tenancy Ba
 *   **Justificación:** La estrategia original basada en subdominios (ej. `algarrobos.condomanager.vip`) es incompatible con las limitaciones de plataformas de despliegue como Railway, que no ofrecen soporte nativo para subdominios dinámicos (wildcard DNS). El error `DNS_PROBE_FINISHED_NXDOMAIN` confirmó esta incompatibilidad.
 *   **Implementación:**
     1.  **Identificación del Tenant:** El middleware `resolve_tenant` en `app/middleware.py` inspecciona el path de la URL. Si la ruta es `/algarrobos/admin/panel`, extrae `algarrobos` como el identificador del tenant.
-    2.  **Definición de Rutas:** Todas las rutas que pertenecen a un tenant específico **deben** estar prefijadas con un parámetro dinámico `<tenant_slug>`. Ejemplo: `@admin_bp.route('/<tenant_slug>/admin/panel')`.
-    3.  **Redirección Post-Login:** Tras un login exitoso, el sistema redirige al usuario a la ruta completa, incluyendo el slug del tenant. Ejemplo: `redirect(url_for('admin.admin_condominio_panel', tenant_slug='algarrobos'))`.
+    2.  **Contexto de la Solicitud:** Una vez identificado, el middleware carga el objeto `Condominium` correspondiente y lo inyecta en el objeto global de la aplicación (`g.condominium`), haciéndolo accesible durante toda la vida de la petición.
+    3.  **Autorización y Lógica de Negocio:** Los decoradores (ej. `@admin_tenant_required`) y las funciones de las rutas utilizan `g.condominium` para filtrar consultas a la base de datos y asegurar que un usuario solo acceda a los datos de su tenant. Esto cumple la regla de **Filtro Explícito** de `00_CONVENCIONES.md`.
+    4.  **Contexto de Plantillas:** Un `context_processor` (definido en `app/auth.py`) se encarga de inyectar variables globales como `current_user` y `g.condominium` en todas las plantillas HTML, simplificando la renderización de datos específicos del tenant y del usuario.
+    5.  **Redirección Post-Login:** Tras un login exitoso, el sistema redirige al usuario a la ruta completa, incluyendo el slug del tenant. Ejemplo: `redirect(url_for('admin.admin_condominio_panel', tenant_slug='algarrobos'))`.
 
 *   **Beneficios:** Esta arquitectura es robusta, cumple con las convenciones de aislamiento de datos y es 100% compatible con el entorno de despliegue actual, eliminando la necesidad de configuraciones de DNS complejas.
 
@@ -179,7 +180,7 @@ Se ha adoptado una arquitectura **"Path-Based Multi-Tenancy"** (Multi-Tenancy Ba
 
 ## 6. Seguridad
 - **Autenticación:** JWT con cookies HTTP-Only (gestionado por Flask-JWT-Extended).
-- **Autorización:** Verificación de roles y permisos en cada ruta protegida. Decoradores personalizados (`@master_required`, `@module_required`, `@condominium_admin_required`).
+- **Autorización:** Verificación de roles y permisos en cada ruta protegida. Decoradores personalizados (`@master_required`, `@module_required`, `@admin_tenant_required`).
 - **Hashing de Contraseñas:** SHA256.
 - **Protección CSRF:** Implícita por diseño en cookies SameSite.
 - **HTTPS:** Obligatorio en producción.

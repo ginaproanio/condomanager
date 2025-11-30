@@ -42,7 +42,7 @@ Cada condominio tiene su propio entorno aislado:
 
 **Gestión inteligente de condominios y edificios residenciales**
 
-CondoManager es la plataforma SaaS líder en gestión de condominios y edificios residenciales en Latinoamérica. Arquitectura multi-tenant con datos aislados por edificio, integración de pagos PayPhone, gestión de usuarios y roles, reservas de áreas comunes y mantenimiento digital. Subdominio personalizado automático (`tuedificio.condomanager.vip`). Desarrollado por SORSABSA.
+CondoManager es una plataforma SaaS para la gestión de condominios y edificios residenciales. Utiliza una arquitectura multi-tenant "Path-Based" con una base de datos de esquema compartido, integración de pagos, gestión de roles y un sistema de módulos escalable.
 
 **Hashtags Oficiales:**
 `#PropTech` `#CondoTech` `#HOAManagement` `#SaaS` `#LatamTech` `#GestiónDeCondominios`

@@ -1,5 +1,5 @@
 # Roles y Permisos del Sistema
-Versión: 1.5.0 (Actualizado: Noviembre 2025)
+Versión: 2.0.0 (Sincronizado con Arquitectura Path-Based: Noviembre 2025)
 
 ## Filosofía de Permisos
 El sistema opera bajo un modelo de permisos acumulativos. Si un usuario tiene múltiples roles (ej. `ADMIN` y `PRESIDENTE`), sus permisos son la suma de todos sus roles. El acceso a funcionalidades específicas, como los módulos, se concede si CUALQUIERA de sus roles activos se lo permite.
@@ -12,8 +12,8 @@ La directiva del condominio (compuesta por roles especiales) elige a un `ADMINIS
 **Filosofía:** El `MASTER` es el superadministrador de la **plataforma**, no de los datos de los condominios. Su acceso a los datos de un condominio es siempre de **solo lectura y de alto nivel (métricas)**.
 - **Gestión de Plataforma:** Creación y configuración global de condominios y usuarios administradores.
 - **Gestión del Catálogo de Módulos:** Creación y edición de los módulos que la plataforma ofrece.
-- **Supervisión de Condominios (Solo Lectura):** Acceso a un panel de supervisión (`/supervise/<id>`) con estadísticas generales (conteos de unidades, usuarios activos/pendientes) para fines de facturación y seguimiento.
-- **Reportería Global:** Acceso a `/master/reports` para exportar datos agregados. **Regla Crítica:** Todas las métricas de negocio (pagos, usuarios activos, etc.) deben filtrar y excluir los condominios con `environment = 'sandbox'` o `'internal'`.
+- **Supervisión de Condominios (Solo Métricas):** Acceso a paneles de métricas globales (`/master/reports`) con estadísticas agregadas (conteos de unidades, usuarios activos/pendientes) para fines de facturación y seguimiento.
+- **Reportería Global:** Acceso a `/master/reports` para exportar datos agregados. **Regla Crítica de Aislamiento:** Todas las métricas de negocio (pagos, usuarios activos, etc.) **deben** filtrar y excluir los condominios con `environment IN ('sandbox', 'internal')`. Esta es una regla de seguridad para prevenir la contaminación de datos.
 - **Limitación Crítica de Seguridad:** El rol `MASTER` **NUNCA** puede operar, navegar o ejecutar acciones dentro del panel de un `ADMIN`. El sistema está diseñado para que la suplantación de roles sea imposible. El acceso del `MASTER` a los datos de un condominio se limita estrictamente a los datos agregados y métricas del panel de supervisión.
 - **Gestión del Catálogo de Módulos:**
     - **Exclusividad:** Solo el `MASTER` puede crear, editar y definir los precios de los módulos en el catálogo global del sistema (tabla `modules`).
@@ -22,11 +22,12 @@ La directiva del condominio (compuesta por roles especiales) elige a un `ADMINIS
     - **Gestión de Estado Específico:** Registra períodos de mantenimiento para un módulo en un condominio específico, dejando un historial auditable.
 - **Documentos Propios:** El MASTER tiene su propio módulo de "Documentos" para gestionar contratos, términos de servicio y comunicados de la plataforma, independiente de los condominios.
 - **Sandbox:** El MASTER reside en un condominio de pruebas ("Sandbox") para sus configuraciones personales. Este condominio no debe ser incluido en los reportes de negocio.
+- **Sandbox:** El MASTER reside en un condominio con `environment = 'sandbox'` para sus configuraciones personales. Este tenant **NUNCA** debe ser incluido en los reportes de negocio.
 
 ### 1.2 ADMINISTRADOR
 - Gestión completa de **un único condominio específico** al que está asignado (vía `tenant` y validación de `Condominium.admin_user_id`).
-- Acceso a su panel de gestión a través de `/admin/condominio/<id>`.
-- **Reportería Operativa:** Acceso a `/admin/condominio/<id>/reportes` para descargar listados de **propietarios** (incluyendo datos de contacto sensibles para garita) y estados de ocupación.
+- Acceso a su panel de gestión a través de la ruta `/<tenant_slug>/admin/panel`.
+- **Reportería Operativa:** Acceso a `/<tenant_slug>/admin/reportes` para descargar listados de **propietarios** (incluyendo datos de contacto sensibles para garita) y estados de ocupación.
 - **Gestión de Comunicaciones:** Configuración exclusiva del proveedor de WhatsApp (Gateway QR o Meta API) para su condominio.
 - **Gestión Financiera (Pagos, Recaudación y Caja Chica):**
     - Configuración de pasarela PayPhone para cobros automáticos.
@@ -133,23 +134,24 @@ La directiva del condominio (compuesta por roles especiales) elige a un `ADMINIS
 ### 5.1 Estructura de Base de Datos
 ```sql
 -- Tabla de asignación de roles especiales
+-- Basado en el modelo UserSpecialRole en app/models.py
 CREATE TABLE user_special_roles (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    id SERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL,
     condominium_id BIGINT NOT NULL,
     role ENUM('PRESIDENTE', 'SECRETARIO', 'TESORERO', 'CONTADOR', 'VOCAL') NOT NULL,
-    asignado_por BIGINT NOT NULL,
-    fecha_inicio DATE NOT NULL,
-    fecha_fin DATE,
-    activo BOOLEAN DEFAULT TRUE,
+    assigned_by BIGINT NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE,
+    is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (condominium_id) REFERENCES condominiums(id),
-    FOREIGN KEY (asignado_por) REFERENCES users(id),
+    FOREIGN KEY (assigned_by) REFERENCES users(id),
     
-    UNIQUE KEY unique_active_role_per_user_condominium (user_id, condominium_id, role, activo)
+    UNIQUE (user_id, condominium_id, role, is_active)
 );
 ```
 
@@ -158,14 +160,6 @@ CREATE TABLE user_special_roles (
 - Validar autorización del administrador
 - Comprobar no duplicidad de roles activos
 - Validar coherencia de fechas
-
-### ⚠️ NOTA CRÍTICA DE SEGURIDAD (Testing vs Producción)
-En el entorno de pruebas (Railway), la validación estricta de roles por subdominio (Tenant) se ha relajado intencionalmente para permitir el login desde la URL principal.
-**Para Producción:** Se debe auditar y reactivar la validación estricta en `app/tenant.py` y `app/routes/api_routes.py` para asegurar que un usuario con rol `ADMIN` o `USER` solo pueda autenticarse desde el subdominio que le corresponde (ej: `algarrobos.condomanager.com`), evitando fugas de información cruzada entre inquilinos.
-
-## 6. Flujos de Trabajo
-
-### 6.1 Asignación de Rol Especial
 1. Administrador selecciona usuario existente en su panel.
 2. Verifica roles actuales.
 3. Selecciona nuevo rol especial (cargo) y fechas de vigencia.

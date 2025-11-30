@@ -75,16 +75,17 @@ def create_app():
         try:
             # Verifica el token de forma opcional (no lanza error si falta)
             verify_jwt_in_request(optional=True)
-            
+ 
             # Si hay token, buscamos el usuario
             user_id = get_jwt_identity()
             if user_id:
                 current_user = models.User.query.get(int(user_id))
                 return {'user': current_user}
-        except Exception:
+        except Exception as e:
+            app.logger.warning(f"Context processor inject_user failed: {e}")
             # Si el token es inválido o expiró, simplemente no inyectamos usuario
             pass
-            
+ 
         return {'user': None}
 
     @jwt.user_identity_loader

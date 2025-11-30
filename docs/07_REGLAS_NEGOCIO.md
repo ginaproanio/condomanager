@@ -1,5 +1,5 @@
 # Reglas de Negocio
-Versión: 3.0.0 (Sincronizado con implementación: 2025-11-23)
+Versión: 4.0.0 (Sincronizado con Arquitectura de Módulos: Noviembre 2025)
 *(Nota: Este documento refleja el estado real de la implementación.)*
 
 ## 1. Roles del Sistema
@@ -8,7 +8,7 @@ Versión: 3.0.0 (Sincronizado con implementación: 2025-11-23)
 Rol con el más alto nivel de acceso, encargado de la gestión global de la plataforma.
 - ✅ **Gestión Global:** Crea condominios (Individual/Masivo), inactiva tenants y gestiona usuarios globales.
 - ✅ **Catálogo de Módulos:** Puede activar/desactivar módulos a nivel global (activando flag de Mantenimiento) o por condominio.
-- ✅ **Acceso Transversal:** Tiene acceso "Premium" a todos los módulos para supervisión (ej. puede ver y crear documentos en cualquier tenant).
+- ✅ **Acceso Transversal:** Tiene acceso "Premium" inherente a todos los módulos para fines de supervisión y soporte, sin importar si el tenant tiene el módulo contratado.
 
 ### 1.2 Perfil Administrador (ADMIN)
 Rol para gestionar un condominio específico.
@@ -38,10 +38,11 @@ Roles acumulativos asignados por el ADMIN (`UserSpecialRole`).
     - Disponible para **todos** los usuarios (`USER`, `ADMIN`, `MASTER`) de un condominio activo.
     - Funcionalidad: Visualizar repositorio (`index`), descargar PDF sin firmar.
     - *Justificación:* Fomenta la transparencia y el uso de la plataforma.
-- ✅ **Nivel Premium (Pago/Restringido):**
-    - Requiere que el condominio tenga `has_documents_module = True`.
-    - Disponible para: `MASTER`, `ADMIN` y `Directiva` (con Roles Especiales activos).
-    - Funcionalidad: Crear documentos (`editor`), Editar, Firmar (Física), Enviar.
+- ✅ **Nivel Premium (Pago/Restringido):** Disponible para `MASTER`, `ADMIN` y `Directiva` (con Roles Especiales activos).
+    - **Requisito de Acceso:** El acceso se concede si se cumplen dos condiciones:
+        1. El módulo (`documents`) está `ACTIVE` en el catálogo global (tabla `Module`).
+        2. Existe una entrada `ACTIVE` para ese condominio y ese módulo en la tabla `CondominiumModule`.
+    - **Funcionalidad:** Crear documentos (`editor`), Editar, Firmar, Enviar.
 
 ### 2.2 Ciclo de Vida del Documento
 1. **Borrador:** Creado por un usuario Premium.
@@ -64,9 +65,9 @@ Roles acumulativos asignados por el ADMIN (`UserSpecialRole`).
 - ✅ **Decoradores en Cascada:**
     1. `@login_required`: Usuario autenticado.
     2. `@module_required('documents')`:
-        - Verifica Mantenimiento Global.
-        - Verifica Contrato del Condominio (`has_documents_module`).
-        - Verifica Rol (Master/Admin o Rol Especial).
+        - **Paso 1 (Global):** Verifica que el módulo no esté en mantenimiento en la tabla `Module`.
+        - **Paso 2 (Tenant):** Verifica que el condominio actual (`g.condominium`) tenga una suscripción activa al módulo en la tabla `CondominiumModule`.
+        - **Paso 3 (Rol):** Verifica que el `current_user` tenga un rol permitido (`MASTER`, `ADMIN` o un `UserSpecialRole` válido).
 
 ---
 

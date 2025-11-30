@@ -1,7 +1,7 @@
 # Sistema de Gestión de Condominios
 
 **CondoManager** es un sistema web multi-tenant para la gestión de condominios, desarrollado con Flask y SQLAlchemy.
-
+ 
 *   **Repositorio Principal:** [https://github.com/ginaproanio/condomanager](https://github.com/ginaproanio/condomanager)
 *   **Ambiente de Producción:** [https://condomanager.puntablancaecuador.com/](https://condomanager.puntablancaecuador.com/)
 
@@ -23,12 +23,12 @@ Este proyecto sigue convenciones de código y documentación para asegurar clari
 
 > **IMPORTANTE**: Todo el código y los identificadores técnicos de este proyecto DEBEN estar en **inglés**, incluyendo:
 > - Nombres de variables, funciones, clases, atributos y métodos.
-> - Nombres de tablas y columnas en la base de datos.
+> - Nombres de tablas y columnas en la base de datos (con excepciones para términos legales o locales).
 > - Endpoints de la API.
 > - Comentarios en el código
 > - Mensajes de commit.
 > - Nombres de archivos y directorios.
->
+> 
 > Excepciones permitidas:
 > > - **Texto visible para el usuario final**: El contenido de texto destinado a la interfaz de usuario (UI), como etiquetas en plantillas HTML, mensajes de `flash` o alertas, **debe estar en español**.
 > - Documentación de alto nivel (como este Índice) puede estar en español para claridad del equipo.
