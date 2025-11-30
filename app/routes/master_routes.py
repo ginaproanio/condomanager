@@ -18,7 +18,8 @@ master_bp = Blueprint('master', __name__)
 
 @master_bp.route('/master')
 @master_required
-def master_panel(current_user):
+def master_panel():
+    current_user = get_current_user()
     condominium = g.condominium
     config = current_app.get_tenant_config(condominium.subdomain if condominium else None)
     all_users = User.query.all()
@@ -26,7 +27,8 @@ def master_panel(current_user):
 
 @master_bp.route('/master/reports', methods=['GET', 'POST'])
 @master_required
-def reports(current_user):
+def reports():
+    current_user = get_current_user()
     # Generación de estadísticas en tiempo real
     # ✅ REGLA: Las métricas de negocio deben excluir entornos internos/de prueba.
     production_envs = ['production', 'demo'] # Definir qué se considera "real"
@@ -201,7 +203,8 @@ def reports(current_user):
 
 @master_bp.route('/master/condominios', methods=['GET'])
 @master_required
-def master_condominios(current_user):
+def master_condominios():
+    current_user = get_current_user()
     search_query = request.args.get('q', '')
     query = Condominium.query
 
@@ -220,11 +223,12 @@ def master_condominios(current_user):
 
 @master_bp.route('/supervise/<int:condominium_id>', methods=['GET'])
 @master_required
-def supervise_condominium(current_user, condominium_id):
+def supervise_condominium(condominium_id):
     """
     Muestra un panel de supervisión de solo lectura para un condominio específico.
     Accesible solo para el rol MASTER.
     """
+    current_user = get_current_user()
     condominium = db.session.get(Condominium, condominium_id)
     if not condominium:
         flash('Condominio no encontrado.', 'danger')
@@ -244,7 +248,8 @@ def supervise_condominium(current_user, condominium_id):
 
 @master_bp.route('/master/usuarios', methods=['GET'])
 @master_required
-def master_usuarios(current_user):
+def master_usuarios():
+    current_user = get_current_user()
     search_query = request.args.get('q', '')
     base_query = User.query
 
@@ -281,7 +286,8 @@ def master_usuarios(current_user):
 
 @master_bp.route('/master/usuarios/manage', methods=['POST'])
 @master_required
-def master_manage_user(current_user):
+def master_manage_user():
+    current_user = get_current_user()
     action = request.form.get('action')
     user_id = request.form.get('user_id')
     user_to_manage = User.query.get_or_404(int(user_id))
@@ -334,7 +340,8 @@ def master_manage_user(current_user):
 
 @master_bp.route('/master/usuarios/editar/<int:user_id>', methods=['GET', 'POST'])
 @master_required
-def master_usuarios_editar(current_user, user_id):
+def master_usuarios_editar(user_id):
+    current_user = get_current_user()
     user_to_edit = User.query.get_or_404(user_id)
     all_condominiums = Condominium.query.order_by(Condominium.name).all()
 
@@ -367,14 +374,15 @@ def master_usuarios_editar(current_user, user_id):
 
 @master_bp.route('/master/usuarios/eliminar/<int:user_id>', methods=['POST'])
 @master_required
-def master_usuarios_eliminar(current_user, user_id):
+def master_usuarios_eliminar(user_id):
+    current_user = get_current_user()
     # Placeholder para la lógica de eliminación
     flash(f"Funcionalidad para eliminar usuario {user_id} no implementada.", "info")
     return redirect(url_for('master.master_usuarios'))
 
 @master_bp.route('/master/configuracion', methods=['GET', 'POST'])
 @master_required
-def master_configuracion(current_user):
+def master_configuracion():
     """
     Panel de configuración global de la plataforma (Banco, APIs, etc.)
     Usa el condominio 'sandbox' como almacén de esta configuración global.
@@ -382,6 +390,7 @@ def master_configuracion(current_user):
     # Usamos el condominio 'sandbox' o el tenant del master para guardar esta config
     # En un sistema más grande, esto iría en una tabla 'PlatformConfig'
     target_condo = None
+    current_user = get_current_user()
     if current_user.tenant:
         target_condo = Condominium.query.filter_by(subdomain=current_user.tenant).first()
     if not target_condo:
@@ -447,7 +456,8 @@ def master_configuracion(current_user):
 
 @master_bp.route('/master/configuracion/cuenta-bancaria', methods=['POST'])
 @master_required
-def manage_bank_account(current_user):
+def manage_bank_account():
+    current_user = get_current_user()
     try:
         account_id = request.form.get('account_id_db')
         
@@ -477,7 +487,8 @@ def manage_bank_account(current_user):
 
 @master_bp.route('/master/configuracion/cuenta-bancaria/<int:account_id>/eliminar', methods=['POST'])
 @master_required
-def delete_bank_account(current_user, account_id):
+def delete_bank_account(account_id):
+    current_user = get_current_user()
     try:
         account = PlatformBankAccount.query.get_or_404(int(account_id))
         db.session.delete(account)
@@ -491,7 +502,8 @@ def delete_bank_account(current_user, account_id):
 
 @master_bp.route('/master/usuarios/reaprobar/<int:user_id>', methods=['POST'])
 @master_required
-def master_usuarios_reaprobar(current_user, user_id):
+def master_usuarios_reaprobar(user_id):
+    current_user = get_current_user()
     user_to_reapprove = User.query.get_or_404(user_id)
     if user_to_reapprove:
         user_to_reapprove.status = 'pending' # Lo devolvemos a pendiente para que el MASTER decida qué hacer
@@ -504,7 +516,8 @@ def master_usuarios_reaprobar(current_user, user_id):
 
 @master_bp.route('/master/usuarios/importar_admins', methods=['POST'])
 @master_required
-def master_importar_admins_csv(current_user):
+def master_importar_admins_csv():
+    current_user = get_current_user()
     if 'csv_file' not in request.files:
         flash('No se encontró el archivo en la solicitud.', 'error')
         return redirect(url_for('master.master_usuarios'))
@@ -563,7 +576,8 @@ def master_importar_admins_csv(current_user):
 
 @master_bp.route('/master/usuarios/crear', methods=['GET', 'POST'])
 @master_required
-def master_usuarios_crear(current_user):
+def master_usuarios_crear():
+    current_user = get_current_user()
     all_condominiums = Condominium.query.order_by(Condominium.name).all()
 
     if request.method == 'POST':
@@ -615,7 +629,8 @@ def master_usuarios_crear(current_user):
 
 @master_bp.route('/master/crear_condominio', methods=['GET', 'POST'])
 @master_required
-def crear_condominio(current_user):
+def crear_condominio():
+    current_user = get_current_user()
     if request.method == 'POST':
         try:
             # Asegurarse de que el admin_user_id es un entero
@@ -668,11 +683,12 @@ def crear_condominio(current_user):
 
 @master_bp.route('/master/modules', methods=['GET', 'POST'])
 @master_required
-def manage_module_catalog(current_user):
+def manage_module_catalog():
     """
     Panel para que el MASTER gestione el catálogo global de módulos.
     Aquí se crean, editan y se pone en mantenimiento los módulos.
     """
+    current_user = get_current_user()
     if request.method == 'POST':
         # Lógica para crear o editar un módulo del catálogo
         module_id = request.form.get('module_id')
@@ -735,7 +751,8 @@ def manage_module_catalog(current_user):
 
 @master_bp.route('/master/condominios/importar', methods=['POST'])
 @master_required
-def master_importar_condos_csv(current_user):
+def master_importar_condos_csv():
+    current_user = get_current_user()
     if 'csv_file' not in request.files:
         flash('No se encontró el archivo en la solicitud.', 'error')
         return redirect(url_for('master.master_condominios'))
@@ -783,7 +800,8 @@ def master_importar_condos_csv(current_user):
 
 @master_bp.route('/master/condominios/editar/<int:condo_id>', methods=['GET', 'POST'])
 @master_required
-def editar_condominio(current_user, condo_id):
+def editar_condominio(condo_id):
+    current_user = get_current_user()
     condo_to_edit = Condominium.query.get_or_404(condo_id)
     administradores = User.query.filter(User.role.in_(['ADMIN', 'MASTER'])).all()
 
@@ -853,7 +871,8 @@ def editar_condominio(current_user, condo_id):
 
 @master_bp.route('/master/descargar-plantilla-unidades')
 @master_required
-def descargar_plantilla_unidades(current_user):
+def descargar_plantilla_unidades():
+    current_user = get_current_user()
     output = io.StringIO()
     writer = csv.writer(output)
     
@@ -879,7 +898,8 @@ def descargar_plantilla_unidades(current_user):
 
 @master_bp.route('/master/condominios/inactivar/<int:condo_id>', methods=['POST'])
 @master_required
-def inactivar_condominio(current_user, condo_id):
+def inactivar_condominio(condo_id):
+    current_user = get_current_user()
     condo_to_inactivate = Condominium.query.get_or_404(condo_id)
     condo_to_inactivate.status = 'INACTIVO'
     db.session.commit()
@@ -890,12 +910,13 @@ from app.services.whatsapp import WhatsAppService
 
 @master_bp.route('/master/comunicaciones', methods=['GET'])
 @master_required
-def master_comunicaciones(current_user):
+def master_comunicaciones():
     """
     Panel de comunicaciones globales para el MASTER.
     """
     # Obtener el condominio "Sandbox" o donde resida el Master
     # Lógica: Buscar por tenant del usuario, si no, buscar por environment 'internal'
+    current_user = get_current_user()
     condominium = None
     if current_user.tenant:
         condominium = Condominium.query.filter_by(subdomain=current_user.tenant).first()
@@ -924,11 +945,12 @@ def master_comunicaciones(current_user):
 
 @master_bp.route('/master/comunicaciones/qr', methods=['GET'])
 @master_required
-def master_get_qr(current_user):
+def master_get_qr():
     """
     Retorna el QR para la conexión de WhatsApp.
     """
     condominium = None
+    current_user = get_current_user()
     if current_user.tenant:
         condominium = Condominium.query.filter_by(subdomain=current_user.tenant).first()
     if not condominium:
@@ -947,11 +969,12 @@ def master_get_qr(current_user):
 
 @master_bp.route('/master/configurar-whatsapp', methods=['POST'])
 @master_required
-def configurar_whatsapp(current_user):
+def configurar_whatsapp():
     """
     Guarda la configuración del proveedor de WhatsApp para el MASTER.
     """
     # Determinar condominio del Master
+    current_user = get_current_user()
     condo = None
     if current_user.tenant:
         condo = Condominium.query.filter_by(subdomain=current_user.tenant).first()
@@ -995,7 +1018,8 @@ def configurar_whatsapp(current_user):
 
 @master_bp.route('/master/condominios/configurar-modulos/<int:condo_id>', methods=['GET'])
 @master_required
-def configure_condo_modules(current_user, condo_id):
+def configure_condo_modules(condo_id):
+    current_user = get_current_user()
     condo = Condominium.query.get_or_404(condo_id)
     
     # 1. Obtener TODOS los módulos globales
@@ -1038,9 +1062,10 @@ def configure_condo_modules(current_user, condo_id):
 
 @master_bp.route('/master/document-audit', methods=['GET'])
 @master_required
-def master_document_audit(current_user):
+def master_document_audit():
     # Listar todos los documentos del sistema
     # OPTIMIZACIÓN: Eager load de relaciones
+    current_user = get_current_user()
     documents = models.Document.query.order_by(models.Document.created_at.desc())\
         .options(joinedload(models.Document.condominium), joinedload(models.Document.created_by))\
         .all()
@@ -1049,7 +1074,8 @@ def master_document_audit(current_user):
 
 @master_bp.route('/master/condominios/guardar-config-modulo/<int:condo_id>', methods=['POST'])
 @master_required
-def save_condo_module_config(current_user, condo_id):
+def save_condo_module_config(condo_id):
+    current_user = get_current_user()
     condo = Condominium.query.get_or_404(condo_id)
     module_id = request.form.get('module_id')
     
