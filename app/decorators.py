@@ -1,5 +1,5 @@
 from functools import wraps
-from flask import flash, redirect, url_for, current_app, abort
+from flask import flash, redirect, url_for, current_app, abort, g
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.models import User, Condominium, UserSpecialRole, Module # Importar modelo Module
 from datetime import date, datetime
