@@ -23,17 +23,6 @@
                         <p class="lead text-muted">Gestiona unidades y usuarios de este condominio.</p>
                     </div>
 
-                    {% with messages = get_flashed_messages(with_categories=true) %}
-                        {% if messages %}
-                            {% for category, message in messages %}
-                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                                    <i class="fas fa-info-circle me-2"></i>{{ message }}
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                                </div>
-                            {% endfor %}
-                        {% endif %}
-                    {% endwith %}
-
                     {# --- SOLUCIÓN DE INGENIERÍA APLICADA --- #}
                     {# Se elimina el bloque 'if/else' que contenía la lógica de seguridad errónea. #}
                     {# Si el usuario ha llegado a esta plantilla, es porque la ruta de Python ya ha validado #}
@@ -77,19 +66,19 @@
                         </li>
                         <!-- NUEVA PESTAÑA COMUNICACIONES -->
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="comms-tab" data-bs-toggle="tab" data-bs-target="#comms" type="button" role="tab" aria-controls="comms" aria-selected="false">
+                            <a class="nav-link" href="{{ url_for_tenant('admin.comunicaciones') }}">
                                 <i class="fab fa-whatsapp me-2 text-success"></i>Comunicaciones
-                            </button>
+                            </a>
                         </li>
                         <!-- NUEVA PESTAÑA REPORTES -->
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="reports-tab" data-bs-toggle="tab" data-bs-target="#reports" type="button" role="tab" aria-controls="reports" aria-selected="false">
+                            <a class="nav-link" href="{{ url_for_tenant('admin.reportes_condominio') }}">
                                 <i class="fas fa-chart-pie me-2"></i>Reportes
-                            </button>
+                            </a>
                         </li>
                         <!-- NUEVA PESTAÑA FINANZAS -->
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="finance-tab" data-bs-toggle="tab" data-bs-target="#finance" type="button" role="tab" aria-controls="finance" aria-selected="false">
+                            <button class="nav-link" id="finance-tab" data-bs-toggle="tab" data-bs-target="#finance" type="button" role="tab" aria-controls="finance" aria-selected="false" disabled>
                                 <i class="fas fa-wallet me-2 text-dark"></i>Finanzas
                             </button>
                         </li>
@@ -147,10 +136,10 @@
                                                         <td>{{ unit.bathrooms }}</td>
                                                         <td>
                                                             <div class="btn-group btn-group-sm">
-                                                                <a href="{{ url_for('admin.editar_unidad', unit_id=unit.id) }}" class="btn btn-info">
+                                                                <a href="{{ url_for_tenant('admin.editar_unidad', unit_id=unit.id) }}" class="btn btn-info">
                                                                     <i class="fas fa-edit"></i>
                                                                 </a>
-                                                                <form action="{{ url_for('admin.eliminar_unidad', unit_id=unit.id) }}" method="POST" class="d-inline">
+                                                                <form action="{{ url_for_tenant('admin.eliminar_unidad', unit_id=unit.id) }}" method="POST" class="d-inline">
                                                                     <button type="submit" class="btn btn-danger" onclick="return confirm('¿Estás seguro de que quieres eliminar esta unidad?');">
                                                                         <i class="fas fa-trash"></i>
                                                                     </button>
@@ -182,7 +171,7 @@
                                     <p class="text-muted">Sube un archivo CSV con la siguiente estructura para unidades:</p>
                                     <p><code>property_number,name,property_type,area_m2,bedrooms,bathrooms</code></p>
                                     <p class="text-muted">Ejemplo: <code>"A-101", "Apartamento 101", "apartamento", "85.5", "2", "2"</code></p>
-                                    <form action="{{ url_for('admin.admin_condominio_panel', condominium_id=condominium.id) }}" method="POST" enctype="multipart/form-data">
+                                    <form action="{{ url_for_tenant('admin.admin_condominio_panel') }}" method="POST" enctype="multipart/form-data">
                                         <input type="hidden" name="action" value="import_units_csv">
                                         <div class="mb-3">
                                             <label for="units_csv_file" class="form-label">Seleccionar archivo CSV de Unidades</label>
@@ -226,10 +215,10 @@
                                                         <td><span class="badge bg-secondary">{{ u.status }}</span></td>
                                                         <td>
                                                             <div class="btn-group btn-group-sm">
-                                                                <a href="/admin/usuario/editar/{{ u.id }}" class="btn btn-info">
+                                                                <a href="{{ url_for_tenant('admin.editar_usuario_unidad', user_id=u.id) }}" class="btn btn-info">
                                                                     <i class="fas fa-edit"></i>
                                                                 </a>
-                                                                <a href="/admin/usuario/eliminar/{{ u.id }}" class="btn btn-danger">
+                                                                <a href="{{ url_for_tenant('admin.eliminar_usuario_unidad', user_id=u.id) }}" class="btn btn-danger" onclick="return confirm('¿Estás seguro de que quieres eliminar este usuario?');">
                                                                     <i class="fas fa-trash"></i>
                                                                 </a>
                                                             </div>
@@ -259,8 +248,8 @@
                                     <p class="text-muted">Sube un archivo CSV con la siguiente estructura para usuarios de unidades:</p>
                                     <p><code>email,name,password,phone,unit_property_number</code></p>
                                     <p class="text-muted">Ejemplo: <code>"juan@ejemplo.com", "Juan Pérez", "password123", "+593987654321", "A-101"</code></p>
-                                    <p class="text-danger">**Importante:** La `unit_property_number` debe existir previamente en este condominio.</p>
-                                    <form action="{{ url_for('admin.admin_condominio_panel', condominium_id=condominium.id) }}" method="POST" enctype="multipart/form-data">
+                                    <p class="text-danger">**Importante:** La `unit_property_number` debe existir previamente en este condominio.</p> 
+                                    <form action="{{ url_for_tenant('admin.admin_condominio_panel') }}" method="POST" enctype="multipart/form-data">
                                         <input type="hidden" name="action" value="import_users_csv">
                                         <div class="mb-3">
                                             <label for="users_csv_file" class="form-label">Seleccionar archivo CSV de Usuarios</label>
@@ -302,10 +291,10 @@
                                                         <td>{{ u.created_at.strftime('%d/%m/%Y %H:%M') if u.created_at else 'N/A' }}</td>
                                                         <td>
                                                             <div class="btn-group btn-group-sm">
-                                                                <a href="{{ url_for('admin.approve_user', user_id=u.id) }}" class="btn btn-success">
+                                                                <a href="{{ url_for_tenant('admin.approve_user', user_id=u.id) }}" class="btn btn-success">
                                                                     <i class="fas fa-check"></i> Aprobar
                                                                 </a>
-                                                                <a href="{{ url_for('admin.reject_user', user_id=u.id) }}" class="btn btn-danger">
+                                                                <a href="{{ url_for_tenant('admin.reject_user', user_id=u.id) }}" class="btn btn-danger">
                                                                     <i class="fas fa-times"></i> Rechazar
                                                                 </a>
                                                             </div>
@@ -335,8 +324,8 @@
                                     <div class="row">
                                         <!-- Formulario de Asignación -->
                                         <div class="col-md-4 border-end">
-                                            <h6 class="mb-3">Asignar Nuevo Cargo</h6>
-                                            <form action="{{ url_for('admin.asignar_rol_especial', condominium_id=condominium.id) }}" method="POST">
+                                            <h6 class="mb-3">Asignar Nuevo Cargo</h6> 
+                                            <form action="{{ url_for_tenant('admin.asignar_rol_especial') }}" method="POST">
                                                 <div class="mb-3">
                                                     <label for="role_user_id" class="form-label">Usuario</label>
                                                     <select class="form-select" id="role_user_id" name="user_id" required>
@@ -398,7 +387,7 @@
                                                                 <td>{{ role.start_date }}</td>
                                                                 <td>{{ role.end_date if role.end_date else 'Indefinido' }}</td>
                                                                 <td>
-                                                                    <form action="{{ url_for('admin.revocar_rol_especial', role_id=role.id) }}" method="POST" class="d-inline">
+                                                                    <form action="{{ url_for_tenant('admin.revocar_rol_especial', role_id=role.id) }}" method="POST" class="d-inline">
                                                                         <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('¿Estás seguro de revocar el cargo de {{ role.role }} a {{ role.user.name }}?');" title="Revocar Cargo">
                                                                             <i class="fas fa-user-slash"></i>
                                                                         </button>
@@ -519,7 +508,7 @@
                                         </div>
                                     </div>
 
-                                    <a href="{{ url_for('admin.finanzas', condominium_id=condominium.id) }}" class="btn btn-dark btn-lg mt-4 shadow-sm">
+                                    <a href="{{ url_for_tenant('admin.finanzas') }}" class="btn btn-dark btn-lg mt-4 shadow-sm">
                                         <i class="fas fa-external-link-alt me-2"></i>Abrir Panel Financiero
                                     </a>
                                 </div>
@@ -547,7 +536,7 @@
                                         </div>
                                     </div>
 
-                                    <a href="{{ url_for('petty_cash.index', condominium_id=condominium.id) }}" class="btn btn-danger btn-lg mt-4 shadow-sm">
+                                    <a href="{{ url_for_tenant('petty_cash.index') }}" class="btn btn-danger btn-lg mt-4 shadow-sm">
                                         <i class="fas fa-calculator me-2"></i>Gestionar Caja Chica
                                     </a>
                                 </div>
@@ -562,8 +551,8 @@
                                 </div>
                                 <div class="card-body py-5">
                                     <div class="row justify-content-center">
-                                        <div class="col-md-8">
-                                            <form action="{{ url_for('admin.personalizar_condominio', condominium_id=condominium.id) }}" method="POST" enctype="multipart/form-data">
+                                        <div class="col-md-8"> 
+                                            <form action="{{ url_for_tenant('admin.personalizar_condominio') }}" method="POST" enctype="multipart/form-data">
                                                 <div class="mb-4 text-center">
                                                     <p class="text-muted">Sube el logo de tu condominio y personaliza el color principal de la interfaz.</p>
                                                 </div>
@@ -610,7 +599,7 @@
                                         </div>
                                         
                                         <div class="mt-4">
-                                            <a href="{{ url_for('google_drive.connect') }}" class="btn btn-outline-secondary">
+                                            <a href="{{ url_for_tenant('google_drive.connect') }}" class="btn btn-outline-secondary">
                                                 <i class="fas fa-sync me-2"></i>Reconectar / Cambiar Cuenta
                                             </a>
                                         </div>
@@ -631,7 +620,7 @@
                                             </div>
                                         </div>
 
-                                        <a href="{{ url_for('google_drive.connect') }}" class="btn btn-success btn-lg shadow-sm">
+                                        <a href="{{ url_for_tenant('google_drive.connect') }}" class="btn btn-success btn-lg shadow-sm">
                                             <i class="fab fa-google me-2"></i>Conectar con Google Drive
                                         </a>
                                         <p class="small text-muted mt-3">Se solicitarán permisos para gestionar archivos creados por la app.</p>

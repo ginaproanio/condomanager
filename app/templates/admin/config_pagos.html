@@ -27,9 +27,7 @@
                         Los pagos realizados por los residentes irán directamente a la cuenta de PayPhone que configures aquí. La plataforma no retiene comisiones.
                     </div>
 
-                    {% include '_messages.html' %}
-
-                    <form method="POST">
+                    <form method="POST" action="{{ url_for_tenant('admin.configuracion_pagos') }}">
                         <div class="mb-4">
                             <label for="payphone_token" class="form-label fw-bold">Token de Autenticación (Bearer Token)</label>
                             <div class="input-group">

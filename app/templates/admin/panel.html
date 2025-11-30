@@ -15,26 +15,7 @@
                 {% endif %}
             </div>
 
-            {% if error %}
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="fas fa-exclamation-triangle me-2"></i>{{ error }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-            {% endif %}
-
-            {% if user and user.role == 'ADMIN' and not session.get('impersonating_condominium_id') %}
-                <p>Bienvenido, <strong>{{ user.name }}</strong> ({{ user.role }})</p>
-            {% elif user and user.role == 'MASTER' and session.get('impersonating_condominium_id') %}
-                <div class="alert alert-warning" role="alert">
-                    <h5 class="alert-heading"><i class="fas fa-user-shield me-2"></i>Modo de Suplantación Activo</h5>
-                    <p class="mb-0">
-                        Estás viendo este panel como <strong>{{ user.name }} (MASTER)</strong>, tomando control del condominio.
-                        Todas las acciones realizadas en este modo serán auditadas.
-                    </p>
-                </div>
-            {% else %}
-                <p>No tienes acceso a este contenido.</p>
-            {% endif %}
+            <p>Bienvenido, <strong>{{ user.name }}</strong> ({{ user.role }})</p>
 
             <!-- Estadísticas -->
             <div class="row mb-4">
@@ -108,10 +89,10 @@
                                         <td>{{ user.created_at.strftime('%d/%m/%Y %H:%M') if user.created_at else 'N/A' }}</td>
                                         <td>
                                             <div class="btn-group btn-group-sm">
-                                                <a href="{{ url_for('admin.approve_user', user_id=user.id) }}" class="btn btn-success">
+                                                <a href="{{ url_for_tenant('admin.approve_user', user_id=user.id) }}" class="btn btn-success">
                                                     <i class="fas fa-check"></i>Aprobar
                                                 </a>
-                                                <a href="{{ url_for('admin.reject_user', user_id=user.id) }}" class="btn btn-danger">
+                                                <a href="{{ url_for_tenant('admin.reject_user', user_id=user.id) }}" class="btn btn-danger">
                                                     <i class="fas fa-times"></i>Rechazar
                                                 </a>
                                             </div>
@@ -138,7 +119,7 @@
                         <i class="fas fa-bolt me-2"></i>Acciones Rápidas
                     </h5>
                     <div class="d-grid gap-2 d-md-flex">
-                        <a href="{{ url_for('admin.admin_condominio_panel', condominium_id=condominium_id_for_link) if condominium_id_for_link else '#' }}" class="btn btn-primary {{ 'disabled' if not condominium_id_for_link }}">
+                        <a href="{{ url_for_tenant('admin.admin_condominio_panel') if condominium_id_for_link else '#' }}" class="btn btn-primary {{ 'disabled' if not condominium_id_for_link }}">
                             <i class="fas fa-building me-2"></i>Gestionar Mi Condominio
                         </a>
                         <a href="#" class="btn btn-outline-primary disabled">

@@ -9,12 +9,10 @@
             <h2 class="mb-1"><i class="fas fa-cash-register me-2 text-primary"></i>Caja Chica</h2>
             <p class="text-muted mb-0">Gestión de gastos menores y reposiciones.</p>
         </div>
-        <a href="{{ url_for('admin.admin_condominio_panel', condominium_id=condominium.id) }}" class="btn btn-outline-secondary">
+        <a href="{{ url_for_tenant('admin.admin_condominio_panel') }}" class="btn btn-outline-secondary">
             <i class="fas fa-arrow-left me-2"></i>Volver al Panel
         </a>
     </div>
-
-    {% include '_messages.html' %}
 
     <div class="row mb-4">
         <!-- Tarjeta de Saldo -->
@@ -35,7 +33,7 @@
                     <h5 class="mb-0 text-primary"><i class="fas fa-plus-circle me-2"></i>Registrar Movimiento</h5>
                 </div>
                 <div class="card-body">
-                    <form action="{{ url_for('petty_cash.nuevo_movimiento', condominium_id=condominium.id) }}" method="POST" enctype="multipart/form-data">
+                    <form action="{{ url_for_tenant('petty_cash.nuevo_movimiento') }}" method="POST" enctype="multipart/form-data">
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">Tipo</label>
@@ -183,4 +181,3 @@
     }
 </script>
 {% endblock %}
-

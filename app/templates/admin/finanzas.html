@@ -7,13 +7,13 @@
     <!-- Encabezado -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <a href="{{ url_for('admin.admin_condominio_panel', condominium_id=condominium.id) }}" class="btn btn-outline-secondary mb-2">
+            <a href="{{ url_for_tenant('admin.admin_condominio_panel') }}" class="btn btn-outline-secondary mb-2">
                 <i class="fas fa-arrow-left me-2"></i>Volver al Panel
             </a>
             <h2 class="text-primary mb-0"><i class="fas fa-cash-register me-2"></i>Gestión Financiera</h2>
         </div>
         
-        <a href="{{ url_for('admin.configuracion_pagos', condominium_id=condominium.id) }}" class="btn btn-outline-primary">
+        <a href="{{ url_for_tenant('admin.configuracion_pagos') }}" class="btn btn-outline-primary">
             <i class="fas fa-cog me-2"></i>Configurar Pasarela
         </a>
     </div>
@@ -54,13 +54,13 @@
                                 <td>{{ payment.description }}</td>
                                 <td class="fw-bold text-success">${{ payment.amount }}</td>
                                 <td>
-                                    <a href="{{ url_for('admin.ver_comprobante', filename=payment.proof_of_payment) }}" target="_blank" class="btn btn-sm btn-info text-white">
+                                    <a href="{{ url_for_tenant('admin.ver_comprobante', filename=payment.proof_of_payment) }}" target="_blank" class="btn btn-sm btn-info text-white">
                                         <i class="fas fa-eye me-1"></i>Ver Archivo
                                     </a>
                                 </td>
                                 <td class="text-end pe-4">
                                     <div class="btn-group">
-                                        <form action="{{ url_for('admin.aprobar_pago', payment_id=payment.id) }}" method="POST" class="d-inline">
+                                        <form action="{{ url_for_tenant('admin.aprobar_pago', payment_id=payment.id) }}" method="POST" class="d-inline">
                                             <button type="submit" class="btn btn-success btn-sm" title="Aprobar">
                                                 <i class="fas fa-check"></i>
                                             </button>
@@ -78,7 +78,7 @@
                                                     <h5 class="modal-title">Rechazar Pago</h5>
                                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                                 </div>
-                                                <form action="{{ url_for('admin.rechazar_pago', payment_id=payment.id) }}" method="POST">
+                                                <form action="{{ url_for_tenant('admin.rechazar_pago', payment_id=payment.id) }}" method="POST">
                                                     <div class="modal-body text-start">
                                                         <div class="mb-3">
                                                             <label class="form-label">Motivo del rechazo</label>
@@ -155,7 +155,7 @@
                                 </td>
                                 <td>
                                     {% if tx.payment_method == 'TRANSFER' and tx.proof_of_payment %}
-                                        <a href="{{ url_for('admin.ver_comprobante', filename=tx.proof_of_payment) }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                        <a href="{{ url_for_tenant('admin.ver_comprobante', filename=tx.proof_of_payment) }}" target="_blank" class="btn btn-sm btn-outline-secondary">
                                             <i class="fas fa-paperclip"></i>
                                         </a>
                                     {% endif %}

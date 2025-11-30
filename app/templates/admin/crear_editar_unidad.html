@@ -19,17 +19,6 @@
                         <p class="lead text-muted">Para el condominio: <strong>{{ condominium.name }}</strong></p>
                     </div>
 
-                    {% with messages = get_flashed_messages(with_categories=true) %}
-                        {% if messages %}
-                            {% for category, message in messages %}
-                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                                    {{ message }}
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                                </div>
-                            {% endfor %}
-                        {% endif %}
-                    {% endwith %}
-
                     <form method="POST">
                         <div class="row">
                             <div class="col-md-6 mb-3">
@@ -80,7 +69,7 @@
                             </div>
                         </div>
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
-                            <a href="{{ url_for('admin.admin_condominio_panel', condominium_id=condominium.id) }}" class="btn btn-secondary">
+                            <a href="{{ url_for_tenant('admin.admin_condominio_panel') }}" class="btn btn-secondary">
                                 <i class="fas fa-times me-2"></i>Cancelar
                             </a>
                             {% if unit %}

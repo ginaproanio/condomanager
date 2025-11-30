@@ -15,21 +15,6 @@
                         <p class="text-muted">Sistema de Gestión de Condominios</p>
                     </div>
 
-                    <!-- Mensajes -->
-                    {% if mensaje %}
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        <i class="fas fa-check-circle me-2"></i>{{ mensaje }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                    {% endif %}
-
-                    {% if error %}
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <i class="fas fa-exclamation-triangle me-2"></i>{{ error }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                    {% endif %}
-
                     <form method="post">
                         <!-- Fila 1: Nombres y Apellidos -->
                         <div class="row">
@@ -144,7 +129,7 @@
                     
                     <div class="text-center">
                         <p class="mb-2">
-                            <a href="{{ url_for('public.login') }}" class="text-decoration-none">
+                            <a href="{{ url_for('auth.login') }}" class="text-decoration-none">
                                 <i class="fas fa-sign-in-alt me-1"></i>¿Ya tienes cuenta? Inicia sesión
                             </a>
                         </p>

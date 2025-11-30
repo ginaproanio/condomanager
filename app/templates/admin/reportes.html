@@ -6,7 +6,7 @@
 <div class="container py-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <a href="{{ url_for('admin.admin_condominio_panel', tenant_slug=condominium.subdomain) }}" class="btn btn-outline-secondary mb-2">
+            <a href="{{ url_for_tenant('admin.admin_condominio_panel') }}" class="btn btn-outline-secondary mb-2">
                 <i class="fas fa-arrow-left me-2"></i>Volver al Panel
             </a>
             <h2 class="text-primary mb-0"><i class="fas fa-chart-pie me-2"></i>Reportes del Condominio</h2>
@@ -57,7 +57,7 @@
                         <div class="flex-grow-1">
                             <h6 class="fw-bold">Listado de Propietarios</h6>
                             <p class="text-muted small mb-3">Exporta la lista completa de propietarios/usuarios activos con sus unidades y contactos. Ideal para garita o seguridad.</p>
-                            <form method="POST">
+                            <form method="POST" action="{{ url_for_tenant('admin.reportes_condominio') }}">
                                 <input type="hidden" name="tipo_reporte" value="residentes">
                                 <button type="submit" class="btn btn-primary btn-sm">
                                     <i class="fas fa-file-csv me-2"></i>Descargar CSV

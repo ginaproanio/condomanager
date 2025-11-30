@@ -10,7 +10,7 @@
                 <h1 class="text-primary">
                     <i class="fas fa-users me-2"></i>Gestión de Usuarios
                 </h1>
-                <a href="{{ url_for('admin.admin_panel') }}" class="btn btn-outline-primary">
+                <a href="{{ url_for_tenant('admin.admin_panel') }}" class="btn btn-outline-primary">
                     <i class="fas fa-arrow-left me-2"></i>Volver al Panel
                 </a>
             </div>
@@ -98,11 +98,11 @@
                                         <td>
                                             <div class="btn-group btn-group-sm">
                                                 {% if user.status == 'pending' %}
-                                                    <a href="{{ url_for('admin.approve_user', user_id=user.id) }}" class="btn btn-success" 
+                                                    <a href="{{ url_for_tenant('admin.approve_user', user_id=user.id) }}" class="btn btn-success" 
                                                        title="Aprobar usuario">
                                                         <i class="fas fa-check"></i>
                                                     </a>
-                                                    <a href="{{ url_for('admin.reject_user', user_id=user.id) }}" class="btn btn-danger"
+                                                    <a href="{{ url_for_tenant('admin.reject_user', user_id=user.id) }}" class="btn btn-danger"
                                                        title="Rechazar usuario">
                                                         <i class="fas fa-times"></i>
                                                     </a>
@@ -112,7 +112,7 @@
                                                         <i class="fas fa-user-check"></i>
                                                     </button>
                                                 {% else %}
-                                                    <a href="{{ url_for('admin.approve_user', user_id=user.id) }}" class="btn btn-outline-success"
+                                                    <a href="{{ url_for_tenant('admin.approve_user', user_id=user.id) }}" class="btn btn-outline-success"
                                                        title="Re-activar usuario">
                                                         <i class="fas fa-redo"></i>
                                                     </a>
