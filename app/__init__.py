@@ -100,8 +100,7 @@ def create_app():
         # --- REGISTRO EXPLÍCITO Y ROBUSTO DE BLUEPRINTS ---
         # Se elimina la capa de abstracción en routes/__init__.py para
         # garantizar que cada blueprint se registre de forma inequívoca.
-        from .routes import public_bp, user_bp, admin_bp, master_bp, api_bp, document_bp, payment_bp, petty_cash_bp, google_drive_bp
-        from .auth import auth_bp
+        from .routes import public_bp, user_bp, auth_bp, admin_bp, master_bp, api_bp, document_bp, payment_bp, petty_cash_bp, google_drive_bp
 
         app.register_blueprint(public_bp)
         app.register_blueprint(user_bp)
