@@ -2,6 +2,21 @@ from functools import wraps
 from flask import abort, g
 from flask_jwt_extended import jwt_required, get_jwt_identity, verify_jwt_in_request
 
+def login_required(f):
+    """
+    Decorador simple que solo verifica que un usuario esté autenticado vía JWT.
+    Es un alias para @jwt_required() para mantener la consistencia.
+    """
+    @wraps(f)
+    @jwt_required()
+    def decorated_function(*args, **kwargs):
+        # La validación la hace @jwt_required, aquí solo pasamos la ejecución.
+        return f(*args, **kwargs)
+    return decorated_function
+
+# El decorador admin_tenant_required ya está aquí y es correcto.
+# ...
+
 def admin_tenant_required(f):
     """
     Decorador definitivo para rutas de administración de un tenant.
@@ -29,6 +44,8 @@ def admin_tenant_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+# El decorador master_required ya está aquí y es correcto.
+# ...
 def master_required(f):
     """
     Decorador para rutas del panel MASTER.
@@ -51,3 +68,34 @@ def master_required(f):
 
         return f(*args, **kwargs)
     return decorated_function
+
+def module_required(module_name):
+    """
+    Decorador factory para verificar si un módulo específico está activo
+    para el condominio actual en el contexto `g`.
+    """
+    def decorator(f):
+        @wraps(f)
+        # Este decorador asume que otro decorador como @admin_tenant_required ya se ha ejecutado
+        # y ha validado el usuario y el condominio.
+        def decorated_function(*args, **kwargs):
+            condominium = getattr(g, 'condominium', None)
+            if not condominium:
+                abort(403, "Se requiere un contexto de condominio para verificar el módulo.")
+
+            # Importación local para evitar ciclos
+            from app.models import Module
+
+            # Verificar si el módulo está activo para este condominio
+            module_is_active = Module.query.filter_by(
+                condominium_id=condominium.id,
+                name=module_name,
+                is_active=True
+            ).first()
+
+            if not module_is_active:
+                abort(403, f"El módulo '{module_name}' no está activo o no existe para este condominio.")
+            
+            return f(*args, **kwargs)
+        return decorator
+    return decorator
