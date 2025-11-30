@@ -2,7 +2,6 @@
 venv/
 .venv/
 env/
-.env
 
 # Archivos de bytecode de Python
 __pycache__/
@@ -19,7 +18,19 @@ local_dev.db
 # Archivos de configuración de IDEs
 .vscode/
 .idea/
+.cursor/
+
+# Archivos de caché de testing
+.pytest_cache/
 
 # Archivos del sistema operativo
 .DS_Store
 Thumbs.db
+
+# Archivos de entorno y logs
+.env
+*.log
+
+# Archivos temporales generados
+listado.txt
+estructura_limpia.txt
