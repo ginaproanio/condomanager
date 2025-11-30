@@ -1,1 +1,1 @@
-web: flask db upgrade && python seed_initial_data.py && gunicorn run:app
+web: flask db upgrade && gunicorn run:app

@@ -500,3 +500,6 @@ def seed_initial_data():
             db.session.add_all([pago1, pago2])
         else:
             print(f"✅ Condominio '{demo_subdomain}' ya existe.")
+
+        db.session.commit()
+        print("✅✅✅ AUDIT: Script de siembra de datos finalizado exitosamente.")
