@@ -9,9 +9,11 @@ def init_tenant_middleware(app):
         # Ej: /algarrobos/admin/panel -> parts[1] es 'algarrobos'
         subdomain = None
         path_parts = request.path.split('/')
-        if len(path_parts) > 1 and path_parts[1] not in ['static', 'api', 'master', 'auth', 'google_drive']:
+        # ARQUITECTURA: Se añade 'global' a la lista de exclusión para permitir rutas públicas.
+        # Esta lista define los "espacios de nombres" que NO son tenants.
+        if len(path_parts) > 1 and path_parts[1] not in ['static', 'api', 'master', 'auth', 'google_drive', 'global']:
             # Asumimos que el primer segmento es el slug del tenant
-            # Se excluyen rutas globales para no confundirlas con un tenant.
+            # Se excluyen rutas de sistema para no confundirlas con un tenant.
             subdomain = path_parts[1]
 
         # Para desarrollo, mantenemos la capacidad de forzar un tenant con un query param.
